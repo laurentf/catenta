@@ -1,0 +1,65 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    @apply antialiased;
+  }
+  body {
+    @apply bg-white font-sans text-navy;
+  }
+  /* Titres : gros, gras, teal — la signature visuelle des slides. */
+  h1 {
+    @apply text-3xl font-extrabold tracking-tight text-teal sm:text-4xl;
+  }
+  h2 {
+    @apply text-xl font-extrabold tracking-tight text-teal;
+  }
+  ::selection {
+    @apply bg-teal-soft text-teal-deep;
+  }
+}
+
+@layer components {
+  /* Le bandeau numéroté en haut à droite des slides. */
+  .eyebrow {
+    @apply text-xs font-semibold uppercase tracking-[0.14em] text-slate-muted;
+  }
+  /* Le sous-titre italique gris sous chaque titre. */
+  .subtitle {
+    @apply mt-2 text-base italic text-slate-label;
+  }
+  .card {
+    @apply rounded-card border border-slate-line bg-white p-6 shadow-card;
+  }
+  .card-mint {
+    @apply rounded-card bg-teal-mist p-6;
+  }
+  .card-panel {
+    @apply rounded-card bg-slate-panel p-6;
+  }
+  .card-peach {
+    @apply rounded-card bg-peach p-6;
+  }
+  .label {
+    @apply mb-1.5 block text-xs font-bold uppercase tracking-wider text-navy-soft;
+  }
+  .input {
+    @apply w-full rounded-lg border border-slate-line bg-white px-3.5 py-2.5 text-sm
+           text-navy outline-none transition placeholder:text-slate-muted
+           focus:border-teal focus:ring-2 focus:ring-teal-soft
+           disabled:cursor-not-allowed disabled:bg-slate-panel;
+  }
+  .hint {
+    @apply mt-1.5 text-xs leading-relaxed text-slate-label;
+  }
+  .mono {
+    @apply font-mono text-[0.8rem];
+  }
+  .divider {
+    @apply my-6 h-px w-full bg-slate-line;
+  }
+}

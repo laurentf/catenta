@@ -1,0 +1,209 @@
+import { Contract, id, type ContractRunner } from 'ethers'
+
+/**
+ * ABIs *human-readable*, tenues en phase avec contracts/.
+ * Les fragments `error` sont inclus : sans eux ethers ne sait pas décoder un
+ * revert en erreur nommée, et l'utilisateur voit « unknown custom error ».
+ */
+
+export const ROLES_ABI = [
+  // rôles acteurs
+  'function LAB_ROLE() view returns (bytes32)',
+  'function PRACTITIONER_ROLE() view returns (bytes32)',
+  'function DISTRIBUTOR_ROLE() view returns (bytes32)',
+  'function REGULATOR_ROLE() view returns (bytes32)',
+  'function DEFAULT_ADMIN_ROLE() view returns (bytes32)',
+  // rôles modules (accordés à des contrats, jamais à des personnes)
+  'function PASSPORT_MINTER_ROLE() view returns (bytes32)',
+  'function PASSPORT_CONTROLLER_ROLE() view returns (bytes32)',
+  'function LOT_MINTER_ROLE() view returns (bytes32)',
+  'function LOT_BURNER_ROLE() view returns (bytes32)',
+  // lectures
+  'function hasRole(bytes32 role, address account) view returns (bool)',
+  'function getRoleMemberCount(bytes32 role) view returns (uint256)',
+  'function getRoleMember(bytes32 role, uint256 index) view returns (address)',
+  // écritures
+  'function grantRole(bytes32 role, address account)',
+  'function revokeRole(bytes32 role, address account)',
+  // events
+  'event RoleGranted(bytes32 indexed role, address indexed account, address indexed sender)',
+  'event RoleRevoked(bytes32 indexed role, address indexed account, address indexed sender)',
+  // erreurs
+  'error AccessControlUnauthorizedAccount(address account, bytes32 neededRole)',
+  'error AccessControlBadConfirmation()',
+] as const
+
+export const PASSPORT_ABI = [
+  'function name() view returns (string)',
+  'function symbol() view returns (string)',
+  'function ownerOf(uint256 tokenId) view returns (address)',
+  'function balanceOf(address owner) view returns (uint256)',
+  'function tokenOfOwnerByIndex(address owner, uint256 index) view returns (uint256)',
+  'function totalSupply() view returns (uint256)',
+  'function tokenByIndex(uint256 index) view returns (uint256)',
+  'function mintedCount() view returns (uint256)',
+  'function traitsOf(uint256 tokenId) view returns (tuple(uint64 lotId, uint40 mintedAt, bytes32 conformityHash))',
+  'function pendingHandoff(uint256 tokenId) view returns (address)',
+  'function ROLES() view returns (address)',
+  // events
+  'event Transfer(address indexed from, address indexed to, uint256 indexed tokenId)',
+  'event PassportIssued(uint256 indexed tokenId, address indexed lab, uint64 indexed lotId, bytes32 conformityHash)',
+  'event HandoffArmed(uint256 indexed tokenId, address indexed from, address indexed to)',
+  // erreurs
+  'error Soulbound(uint256 tokenId)',
+  'error UnauthorizedRole(bytes32 role, address account)',
+  'error ERC721NonexistentToken(uint256 tokenId)',
+] as const
+
+export const LOTS_ABI = [
+  'function lotOf(uint64 lotId) view returns (tuple(address lab, uint40 declaredAt, bytes32 certHash))',
+  'function lotExists(uint64 lotId) view returns (bool)',
+  'function lotCount() view returns (uint64)',
+  'function totalSupply(uint256 lotId) view returns (uint256)',
+  'function balanceOf(address account, uint256 id) view returns (uint256)',
+  // events
+  'event LotDeclared(uint64 indexed lotId, address indexed lab, bytes32 certHash, uint256 quantity)',
+  'event TransferSingle(address indexed operator, address indexed from, address indexed to, uint256 id, uint256 value)',
+  // erreurs
+  'error LotNotTransferable()',
+  'error UnknownLot(uint64 lotId)',
+  'error UnauthorizedRole(bytes32 role, address account)',
+  'error ERC1155InsufficientBalance(address sender, uint256 balance, uint256 needed, uint256 tokenId)',
+] as const
+
+export const LIFECYCLE_ABI = [
+  // pile
+  'function ROLES() view returns (address)',
+  'function PASSPORTS() view returns (address)',
+  'function LOTS() view returns (address)',
+  // lectures
+  'function statusOf(uint256 tokenId) view returns (uint8)',
+  'function patientCommitmentOf(uint256 tokenId) view returns (bytes32)',
+  // écritures — laboratoire
+  'function declareLot(bytes32 _certHash, uint256 _quantity) returns (uint64)',
+  'function mintPassport(uint64 _lotId, uint256 _quantity, bytes32 _conformityHash) returns (uint256)',
+  // écritures — praticien
+  'function attestConformity(uint256 _tokenId)',
+  'function markPlaced(uint256 _tokenId, bytes32 _patientCommitment)',
+  // écritures — handoff
+  'function initiateHandoff(uint256 _tokenId, address _to)',
+  'function acceptHandoff(uint256 _tokenId)',
+  // events
+  'event MaterialConsumed(uint256 indexed tokenId, uint64 indexed lotId, uint256 quantity)',
+  'event ConformityAttested(uint256 indexed tokenId, address indexed practitioner)',
+  'event PlacedInMouth(uint256 indexed tokenId, address indexed practitioner, bytes32 patientCommitment)',
+  // erreurs
+  'error WrongStatus(uint256 tokenId, uint8 expected, uint8 current)',
+  'error UnknownLot(uint64 lotId)',
+  'error NotLotOwner(uint64 lotId, address caller)',
+  'error ZeroQuantity()',
+  'error EmptyHash()',
+  'error NotPassportHolder(uint256 tokenId, address caller)',
+  'error RecipientNotEligible(address to)',
+  'error SelfHandoff()',
+  'error NotPendingRecipient(uint256 tokenId, address caller)',
+  'error PassportLocked(uint256 tokenId)',
+  'error UnauthorizedRole(bytes32 role, address account)',
+] as const
+
+/** Miroir de LifecycleModule.Status. */
+export enum Status {
+  Manufactured = 0,
+  Certified = 1,
+  Placed = 2,
+}
+
+/**
+ * Rôles, précalculés côté client.
+ * keccak256 du nom — identique à ce que le contrat calcule en `constant`, donc
+ * pas besoin d'un aller-retour RPC par rôle au démarrage.
+ */
+export const ROLE = {
+  ADMIN: '0x' + '0'.repeat(64),
+  LAB: id('LAB_ROLE'),
+  PRACTITIONER: id('PRACTITIONER_ROLE'),
+  DISTRIBUTOR: id('DISTRIBUTOR_ROLE'),
+  REGULATOR: id('REGULATOR_ROLE'),
+  PASSPORT_MINTER: id('PASSPORT_MINTER_ROLE'),
+  PASSPORT_CONTROLLER: id('PASSPORT_CONTROLLER_ROLE'),
+  LOT_MINTER: id('LOT_MINTER_ROLE'),
+  LOT_BURNER: id('LOT_BURNER_ROLE'),
+} as const
+
+export type RoleKey = keyof typeof ROLE
+
+/** Les rôles accordés à des humains — les seuls proposés dans /admin. */
+export const ACTOR_ROLES: RoleKey[] = ['LAB', 'PRACTITIONER', 'DISTRIBUTOR', 'REGULATOR']
+/** Les rôles accordés à des contrats — affichés en lecture seule. */
+export const MODULE_ROLES: RoleKey[] = [
+  'PASSPORT_MINTER',
+  'PASSPORT_CONTROLLER',
+  'LOT_MINTER',
+  'LOT_BURNER',
+]
+
+export function roles(address: string, runner: ContractRunner): Contract {
+  return new Contract(address, ROLES_ABI, runner)
+}
+export function passports(address: string, runner: ContractRunner): Contract {
+  return new Contract(address, PASSPORT_ABI, runner)
+}
+export function lots(address: string, runner: ContractRunner): Contract {
+  return new Contract(address, LOTS_ABI, runner)
+}
+export function lifecycle(address: string, runner: ContractRunner): Contract {
+  return new Contract(address, LIFECYCLE_ABI, runner)
+}
+
+/** Erreurs custom → clé i18n. */
+const ERROR_KEYS: Record<string, string> = {
+  WrongStatus: 'errors.wrongStatus',
+  UnknownLot: 'errors.unknownLot',
+  NotLotOwner: 'errors.notLotOwner',
+  ZeroQuantity: 'errors.zeroQuantity',
+  EmptyHash: 'errors.emptyHash',
+  NotPassportHolder: 'errors.notPassportHolder',
+  RecipientNotEligible: 'errors.recipientNotEligible',
+  SelfHandoff: 'errors.selfHandoff',
+  NotPendingRecipient: 'errors.notPendingRecipient',
+  PassportLocked: 'errors.passportLocked',
+  UnauthorizedRole: 'errors.unauthorizedRole',
+  Soulbound: 'errors.soulbound',
+  LotNotTransferable: 'errors.lotNotTransferable',
+  AccessControlUnauthorizedAccount: 'errors.accessControl',
+  ERC1155InsufficientBalance: 'errors.insufficientMaterial',
+  ERC721NonexistentToken: 'errors.unknownPassport',
+}
+
+type EthersLikeError = {
+  code?: string
+  shortMessage?: string
+  message?: string
+  reason?: string
+  revert?: { name?: string } | null
+  info?: { error?: { message?: string } }
+}
+
+/**
+ * Traduit un revert en clé i18n. Un utilisateur ne doit jamais voir
+ * « execution reverted (unknown custom error) » : chaque erreur du contrat a
+ * une phrase, et le rejet de signature n'est pas une erreur applicative.
+ */
+export function parseError(err: unknown): { key: string; raw?: string } {
+  const e = err as EthersLikeError
+
+  if (e?.code === 'ACTION_REJECTED') return { key: 'errors.rejected' }
+  if (e?.code === 'INSUFFICIENT_FUNDS') return { key: 'errors.insufficientFunds' }
+
+  const name = e?.revert?.name
+  if (name && ERROR_KEYS[name]) return { key: ERROR_KEYS[name] }
+
+  // repli : certains RPC ne renvoient pas de `revert` décodé, le nom de
+  // l'erreur reste alors dans le message brut.
+  const blob = `${e?.shortMessage ?? ''} ${e?.message ?? ''} ${e?.info?.error?.message ?? ''}`
+  for (const [errName, key] of Object.entries(ERROR_KEYS)) {
+    if (blob.includes(errName)) return { key }
+  }
+
+  return { key: 'errors.unknown', raw: e?.shortMessage ?? e?.reason ?? e?.message }
+}

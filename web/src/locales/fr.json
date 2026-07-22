@@ -1,0 +1,201 @@
+{
+  "footer": "Catenta — passeport dentaire on-chain · registre neutre entre acteurs concurrents",
+  "common": {
+    "loading": "Chargement…",
+    "close": "Fermer",
+    "back": "Retour",
+    "done": "Transaction confirmée."
+  },
+  "nav": {
+    "passports": "Passeports",
+    "lots": "Lots",
+    "admin": "Administration"
+  },
+  "roles": {
+    "ADMIN": "Administrateur",
+    "LAB": "Laboratoire",
+    "PRACTITIONER": "Praticien",
+    "DISTRIBUTOR": "Distributeur",
+    "REGULATOR": "Ordre / ARS",
+    "SPECTATOR": "Lecture seule",
+    "PASSPORT_MINTER": "Émission de passeports",
+    "PASSPORT_CONTROLLER": "Contrôle des transferts",
+    "LOT_MINTER": "Déclaration de lots",
+    "LOT_BURNER": "Consommation de matière"
+  },
+  "status": {
+    "manufactured": "Fabriqué",
+    "certified": "Conforme",
+    "placed": "Posé",
+    "unknown": "Inconnu"
+  },
+  "connect": {
+    "eyebrow": "Registre partagé — Ordre · ARS · laboratoires · cabinets",
+    "title": "Passeport dentaire on-chain",
+    "subtitle": "Traçabilité des dispositifs sur mesure, du lot de matière jusqu'à la pose en bouche.",
+    "whatTitle": "Ce que fait le registre",
+    "what": {
+      "1": "<b>Un passeport par prothèse</b> — non transférable, avec ses traits figés à la fabrication.",
+      "2": "<b>Les lots de matériaux tracés</b> et brûlés dans la transaction même du mint.",
+      "3": "<b>Chaque acte horodaté et attribué</b> à un acteur agréé, non réécrivable après coup.",
+      "4": "<b>Aucune donnée patient on-chain</b> — un engagement salé, jamais une identité."
+    },
+    "rolesTitle": "Votre rôle est lu on-chain",
+    "roles": {
+      "1": "<b>Laboratoire</b> — déclare les lots, émet les passeports.",
+      "2": "<b>Praticien</b> — atteste la conformité, enregistre la pose.",
+      "3": "<b>Ordre / ARS</b> — lecture totale du registre.",
+      "4": "<b>Sans rôle</b> — accès en lecture seule, sur une chaîne publique tout est lisible."
+    },
+    "cta": "Connecter un wallet",
+    "switch": "Basculer sur {chain}",
+    "network": "Réseau attendu : {chain}",
+    "wrongChain": "Votre wallet est sur un autre réseau. Basculez sur {chain} pour continuer.",
+    "notConfiguredTitle": "Application non configurée.",
+    "notConfigured": "L'adresse du LifecycleModule est absente : renseignez VITE_LIFECYCLE_ADDRESS dans le fichier .env, puis rechargez."
+  },
+  "lots": {
+    "eyebrow": "Matière première",
+    "title": "Lots de matériaux",
+    "subtitle": "Un identifiant par lot, une quantité consommable — brûlée à la fabrication.",
+    "declare": "Déclarer un lot",
+    "formTitle": "Nouveau lot",
+    "certLabel": "Certificat matière (CE / ISO)",
+    "quantityLabel": "Quantité",
+    "quantityHint": "Dans l'unité du laboratoire — grammes, unités, peu importe : c'est la cohérence qui compte.",
+    "declared": "Lot déclaré.",
+    "readOnly": "Seul un laboratoire agréé peut déclarer un lot. Vous consultez le registre en lecture.",
+    "empty": "Aucun lot déclaré pour l'instant.",
+    "lot": "Lot",
+    "remaining": "restant",
+    "mine": "À moi",
+    "lab": "Laboratoire",
+    "cert": "Certificat",
+    "declaredAt": "Déclaré le"
+  },
+  "passports": {
+    "eyebrow": "Dispositifs médicaux sur mesure",
+    "title": "Passeports",
+    "subtitle": "Un token = un dispositif. Non transférable, sauf remise de dossier acceptée.",
+    "passport": "Passeport",
+    "mint": "Émettre un passeport",
+    "formTitle": "Nouveau passeport",
+    "formSubtitle": "La matière est brûlée dans la transaction même qui crée le passeport : le lien ne peut pas être reconstruit ensuite.",
+    "lotLabel": "Lot consommé",
+    "lotPlaceholder": "Choisir un lot…",
+    "noLot": "Aucun lot disponible : déclarez-en un d'abord.",
+    "quantityLabel": "Quantité consommée",
+    "quantityHint": "Elle sera brûlée définitivement.",
+    "conformityLabel": "Dossier de conformité",
+    "minted": "Passeport émis.",
+    "scope": { "mine": "Les miens", "all": "Tous" },
+    "empty": {
+      "mine": "Vous ne détenez aucun passeport.",
+      "all": "Aucun passeport émis pour l'instant."
+    },
+    "lot": "Lot",
+    "holder": "Détenteur",
+    "mintedAt": "Émis le",
+    "handoffPending": "Remise de dossier en attente d'acceptation"
+  },
+  "passport": {
+    "eyebrow": "Fiche dispositif",
+    "subtitle": "Historique horodaté, attribué, et non réécrivable.",
+    "timelineTitle": "Cycle de vie",
+    "steps": {
+      "manufactured": {
+        "title": "Fabriqué",
+        "desc": "Le laboratoire a émis le passeport en consommant la matière de son lot."
+      },
+      "certified": {
+        "title": "Conforme",
+        "desc": "Le praticien a validé le contrôle de conformité à réception."
+      },
+      "placed": {
+        "title": "Posé",
+        "desc": "Le dispositif est en bouche et lié au patient par un engagement salé."
+      }
+    },
+    "factsTitle": "Traits figés",
+    "conformity": "Conformité",
+    "commitment": "Engagement patient",
+    "commitmentHint": "Empreinte salée : sans le sel conservé hors chaîne, elle ne désigne personne. Effacer la fiche patient la rend définitivement inexploitable.",
+    "actionsTitle": "Actions disponibles",
+    "actions": {
+      "accept": "Accepter la remise",
+      "initiate": "Remettre le dossier",
+      "attest": "Attester la conformité",
+      "openPlace": "Enregistrer la pose",
+      "place": "Confirmer la pose"
+    },
+    "handoffLabel": "Destinataire",
+    "handoffHint": "Doit être un laboratoire ou un praticien agréé. Il devra accepter : personne ne peut se voir imposer un passeport.",
+    "pendingFor": "Remise en attente, réservée à",
+    "nothingToDo": "Aucune action ne vous est ouverte sur ce passeport à ce stade."
+  },
+  "commitment": {
+    "identityLabel": "Identité du patient",
+    "identityPlaceholder": "Nom Prénom, date de naissance",
+    "identityHint": "Cette valeur ne quitte JAMAIS votre navigateur. Seule son empreinte salée monte on-chain.",
+    "saltTitle": "Sel à conserver hors chaîne",
+    "saltWarning": "Conservez ce sel avec la fiche patient, dans votre système habituel. Sans lui, l'engagement on-chain ne désigne plus personne — et c'est précisément ce qui rend le droit à l'effacement compatible avec l'immuabilité de la chaîne.",
+    "download": "Télécharger",
+    "regenerate": "Régénérer",
+    "result": "Engagement :",
+    "fileNote": "Sel Catenta — à conserver avec la fiche patient. Sans ce sel, l'engagement on-chain est inexploitable."
+  },
+  "hashInput": {
+    "mode": { "file": "Fichier", "text": "Référence", "raw": "Empreinte" },
+    "hint": {
+      "file": "Le fichier ne quitte pas votre poste : seule son empreinte est calculée, dans le navigateur.",
+      "text": "Empreinte d'une référence de document — numéro de dossier, identifiant interne.",
+      "raw": "Coller une empreinte déjà calculée (32 octets, préfixe 0x)."
+    },
+    "textPlaceholder": "Réf. dossier DM-2026-0142",
+    "result": "Empreinte :"
+  },
+  "admin": {
+    "eyebrow": "Consortium",
+    "title": "Administration des rôles",
+    "subtitle": "Qui est agréé, et quels contrats sont autorisés à écrire.",
+    "notAdmin": "Cette vue est réservée à l'administrateur du consortium.",
+    "grantTitle": "Agréer un acteur",
+    "roleLabel": "Rôle",
+    "addressLabel": "Adresse",
+    "grant": "Accorder",
+    "granted": "Rôle accordé.",
+    "revoke": "Révoquer",
+    "revoked": "Rôle révoqué.",
+    "noMember": "Aucun titulaire.",
+    "actorsTitle": "Rôles acteurs",
+    "actorsSubtitle": "Accordés à des personnes et des organisations agréées.",
+    "modulesTitle": "Rôles techniques",
+    "modulesSubtitle": "Accordés à des contrats, jamais à des personnes.",
+    "modulesWarning": "Accorder un rôle technique à une adresse humaine court-circuiterait toute la logique métier. Le contrat ne peut pas l'empêcher : c'est le rôle du multisig et de la checklist de déploiement.",
+    "knownModule": "Module connu",
+    "unknownModule": "Non reconnu",
+    "stackTitle": "Pile déployée",
+    "stackSubtitle": "Découverte à partir de la seule adresse configurée — le module expose ses dépendances."
+  },
+  "errors": {
+    "rejected": "Signature refusée dans le wallet.",
+    "insufficientFunds": "Solde insuffisant pour payer les frais de transaction.",
+    "wrongStatus": "Le passeport n'est pas à l'étape attendue pour cette action.",
+    "unknownLot": "Ce lot n'existe pas.",
+    "notLotOwner": "Seul le laboratoire ayant déclaré ce lot peut le consommer.",
+    "zeroQuantity": "La quantité doit être supérieure à zéro.",
+    "emptyHash": "Une empreinte de document est requise.",
+    "notPassportHolder": "Vous ne détenez pas ce passeport.",
+    "recipientNotEligible": "Le destinataire doit être un laboratoire ou un praticien agréé.",
+    "selfHandoff": "Une remise à soi-même n'a pas de sens.",
+    "notPendingRecipient": "Cette remise ne vous est pas destinée.",
+    "passportLocked": "Un dispositif posé est verrouillé : sa remise exige le régulateur.",
+    "unauthorizedRole": "Votre compte n'a pas le rôle requis pour cette action.",
+    "soulbound": "Le passeport n'est pas transférable : passez par la remise de dossier.",
+    "lotNotTransferable": "Un lot appartient au laboratoire qui l'a déclaré et ne peut pas être transféré.",
+    "accessControl": "Votre compte n'a pas le rôle requis.",
+    "insufficientMaterial": "Le lot ne contient pas assez de matière restante.",
+    "unknownPassport": "Ce passeport n'existe pas.",
+    "unknown": "La transaction a échoué."
+  }
+}

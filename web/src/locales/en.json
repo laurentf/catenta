@@ -1,0 +1,201 @@
+{
+  "footer": "Catenta — on-chain dental passport · a neutral registry between competing actors",
+  "common": {
+    "loading": "Loading…",
+    "close": "Close",
+    "back": "Back",
+    "done": "Transaction confirmed."
+  },
+  "nav": {
+    "passports": "Passports",
+    "lots": "Lots",
+    "admin": "Administration"
+  },
+  "roles": {
+    "ADMIN": "Administrator",
+    "LAB": "Laboratory",
+    "PRACTITIONER": "Practitioner",
+    "DISTRIBUTOR": "Distributor",
+    "REGULATOR": "Regulator",
+    "SPECTATOR": "Read only",
+    "PASSPORT_MINTER": "Passport issuance",
+    "PASSPORT_CONTROLLER": "Transfer control",
+    "LOT_MINTER": "Lot declaration",
+    "LOT_BURNER": "Material consumption"
+  },
+  "status": {
+    "manufactured": "Manufactured",
+    "certified": "Certified",
+    "placed": "Placed",
+    "unknown": "Unknown"
+  },
+  "connect": {
+    "eyebrow": "Shared registry — regulators · laboratories · practices",
+    "title": "On-chain dental passport",
+    "subtitle": "Traceability of custom-made devices, from the material lot to placement in the mouth.",
+    "whatTitle": "What the registry does",
+    "what": {
+      "1": "<b>One passport per prosthesis</b> — non-transferable, with traits frozen at manufacturing.",
+      "2": "<b>Material lots traced</b> and burned in the very transaction that mints the passport.",
+      "3": "<b>Every act timestamped and attributed</b> to an approved actor, never rewritable afterwards.",
+      "4": "<b>No patient data on-chain</b> — a salted commitment, never an identity."
+    },
+    "rolesTitle": "Your role is read on-chain",
+    "roles": {
+      "1": "<b>Laboratory</b> — declares lots, issues passports.",
+      "2": "<b>Practitioner</b> — attests conformity, records placement.",
+      "3": "<b>Regulator</b> — full read access to the registry.",
+      "4": "<b>No role</b> — read-only access; on a public chain everything is readable anyway."
+    },
+    "cta": "Connect a wallet",
+    "switch": "Switch to {chain}",
+    "network": "Expected network: {chain}",
+    "wrongChain": "Your wallet is on another network. Switch to {chain} to continue.",
+    "notConfiguredTitle": "Application not configured.",
+    "notConfigured": "The LifecycleModule address is missing: set VITE_LIFECYCLE_ADDRESS in the .env file, then reload."
+  },
+  "lots": {
+    "eyebrow": "Raw material",
+    "title": "Material lots",
+    "subtitle": "One id per lot, a consumable quantity — burned at manufacturing.",
+    "declare": "Declare a lot",
+    "formTitle": "New lot",
+    "certLabel": "Material certificate (CE / ISO)",
+    "quantityLabel": "Quantity",
+    "quantityHint": "In the laboratory's own unit — grams, pieces, whatever: consistency is what matters.",
+    "declared": "Lot declared.",
+    "readOnly": "Only an approved laboratory can declare a lot. You are browsing the registry read-only.",
+    "empty": "No lot declared yet.",
+    "lot": "Lot",
+    "remaining": "left",
+    "mine": "Mine",
+    "lab": "Laboratory",
+    "cert": "Certificate",
+    "declaredAt": "Declared on"
+  },
+  "passports": {
+    "eyebrow": "Custom-made medical devices",
+    "title": "Passports",
+    "subtitle": "One token = one device. Non-transferable, except through an accepted handoff.",
+    "passport": "Passport",
+    "mint": "Issue a passport",
+    "formTitle": "New passport",
+    "formSubtitle": "Material is burned in the very transaction that creates the passport: the link cannot be reconstructed afterwards.",
+    "lotLabel": "Lot consumed",
+    "lotPlaceholder": "Pick a lot…",
+    "noLot": "No lot available: declare one first.",
+    "quantityLabel": "Quantity consumed",
+    "quantityHint": "It will be burned permanently.",
+    "conformityLabel": "Conformity file",
+    "minted": "Passport issued.",
+    "scope": { "mine": "Mine", "all": "All" },
+    "empty": {
+      "mine": "You hold no passport.",
+      "all": "No passport issued yet."
+    },
+    "lot": "Lot",
+    "holder": "Holder",
+    "mintedAt": "Issued on",
+    "handoffPending": "Handoff waiting for acceptance"
+  },
+  "passport": {
+    "eyebrow": "Device record",
+    "subtitle": "Timestamped, attributed, and never rewritable.",
+    "timelineTitle": "Lifecycle",
+    "steps": {
+      "manufactured": {
+        "title": "Manufactured",
+        "desc": "The laboratory issued the passport by consuming material from its lot."
+      },
+      "certified": {
+        "title": "Certified",
+        "desc": "The practitioner validated the conformity check on reception."
+      },
+      "placed": {
+        "title": "Placed",
+        "desc": "The device is in the mouth and bound to a patient by a salted commitment."
+      }
+    },
+    "factsTitle": "Frozen traits",
+    "conformity": "Conformity",
+    "commitment": "Patient commitment",
+    "commitmentHint": "Salted fingerprint: without the salt kept off-chain, it points to nobody. Erasing the patient record makes it permanently unusable.",
+    "actionsTitle": "Available actions",
+    "actions": {
+      "accept": "Accept handoff",
+      "initiate": "Hand off the device",
+      "attest": "Attest conformity",
+      "openPlace": "Record placement",
+      "place": "Confirm placement"
+    },
+    "handoffLabel": "Recipient",
+    "handoffHint": "Must be an approved laboratory or practitioner. They will have to accept: nobody can be forced to hold a passport.",
+    "pendingFor": "Handoff pending, reserved for",
+    "nothingToDo": "No action is open to you on this passport at this stage."
+  },
+  "commitment": {
+    "identityLabel": "Patient identity",
+    "identityPlaceholder": "Full name, date of birth",
+    "identityHint": "This value NEVER leaves your browser. Only its salted fingerprint goes on-chain.",
+    "saltTitle": "Salt to keep off-chain",
+    "saltWarning": "Store this salt with the patient record, in your usual system. Without it the on-chain commitment points to nobody — which is exactly what makes the right to erasure compatible with the immutability of the chain.",
+    "download": "Download",
+    "regenerate": "Regenerate",
+    "result": "Commitment:",
+    "fileNote": "Catenta salt — keep with the patient record. Without this salt the on-chain commitment is unusable."
+  },
+  "hashInput": {
+    "mode": { "file": "File", "text": "Reference", "raw": "Fingerprint" },
+    "hint": {
+      "file": "The file never leaves your machine: only its fingerprint is computed, in the browser.",
+      "text": "Fingerprint of a document reference — case number, internal id.",
+      "raw": "Paste an already computed fingerprint (32 bytes, 0x prefix)."
+    },
+    "textPlaceholder": "Ref. DM-2026-0142",
+    "result": "Fingerprint:"
+  },
+  "admin": {
+    "eyebrow": "Consortium",
+    "title": "Role administration",
+    "subtitle": "Who is approved, and which contracts are allowed to write.",
+    "notAdmin": "This view is reserved for the consortium administrator.",
+    "grantTitle": "Approve an actor",
+    "roleLabel": "Role",
+    "addressLabel": "Address",
+    "grant": "Grant",
+    "granted": "Role granted.",
+    "revoke": "Revoke",
+    "revoked": "Role revoked.",
+    "noMember": "No holder.",
+    "actorsTitle": "Actor roles",
+    "actorsSubtitle": "Granted to approved people and organizations.",
+    "modulesTitle": "Module roles",
+    "modulesSubtitle": "Granted to contracts, never to people.",
+    "modulesWarning": "Granting a module role to a human address would bypass the entire business logic. The contract cannot prevent it: that is what the multisig and the deployment checklist are for.",
+    "knownModule": "Known module",
+    "unknownModule": "Unrecognized",
+    "stackTitle": "Deployed stack",
+    "stackSubtitle": "Discovered from the single configured address — the module exposes its dependencies."
+  },
+  "errors": {
+    "rejected": "Signature rejected in the wallet.",
+    "insufficientFunds": "Insufficient balance to pay transaction fees.",
+    "wrongStatus": "The passport is not at the stage this action requires.",
+    "unknownLot": "This lot does not exist.",
+    "notLotOwner": "Only the laboratory that declared this lot can consume it.",
+    "zeroQuantity": "Quantity must be greater than zero.",
+    "emptyHash": "A document fingerprint is required.",
+    "notPassportHolder": "You do not hold this passport.",
+    "recipientNotEligible": "The recipient must be an approved laboratory or practitioner.",
+    "selfHandoff": "A handoff to yourself makes no sense.",
+    "notPendingRecipient": "This handoff is not addressed to you.",
+    "passportLocked": "A placed device is locked: handing it off requires the regulator.",
+    "unauthorizedRole": "Your account does not hold the role required for this action.",
+    "soulbound": "The passport is not transferable: use the handoff flow.",
+    "lotNotTransferable": "A lot belongs to the laboratory that declared it and cannot be transferred.",
+    "accessControl": "Your account does not hold the required role.",
+    "insufficientMaterial": "The lot does not hold enough material left.",
+    "unknownPassport": "This passport does not exist.",
+    "unknown": "The transaction failed."
+  }
+}
