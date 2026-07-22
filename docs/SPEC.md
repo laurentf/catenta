@@ -55,9 +55,10 @@ Le point à défendre n'est **pas** la performance ou le coût — une base de d
 | `PRACTITIONER_ROLE` | praticien / cabinet | attester la conformité, marquer la pose, signaler un incident, accuser réception d'un rappel |
 | `DISTRIBUTOR_ROLE` | dépôt dentaire | accuser réception d'un rappel et le relayer (preuve de diffusion) |
 | `REGULATOR_ROLE` | Ordre + ARS | lecture totale, déclarer un rappel, *slasher* une caution, autoriser un transfert de dossier, mettre en pause |
-| `DEFAULT_ADMIN_ROLE` | consortium | attribuer et révoquer les rôles — **derrière un multisig** (v2 : + timelock) |
+| `REGISTRAR_ROLE` | opérateur d'agrément | **agréer les acteurs** (LAB / PRACTITIONER / DISTRIBUTOR) — sans être la racine |
+| `DEFAULT_ADMIN_ROLE` | consortium (racine) | gérer les rôles sensibles (registrar, régulateur, modules, crédits) — **derrière un multisig** (v2 : + timelock) |
 
-**Agrément.** `LAB_ROLE` et `PRACTITIONER_ROLE` ne sont attribuables que par l'admin, sur allowlist d'acteurs agréés. C'est la parade au **faux passeport** : sans rôle, pas de mint.
+**Agrément délégué — plusieurs opérateurs sans multiplier la racine.** `LAB_ROLE`, `PRACTITIONER_ROLE` et `DISTRIBUTOR_ROLE` ont pour **admin-role** `REGISTRAR_ROLE` (posé par `_setRoleAdmin` au constructeur), pas `DEFAULT_ADMIN_ROLE`. Un agent d'agrément peut donc inscrire des acteurs **sans détenir la racine**. C'est la réponse propre à « il faut plusieurs administrateurs » : on multiplie l'**opérateur**, pas la **super-racine** (attaque n°13). `REGISTRAR_ROLE` est lui-même administré par la seule racine, tout comme `REGULATOR_ROLE`, les rôles modules et `CREDIT_MINTER_ROLE`. Ce découpage est aussi celui qui **survit à `AccessControlDefaultAdminRules`** (v1/v2), lequel force `DEFAULT_ADMIN_ROLE` à un unique détenteur. Sans rôle, pas de mint : c'est la parade au **faux passeport**.
 
 **Le distributeur a une fonction on-chain réelle.** Le dossier de cadrage lui prêtait un rôle purement narratif (« relai d'alerte »). Ici il **accuse réception** du rappel (`acknowledgeRecall`) : c'est précisément la preuve d'exécution qui manque au processus papier. Un rôle sans fonction on-chain aurait été un rôle décoratif — c'est le genre de détail qu'un jury relève.
 
@@ -127,7 +128,8 @@ Le point à défendre n'est **pas** la performance ou le coût — une base de d
 | **Autorité** | `CatentaRoles` | tous les rôles : acteurs agréés + contrats autorisés à écrire | permanent |
 | **Stockage** | `PassportNFT` (ERC-721) | le passeport et ses traits figés à la fabrication | **permanent** |
 | **Stockage** | `MaterialLots` (ERC-1155) | les lots et leurs quantités | **permanent** |
-| **Module** | `LifecycleModule` | machine à états, handoff, orchestration du mint | remplaçable |
+| **Stockage** | `CatentaCredit` (ERC-20) | le crédit d'usage `$CATENTA`, soldes par acteur (§8.9) | **permanent** |
+| **Module** | `LifecycleModule` | machine à états, handoff, orchestration du mint, **facturation en crédits** | remplaçable |
 | **Module** | `RecallModule` *(v1)* | rappel de lot, statut dérivé, accusés de réception | remplaçable |
 | **Module** | `BondModule` *(v1)* | caution qualité : stake, délai de retrait, slashing | remplaçable |
 | **Jeton externe** | caution `IERC20` | **non émis par le projet** (§8.3) — mock sur testnet | tiers |
@@ -142,7 +144,7 @@ Le point à défendre n'est **pas** la performance ou le coût — une base de d
 
 ### 4.2 Deux familles de rôles
 
-`LAB_ROLE`, `PRACTITIONER_ROLE`, `DISTRIBUTOR_ROLE`, `REGULATOR_ROLE` sont accordés à des **humains et organisations** (§2). `PASSPORT_MINTER_ROLE`, `PASSPORT_CONTROLLER_ROLE`, `LOT_MINTER_ROLE`, `LOT_BURNER_ROLE` ne sont accordés qu'à des **contrats**.
+`LAB_ROLE`, `PRACTITIONER_ROLE`, `DISTRIBUTOR_ROLE`, `REGULATOR_ROLE` et `REGISTRAR_ROLE` (l'opérateur d'agrément) sont accordés à des **humains et organisations** (§2). Les trois premiers sont administrés par `REGISTRAR_ROLE`, les autres par la racine. `PASSPORT_MINTER_ROLE`, `PASSPORT_CONTROLLER_ROLE`, `LOT_MINTER_ROLE`, `LOT_BURNER_ROLE`, `CREDIT_SPENDER_ROLE` ne sont accordés qu'à des **contrats**. Cas particulier : `CREDIT_MINTER_ROLE` est accordé à l'**admin** (émission des crédits contre un abonnement hors chaîne — un acte humain tant que le pont fiat→crédit reste manuel).
 
 > **La vraie faiblesse du modèle, à énoncer avant qu'on l'oppose :** accorder un rôle module à une adresse externe court-circuite entièrement la logique métier, et **rien dans le code ne l'empêche**. C'est une erreur de niveau administrateur, à couvrir par le multisig et la checklist de déploiement — pas par le contrat (attaque n°13).
 
@@ -395,7 +397,50 @@ Le laboratoire immobilise une valeur, *slashable* sur preuve.
 >
 > **Démonstration empirique** : le projet français Galeon paie des rendements de staking de +60 % sur 5 ans en émettant ses propres jetons depuis une allocation dédiée de 920 millions — sur un actif à −87,6 % de son plus haut, dont le volume quotidien est de 3 036 $. Une valeur qu'on émet soi-même n'est pas une garantie, c'est une écriture. Voir [ETUDE_GALEON.md §4.2 et §7](ETUDE_GALEON.md).
 
-**Aucun jeton décoratif.** Chacun des trois standards rend effective une fonctionnalité métier qui ne pourrait pas exister sans lui.
+**Aucun jeton décoratif.** Chacun des quatre standards rend effective une fonctionnalité métier qui ne pourrait pas exister sans lui — y compris le crédit d'usage ci-dessous, qui porte le **modèle économique** du projet.
+
+### 8.3bis Le crédit d'usage `$CATENTA` (ERC-20) — le modèle économique
+
+> **Statut : implémenté (v0).** C'est le quatrième jeton, et le seul lié à la façon dont le projet gagne sa vie. Il n'est **ni vendu, ni coté, ni transférable** : ce n'est pas un actif financier, c'est un compteur d'usage prépayé.
+
+#### Le principe
+
+L'accès au registre se paie par un **abonnement hors chaîne** (euros, facturation classique). À la réception du paiement, l'admin **émet** des crédits `$CATENTA` sur le compte de l'acteur. **Chaque action utile en consomme (brûle) un.** Quand le solde tombe à zéro, l'acteur renouvelle son abonnement. C'est un **forfait prépayé, comme des timbres.**
+
+```
+  abonnement (€, hors chaîne)
+          │
+          ▼  mintCredits(acteur, X)          ← admin, CREDIT_MINTER_ROLE
+   [ solde de crédits ]
+          │  costsCredit  → CREDIT.spend(acteur, 1) → _burn   ← le module, à chaque action
+          ▼
+     action exécutée (déclarer un lot, émettre un passeport, …)
+```
+
+#### Les cinq choix de conception, et leur raison
+
+| Choix | Décision | Pourquoi |
+|---|---|---|
+| **Consommation** | **burn** (détruit), jamais recyclé vers un pot | l'argent a déjà changé de main hors chaîne à l'émission ; recycler ferait du crédit une **monnaie qui circule** → mini-économie interne, gouvernance à définir, et surtout un risque réglementaire que ce design évite (§9). Décision **D8** |
+| **Transférable ?** | **non** — `_update` n'autorise que mint (`from==0`) et burn (`to==0`) | pas de transfert entre acteurs ⇒ **pas de carnet d'ordres, pas de cours, pas de marché**. Le jeton ne *peut pas* être coté, par construction. C'est ce qui le tient hors du champ d'un actif spéculatif |
+| **Supply** | **pas de plafond, entièrement contrôlé** | les crédits se brûlent en continu et doivent être ré-émis à chaque renouvellement ; un `ERC20Capped` finirait par geler le système. Le supply en circulation = **crédits prépayés non encore utilisés** |
+| **Décimales** | **0** | un crédit est une unité entière : les soldes se lisent « 100 », « 99 »…, et « 1 crédit » vaut littéralement 1. Pas de `formatUnits` côté front |
+| **Récompenses** | **plus tard, par mint bonus** (jamais par recyclage) | récompenser = émettre des crédits offerts (`RewardGranted`, une remise sur l'usage futur) — sain ; faire circuler de la valeur entre porteurs serait le piège de dilution de Galeon (§7 ETUDE_GALEON) |
+
+#### Émission et facturation
+
+| Fonction | Qui | Effet |
+|---|---|---|
+| `grantInitialCredits(addr)` | admin | attribue **100 crédits** une seule fois par adresse (garde anti-rejeu) — la dotation d'accueil |
+| `mintCredits(addr, x)` | admin | recharge libre contre paiement (manuel pour l'instant ; automatisable via un module d'onboarding) |
+| `spend(addr, x)` | `CREDIT_SPENDER_ROLE` (le module) | brûle `x` crédits de `addr` dans la transaction de l'action ; erreur claire `InsufficientCredits` si le solde manque |
+
+Le module facture via un modifier `costsCredit`, placé **après** les gardes de rôle et de statut : un crédit n'est jamais brûlé pour une action qui échouerait, et l'atomicité de la transaction garantit qu'un revert du corps annule le brûlage. Fonctions facturées : `declareLot`, `mintPassport`, `attestConformity`, `markPlaced`, `initiateHandoff`. **`acceptHandoff` est gratuit** — on ne paie pas pour *recevoir* un dispositif. Le coût (`actionCost`, défaut 1) est réglable par l'admin ; **0 désactive la facturation** (phase pilote gratuite).
+
+#### Pourquoi c'est prudent côté RGPD *et* réglementation financière
+
+- **Financier** : non transférable + jamais vendu + émis par l'admin ⇒ ce n'est pas un instrument négociable. Aucune offre au public, aucune cotation → hors du régime d'offre de MiCA. C'est l'inverse exact de la trajectoire Galeon (jeton vendu → financement → cours effondré, [ETUDE_GALEON](ETUDE_GALEON.md)).
+- **Frugalité** : le crédit ne stocke **aucune donnée métier** — juste des soldes. Il est un stockage permanent (comme les jetons), mais orthogonal au cycle de vie : le remplacer ou changer la politique de prix ne touche ni les passeports ni les lots.
 
 ### 8.4 Inventaire OpenZeppelin — module par module
 
@@ -609,14 +654,15 @@ Ce niveau règle **trois problèmes d'un coup** : le passage à l'échelle (une 
 | 10 | **Over / underflow** | quantités de lots, montants de caution | Solidity ≥ 0.8 (checked), `uint128` sur les montants → tests de bornes | fuzz sur les bornes |
 | 11 | **Fuite PII / RGPD** | identité patient inscrite on-chain | jamais de PII ; engagement **salé** (§9.2) | revue de code, pas de test automatisable |
 | 12 | **Rejeu de signature** (v2, EIP-712) | co-signature réutilisée sur un autre token | OZ `EIP712` + `Nonces` + `SignatureChecker` — `nonce`, `chainId` et `deadline` dans le domaine | test de rejeu |
-| 13 | **Centralisation admin** | admin tout-puissant sur les rôles | OZ `AccessControlDefaultAdminRules` (transfert en 2 temps + délai), multisig, `TimelockController` en v2, **pas de proxy upgradeable** | test : transfert immédiat impossible |
+| 13 | **Centralisation admin** | admin tout-puissant sur les rôles | **séparation gouverner/opérer** : `REGISTRAR_ROLE` agrée les acteurs sans être la racine (déjà en place) ; racine sous multisig, OZ `AccessControlDefaultAdminRules` + `TimelockController` en v2 ; **pas de proxy upgradeable** | tests : registrar agrée sans admin ; rôles sensibles hors de sa portée |
 | 14 | **Front-running** | pas de mint public compétitif | surface quasi nulle — documenté, mint réservé aux rôles | — |
 | 15 | **Pause comme censure** | `Pausable` gèle le registre | pause limitée au **mint** et au **rappel** ; jamais sur les lectures ni sur `acknowledgeRecall` | test : lecture OK en pause |
 | 16 | **Racine de Merkle empoisonnée** | une racine d'annuaire erronée accorde des rôles à tort | publication `REGULATOR_ROLE` uniquement, racine remplaçable et journalisée, rôle révocable individuellement | test : preuve invalide → revert |
+| 17 | **Sur-émission de crédits** | admin compromis qui s'émet des crédits, ou en émet à une adresse externe | `CREDIT_MINTER_ROLE` sous multisig, crédit **non transférable** (pas de revente), émission journalisée (`CreditsMinted`) ; impact borné à de l'usage gratuit, pas à une fuite de valeur | test : mint hors rôle → revert |
 
-L'**analyse critique des interactions utilisateur** exigée par C4 se conduit à partir de ce tableau : chaque parcours (déclaration de lot, mint, conformité, pose, handoff, rappel, accusé, caution) est confronté aux 16 vecteurs ci-dessus.
+L'**analyse critique des interactions utilisateur** exigée par C4 se conduit à partir de ce tableau : chaque parcours (déclaration de lot, mint, conformité, pose, handoff, rappel, accusé, caution) est confronté aux 17 vecteurs ci-dessus.
 
-**Neuf de ces seize parades sont fournies par OpenZeppelin** (n° 1, 2, 3, 4, 7, 12, 13, 15, 16). C'est l'argument central de C3 : la sécurité ne repose pas sur du code écrit pour l'occasion, mais sur des contrats audités et éprouvés en production. Les sept parades restantes sont propres au métier (statut dérivé, handoff à usage unique, cooldown, engagement salé) — et ce sont précisément celles qui concentrent l'effort de test.
+**Dix de ces dix-sept parades sont fournies par OpenZeppelin** (n° 1, 2, 3, 4, 7, 12, 13, 15, 16). C'est l'argument central de C3 : la sécurité ne repose pas sur du code écrit pour l'occasion, mais sur des contrats audités et éprouvés en production. Les sept parades restantes sont propres au métier (statut dérivé, handoff à usage unique, cooldown, engagement salé) — et ce sont précisément celles qui concentrent l'effort de test.
 
 ---
 
@@ -668,7 +714,8 @@ Détail des conventions dans [CONVENTIONS.md §3](CONVENTIONS.md). En résumé :
 | Distributeur | rôle narratif | `acknowledgeRecall` | un rôle sans fonction on-chain est décoratif (§2) |
 | Retrait de caution | immédiat | **délai de 30 j** | sinon le slashing est contournable (§6.5) |
 | OpenZeppelin | 6 modules cités | **~25 modules inventoriés** (§8.4) | C3 note explicitement la justification du recours aux librairies |
-| Attribution des rôles | `grantRole` par l'admin | + **`MerkleProof` / `claimRole`** | 44 000 praticiens ne s'inscrivent pas un par un (§8.4) |
+| Modèle économique | absent du cadrage | **crédit d'usage `$CATENTA`** (ERC-20, §8.3bis) | facturer l'usage on-chain sans vendre de jeton — inspiré et démarqué de Galeon |
+| Attribution des rôles | `grantRole` par l'admin | **`REGISTRAR_ROLE`** (agrément délégué) + `MerkleProof`/`claimRole` en option à l'échelle | plusieurs opérateurs sans multiplier la racine (§2) ; passage à l'échelle nationale via admission déléguée |
 | Réentrance | `ReentrancyGuard` | `ReentrancyGuardTransient` | même garantie, ~18 000 gas de moins (pragma ≥ 0.8.24) |
 | Admin | multisig « à mettre » | `AccessControlDefaultAdminRules` | la protection devient structurelle et non procédurale |
 | CI | annoncée | **à construire** — le projet précédent n'en avait pas | C5 l'exige explicitement |
@@ -686,6 +733,7 @@ Détail des conventions dans [CONVENTIONS.md §3](CONVENTIONS.md). En résumé :
 | D5 | Montant de caution : fixe ou proportionnel au volume ? | fixe / par lot | **fixe en v1** ; le proportionnel ajoute une comptabilité par lot pour peu de valeur pédagogique |
 | D6 | Multisig admin dès Sepolia ? | EOA / Safe | **Safe si le temps le permet** — sinon documenter la limite explicitement (attaque n°13) |
 | D7 | Identité des acteurs on-chain ? | rien / annuaire off-chain / racine de Merkle | **racine de Merkle pour les praticiens** (§9.4, niveau 2) + annuaire off-chain pour l'affichage ; **jamais** le RPPS en clair. SIRET du labo tolérable on-chain (entité légale) |
+| D8 | Crédit d'usage : brûlé ou recyclé ? | burn / recyclage vers un pot | **brûlé** (§8.3bis) — recycler ferait du crédit une monnaie qui circule (comptabilité, gouvernance, risque réglementaire). Récompenses par mint bonus, plus tard |
 
 Ces six points doivent être tranchés **avant l'écriture du premier contrat** : chacun a un impact structurel.
 </content>

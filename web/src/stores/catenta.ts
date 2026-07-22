@@ -20,11 +20,16 @@ export const useCatentaStore = defineStore('catenta', () => {
   const rolesAddress = ref<string | null>(null)
   const passportsAddress = ref<string | null>(null)
   const lotsAddress = ref<string | null>(null)
+  const creditAddress = ref<string | null>(null)
 
   const loading = ref(false)
   const error = ref<string | null>(null)
   const ready = computed(
-    () => !!rolesAddress.value && !!passportsAddress.value && !!lotsAddress.value,
+    () =>
+      !!rolesAddress.value &&
+      !!passportsAddress.value &&
+      !!lotsAddress.value &&
+      !!creditAddress.value,
   )
 
   // shallowRef : ethers v6 utilise des champs #private que le Proxy réactif
@@ -48,14 +53,16 @@ export const useCatentaStore = defineStore('catenta', () => {
     error.value = null
     try {
       const module = C.lifecycle(LIFECYCLE_ADDRESS, runner)
-      const [r, p, l] = await Promise.all([
+      const [r, p, l, cr] = await Promise.all([
         module.ROLES(),
         module.PASSPORTS(),
         module.LOTS(),
+        module.CREDIT(),
       ])
       rolesAddress.value = r
       passportsAddress.value = p
       lotsAddress.value = l
+      creditAddress.value = cr
     } catch (err) {
       // Cause la plus fréquente : adresse d'un contrat qui n'est pas un
       // LifecycleModule, ou mauvais réseau sélectionné dans le wallet.
@@ -74,6 +81,7 @@ export const useCatentaStore = defineStore('catenta', () => {
       roles: C.roles(rolesAddress.value!, runner),
       passports: C.passports(passportsAddress.value!, runner),
       lots: C.lots(lotsAddress.value!, runner),
+      credit: C.credit(creditAddress.value!, runner),
       lifecycle: C.lifecycle(LIFECYCLE_ADDRESS, runner),
     }
   }
@@ -84,6 +92,7 @@ export const useCatentaStore = defineStore('catenta', () => {
     if (!signer || !ready.value) return null
     return {
       roles: C.roles(rolesAddress.value!, signer),
+      credit: C.credit(creditAddress.value!, signer),
       lifecycle: C.lifecycle(LIFECYCLE_ADDRESS, signer),
     }
   }
@@ -93,6 +102,7 @@ export const useCatentaStore = defineStore('catenta', () => {
     rolesAddress,
     passportsAddress,
     lotsAddress,
+    creditAddress,
     loading,
     error,
     ready,

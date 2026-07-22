@@ -12,18 +12,22 @@ const PATIENT_COMMITMENT = ethers.id("salt42|patient-identity");
 
 /**
  * Deploys the full stack and wires the roles the way the Ignition module will:
- * one authority, two permanent stores, one replaceable module.
+ * one authority, three permanent stores (passports, lots, credit), one module.
+ * By default both the lab and the practitioner receive a generous credit
+ * balance so lifecycle tests don't run out; credit-specific tests override this.
  */
-async function deployStack() {
+async function deployStack(credits = 1000n) {
   const [admin, lab, practitioner, outsider] = await ethers.getSigners();
 
   const roles = await ethers.deployContract("CatentaRoles", [admin.address]);
   const passports = await ethers.deployContract("PassportNFT", [await roles.getAddress()]);
   const lots = await ethers.deployContract("MaterialLots", [await roles.getAddress()]);
+  const credit = await ethers.deployContract("CatentaCredit", [await roles.getAddress()]);
   const lifecycle = await ethers.deployContract("LifecycleModule", [
     await roles.getAddress(),
     await passports.getAddress(),
     await lots.getAddress(),
+    await credit.getAddress(),
   ]);
 
   const moduleAddress = await lifecycle.getAddress();
@@ -33,8 +37,15 @@ async function deployStack() {
   await roles.grantRole(await roles.PASSPORT_CONTROLLER_ROLE(), moduleAddress);
   await roles.grantRole(await roles.LOT_MINTER_ROLE(), moduleAddress);
   await roles.grantRole(await roles.LOT_BURNER_ROLE(), moduleAddress);
+  await roles.grantRole(await roles.CREDIT_SPENDER_ROLE(), moduleAddress);
+  // admin mints credits (the off-chain payment side is simulated here)
+  await roles.grantRole(await roles.CREDIT_MINTER_ROLE(), admin.address);
+  if (credits > 0n) {
+    await credit.mintCredits(lab.address, credits);
+    await credit.mintCredits(practitioner.address, credits);
+  }
 
-  return { roles, passports, lots, lifecycle, admin, lab, practitioner, outsider };
+  return { roles, passports, lots, credit, lifecycle, admin, lab, practitioner, outsider };
 }
 
 describe("Catenta v0 - smoke", () => {
@@ -129,7 +140,7 @@ describe("Catenta v0 - smoke", () => {
   });
 
   it("lets a NEW module drive the SAME stores - the modularity claim", async () => {
-    const { roles, passports, lots, lifecycle, admin, lab, practitioner } =
+    const { roles, passports, lots, credit, lifecycle, admin, lab, practitioner } =
       await deployStack();
 
     // a passport already exists, minted through the first module
@@ -141,6 +152,7 @@ describe("Catenta v0 - smoke", () => {
       await roles.getAddress(),
       await passports.getAddress(),
       await lots.getAddress(),
+      await credit.getAddress(),
     ]);
     const nextAddress = await nextModule.getAddress();
     const oldAddress = await lifecycle.getAddress();
@@ -150,6 +162,7 @@ describe("Catenta v0 - smoke", () => {
       await roles.PASSPORT_CONTROLLER_ROLE(),
       await roles.LOT_MINTER_ROLE(),
       await roles.LOT_BURNER_ROLE(),
+      await roles.CREDIT_SPENDER_ROLE(),
     ]) {
       await roles.connect(admin).grantRole(role, nextAddress);
       await roles.connect(admin).revokeRole(role, oldAddress);
@@ -173,5 +186,137 @@ describe("Catenta v0 - smoke", () => {
     await expect(
       lifecycle.connect(lab).mintPassport(1n, 10n, CONFORMITY_HASH),
     ).to.be.revertedWithCustomError(passports, "UnauthorizedRole");
+  });
+});
+
+describe("Catenta v0 - usage credit ($CATENTA)", () => {
+  it("grants the initial 100 credits once, and refuses a second grant", async () => {
+    const { credit, admin, lab } = await deployStack(0n);
+
+    await expect(credit.connect(admin).grantInitialCredits(lab.address))
+      .to.emit(credit, "InitialCreditsGranted")
+      .withArgs(lab.address, 100n);
+    expect(await credit.balanceOf(lab.address)).to.equal(100n);
+    expect(await credit.hasReceivedInitial(lab.address)).to.equal(true);
+
+    await expect(
+      credit.connect(admin).grantInitialCredits(lab.address),
+    ).to.be.revertedWithCustomError(credit, "InitialAlreadyGranted");
+  });
+
+  it("burns exactly one credit per useful action", async () => {
+    // fund with a known, small balance to observe the decrements
+    const { credit, lifecycle, lab, practitioner } = await deployStack(0n);
+    const c = await credit.getAddress();
+    void c;
+    // admin already holds CREDIT_MINTER_ROLE via deployStack
+    const [admin] = await ethers.getSigners();
+    await credit.connect(admin).mintCredits(lab.address, 10n);
+    await credit.connect(admin).mintCredits(practitioner.address, 10n);
+
+    await lifecycle.connect(lab).declareLot(CERT_HASH, 100n); // -1
+    expect(await credit.balanceOf(lab.address)).to.equal(9n);
+
+    await lifecycle.connect(lab).mintPassport(1n, 10n, CONFORMITY_HASH); // -1
+    expect(await credit.balanceOf(lab.address)).to.equal(8n);
+
+    await lifecycle.connect(lab).initiateHandoff(1n, practitioner.address); // -1 (lab)
+    expect(await credit.balanceOf(lab.address)).to.equal(7n);
+
+    // acceptHandoff is free: the recipient does not pay to receive
+    await lifecycle.connect(practitioner).acceptHandoff(1n);
+    expect(await credit.balanceOf(practitioner.address)).to.equal(10n);
+
+    await lifecycle.connect(practitioner).attestConformity(1n); // -1
+    expect(await credit.balanceOf(practitioner.address)).to.equal(9n);
+
+    await lifecycle.connect(practitioner).markPlaced(1n, PATIENT_COMMITMENT); // -1
+    expect(await credit.balanceOf(practitioner.address)).to.equal(8n);
+  });
+
+  it("blocks an action when the actor is out of credits", async () => {
+    const { credit, lifecycle, lab } = await deployStack(0n);
+    // lab has zero credits
+    await expect(lifecycle.connect(lab).declareLot(CERT_HASH, 100n))
+      .to.be.revertedWithCustomError(credit, "InsufficientCredits")
+      .withArgs(lab.address, 0n, 1n);
+  });
+
+  it("is non-transferable: no market, no price, by construction", async () => {
+    const { credit, lab, practitioner } = await deployStack(0n);
+    const [admin] = await ethers.getSigners();
+    await credit.connect(admin).mintCredits(lab.address, 5n);
+
+    await expect(
+      credit.connect(lab).transfer(practitioner.address, 1n),
+    ).to.be.revertedWithCustomError(credit, "CreditsNotTransferable");
+  });
+
+  it("lets the admin waive charging by setting the cost to zero", async () => {
+    const { credit, lifecycle, admin, lab } = await deployStack(0n);
+    // lab has no credits, yet a free pilot must still work
+    await expect(lifecycle.connect(admin).setActionCost(0n))
+      .to.emit(lifecycle, "ActionCostUpdated")
+      .withArgs(1n, 0n);
+
+    await lifecycle.connect(lab).declareLot(CERT_HASH, 100n);
+    expect(await credit.balanceOf(lab.address)).to.equal(0n);
+  });
+
+  it("mints credits only for the minter role", async () => {
+    const { credit, outsider } = await deployStack(0n);
+    await expect(
+      credit.connect(outsider).mintCredits(outsider.address, 100n),
+    ).to.be.revertedWithCustomError(credit, "UnauthorizedRole");
+  });
+});
+
+describe("Catenta v0 - delegated onboarding (REGISTRAR_ROLE)", () => {
+  it("lets a registrar onboard actors without holding DEFAULT_ADMIN", async () => {
+    const { roles, admin, outsider } = await deployStack(0n);
+    const [, , , , registrar, newLab] = await ethers.getSigners();
+
+    // the root appoints a registrar (only DEFAULT_ADMIN can)
+    await roles.connect(admin).grantRole(await roles.REGISTRAR_ROLE(), registrar.address);
+    expect(await roles.hasRole(await roles.REGISTRAR_ROLE(), registrar.address)).to.equal(true);
+    // the registrar is NOT a super-admin
+    expect(await roles.hasRole(await roles.DEFAULT_ADMIN_ROLE(), registrar.address)).to.equal(false);
+
+    // the registrar can onboard a lab (LAB_ROLE is admined by REGISTRAR_ROLE)
+    await roles.connect(registrar).grantRole(await roles.LAB_ROLE(), newLab.address);
+    expect(await roles.hasRole(await roles.LAB_ROLE(), newLab.address)).to.equal(true);
+
+    // but the registrar cannot appoint another registrar (that is the root's job)
+    await expect(
+      roles.connect(registrar).grantRole(await roles.REGISTRAR_ROLE(), outsider.address),
+    ).to.be.revertedWithCustomError(roles, "AccessControlUnauthorizedAccount");
+  });
+
+  it("keeps sensitive roles under the root, not the registrar", async () => {
+    const { roles, admin, outsider } = await deployStack(0n);
+    const [, , , , registrar] = await ethers.getSigners();
+    await roles.connect(admin).grantRole(await roles.REGISTRAR_ROLE(), registrar.address);
+
+    // a registrar cannot grant the regulator role...
+    await expect(
+      roles.connect(registrar).grantRole(await roles.REGULATOR_ROLE(), outsider.address),
+    ).to.be.revertedWithCustomError(roles, "AccessControlUnauthorizedAccount");
+    // ...nor the credit minter role
+    await expect(
+      roles.connect(registrar).grantRole(await roles.CREDIT_MINTER_ROLE(), outsider.address),
+    ).to.be.revertedWithCustomError(roles, "AccessControlUnauthorizedAccount");
+    // the root can
+    await roles.connect(admin).grantRole(await roles.REGULATOR_ROLE(), outsider.address);
+    expect(await roles.hasRole(await roles.REGULATOR_ROLE(), outsider.address)).to.equal(true);
+  });
+
+  it("supports several credit minters without touching DEFAULT_ADMIN", async () => {
+    const { roles, credit, admin } = await deployStack(0n);
+    const [, lab, , , op2] = await ethers.getSigners();
+    // a second billing operator, minter only
+    await roles.connect(admin).grantRole(await roles.CREDIT_MINTER_ROLE(), op2.address);
+    await credit.connect(op2).mintCredits(lab.address, 40n);
+    expect(await credit.balanceOf(lab.address)).to.equal(40n);
+    expect(await roles.hasRole(await roles.DEFAULT_ADMIN_ROLE(), op2.address)).to.equal(false);
   });
 });

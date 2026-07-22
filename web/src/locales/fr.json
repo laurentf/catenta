@@ -21,7 +21,10 @@
     "PASSPORT_MINTER": "Émission de passeports",
     "PASSPORT_CONTROLLER": "Contrôle des transferts",
     "LOT_MINTER": "Déclaration de lots",
-    "LOT_BURNER": "Consommation de matière"
+    "LOT_BURNER": "Consommation de matière",
+    "CREDIT_MINTER": "Émission de crédits",
+    "CREDIT_SPENDER": "Consommation de crédits",
+    "REGISTRAR": "Agent d'agrément"
   },
   "status": {
     "manufactured": "Fabriqué",
@@ -38,7 +41,7 @@
       "1": "<b>Un passeport par prothèse</b> — non transférable, avec ses traits figés à la fabrication.",
       "2": "<b>Les lots de matériaux tracés</b> et brûlés dans la transaction même du mint.",
       "3": "<b>Chaque acte horodaté et attribué</b> à un acteur agréé, non réécrivable après coup.",
-      "4": "<b>Aucune donnée patient on-chain</b> — un engagement salé, jamais une identité."
+      "4": "<b>Aucune donnée patient sur la blockchain</b> — seulement une empreinte anonyme, jamais une identité."
     },
     "rolesTitle": "Votre rôle est lu on-chain",
     "roles": {
@@ -88,7 +91,10 @@
     "quantityHint": "Elle sera brûlée définitivement.",
     "conformityLabel": "Dossier de conformité",
     "minted": "Passeport émis.",
-    "scope": { "mine": "Les miens", "all": "Tous" },
+    "scope": {
+      "mine": "Les miens",
+      "all": "Tous"
+    },
     "empty": {
       "mine": "Vous ne détenez aucun passeport.",
       "all": "Aucun passeport émis pour l'instant."
@@ -113,13 +119,13 @@
       },
       "placed": {
         "title": "Posé",
-        "desc": "Le dispositif est en bouche et lié au patient par un engagement salé."
+        "desc": "Le dispositif est en bouche, lié au patient par une empreinte anonyme."
       }
     },
     "factsTitle": "Traits figés",
     "conformity": "Conformité",
-    "commitment": "Engagement patient",
-    "commitmentHint": "Empreinte salée : sans le sel conservé hors chaîne, elle ne désigne personne. Effacer la fiche patient la rend définitivement inexploitable.",
+    "commitment": "Empreinte anonyme du patient",
+    "commitmentHint": "Empreinte anonyme : sans le secret conservé de votre côté, elle ne permet de remonter à personne. Effacer la fiche patient rompt définitivement le lien.",
     "actionsTitle": "Actions disponibles",
     "actions": {
       "accept": "Accepter la remise",
@@ -136,16 +142,20 @@
   "commitment": {
     "identityLabel": "Identité du patient",
     "identityPlaceholder": "Nom Prénom, date de naissance",
-    "identityHint": "Cette valeur ne quitte JAMAIS votre navigateur. Seule son empreinte salée monte on-chain.",
-    "saltTitle": "Sel à conserver hors chaîne",
-    "saltWarning": "Conservez ce sel avec la fiche patient, dans votre système habituel. Sans lui, l'engagement on-chain ne désigne plus personne — et c'est précisément ce qui rend le droit à l'effacement compatible avec l'immuabilité de la chaîne.",
+    "identityHint": "Cette valeur ne quitte JAMAIS votre navigateur. Seule une empreinte anonyme est inscrite sur la blockchain — jamais l'identité.",
+    "saltTitle": "Secret à conserver de votre côté",
+    "saltWarning": "Conservez ce secret avec la fiche patient, dans votre logiciel habituel. Sans lui, l'empreinte inscrite sur la blockchain ne permet plus de remonter à personne — c'est exactement ce qui vous laisse effacer les données d'un patient, alors même que la blockchain, elle, ne s'efface pas.",
     "download": "Télécharger",
     "regenerate": "Régénérer",
-    "result": "Engagement :",
-    "fileNote": "Sel Catenta — à conserver avec la fiche patient. Sans ce sel, l'engagement on-chain est inexploitable."
+    "result": "Empreinte anonyme :",
+    "fileNote": "Secret Catenta — à conserver avec la fiche patient. Sans ce secret, l'empreinte inscrite sur la blockchain est inexploitable."
   },
   "hashInput": {
-    "mode": { "file": "Fichier", "text": "Référence", "raw": "Empreinte" },
+    "mode": {
+      "file": "Fichier",
+      "text": "Référence",
+      "raw": "Empreinte"
+    },
     "hint": {
       "file": "Le fichier ne quitte pas votre poste : seule son empreinte est calculée, dans le navigateur.",
       "text": "Empreinte d'une référence de document — numéro de dossier, identifiant interne.",
@@ -175,7 +185,24 @@
     "knownModule": "Module connu",
     "unknownModule": "Non reconnu",
     "stackTitle": "Pile déployée",
-    "stackSubtitle": "Découverte à partir de la seule adresse configurée — le module expose ses dépendances."
+    "stackSubtitle": "Découverte à partir de la seule adresse configurée — le module expose ses dépendances.",
+    "creditsTitle": "Crédits d'usage $CATENTA",
+    "creditsSubtitle": "Émis contre un abonnement hors chaîne, brûlés à chaque action. Non transférables, sans cours.",
+    "creditsFormTitle": "Créditer un acteur",
+    "creditAddressLabel": "Adresse",
+    "creditAmountLabel": "Montant",
+    "mintCredits": "Émettre",
+    "grantInitial": "Attribuer les 100 initiaux",
+    "creditHint": "Les 100 initiaux ne s'attribuent qu'une fois par adresse. « Émettre » recharge librement.",
+    "creditsMinted": "{amount} crédits émis.",
+    "initialGranted": "100 crédits initiaux attribués.",
+    "notAllowed": "Cette vue est réservée à l'administrateur et aux agents d'agrément.",
+    "grantSubtitle": "Agréer un laboratoire, un praticien ou un distributeur.",
+    "rootTitle": "Opérateurs & régulateur",
+    "rootSubtitle": "Réservé à la racine : nommer un agent d'agrément ou l'Ordre / ARS.",
+    "rootHint": "L'agent d'agrément peut agréer des acteurs sans être administrateur. Seule la racine le nomme — c'est la séparation « gouverner / opérer ».",
+    "rootMembersTitle": "Opérateurs & régulateur",
+    "rootMembersSubtitle": "Titulaires des rôles sensibles, gérés par la seule racine."
   },
   "errors": {
     "rejected": "Signature refusée dans le wallet.",
@@ -196,6 +223,13 @@
     "accessControl": "Votre compte n'a pas le rôle requis.",
     "insufficientMaterial": "Le lot ne contient pas assez de matière restante.",
     "unknownPassport": "Ce passeport n'existe pas.",
-    "unknown": "La transaction a échoué."
+    "unknown": "La transaction a échoué.",
+    "insufficientCredits": "Crédits d'usage insuffisants : rechargez pour effectuer cette action.",
+    "creditsNotTransferable": "Les crédits d'usage ne sont pas transférables.",
+    "initialAlreadyGranted": "Cette adresse a déjà reçu ses crédits initiaux."
+  },
+  "credits": {
+    "unit": "crédits",
+    "tooltip": "Crédits d'usage $CATENTA · {cost} par action. Non transférable, non coté — un forfait prépayé, pas un placement."
   }
 }

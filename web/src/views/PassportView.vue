@@ -100,7 +100,7 @@
           </UiButton>
         </form>
 
-        <!-- Pose : l'engagement salé se construit ici -->
+        <!-- Pose : l'empreinte anonyme du patient se construit ici -->
         <div v-if="showPlace" class="mt-5">
           <CommitmentBuilder v-model="commitment" />
           <UiButton class="mt-4" :loading="busy === 'place'" :disabled="!commitment" @click="doPlace">

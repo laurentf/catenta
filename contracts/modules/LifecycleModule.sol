@@ -3,6 +3,7 @@ pragma solidity 0.8.34;
 
 import {CatentaRoles} from "../access/CatentaRoles.sol";
 import {RoleAware} from "../access/RoleAware.sol";
+import {CatentaCredit} from "../tokens/CatentaCredit.sol";
 import {MaterialLots} from "../tokens/MaterialLots.sol";
 import {PassportNFT} from "../tokens/PassportNFT.sol";
 
@@ -41,6 +42,14 @@ contract LifecycleModule is RoleAware {
     PassportNFT public immutable PASSPORTS;
     /// @notice The material lot store driven by this module.
     MaterialLots public immutable LOTS;
+    /// @notice The usage credit spent on each useful action.
+    CatentaCredit public immutable CREDIT;
+
+    /// @notice Credits burned per useful action. Default 1; the admin can set
+    ///         it (0 disables charging entirely — e.g. a free pilot phase).
+    /// @dev Uniform across actions in this version. A per-action price map is a
+    ///      later refinement and does not change the stores.
+    uint256 public actionCost = 1;
 
     /// @dev tokenId => current stage.
     mapping(uint256 tokenId => Status) private _status;
@@ -81,6 +90,11 @@ contract LifecycleModule is RoleAware {
         bytes32 patientCommitment
     );
 
+    /// @notice Emitted when the admin changes the per-action credit cost.
+    /// @param previousCost The cost before the change.
+    /// @param newCost The cost from now on (0 disables charging).
+    event ActionCostUpdated(uint256 previousCost, uint256 newCost);
+
     /// @notice The action is not allowed at the current stage of the passport.
     error WrongStatus(uint256 tokenId, Status expected, Status current);
     /// @notice The lot id does not exist.
@@ -102,6 +116,19 @@ contract LifecycleModule is RoleAware {
     /// @notice A placed device is locked; a post-placement handoff needs the
     ///         regulator, which lands with the transfer-of-record module.
     error PassportLocked(uint256 tokenId);
+
+    /// @notice Spends the per-action usage credit from the caller.
+    /// @dev Placed after the role and status guards on each function, so a
+    ///      credit is only ever burned for an action that would otherwise
+    ///      succeed; and since the whole transaction is atomic, a later revert
+    ///      in the body rolls the burn back. When actionCost is 0, charging is
+    ///      off and the modifier is a no-op.
+    modifier costsCredit() {
+        if (actionCost > 0) {
+            CREDIT.spend(msg.sender, actionCost);
+        }
+        _;
+    }
 
     /// @notice Restricts a function to the current holder of the passport.
     /// @dev Holding the token is the on-chain proof of physical custody: it is
@@ -125,11 +152,25 @@ contract LifecycleModule is RoleAware {
     /// @param _roles The shared access authority.
     /// @param _passports The passport store.
     /// @param _lots The material lot store.
-    constructor(CatentaRoles _roles, PassportNFT _passports, MaterialLots _lots)
-        RoleAware(_roles)
-    {
+    /// @param _credit The usage credit token spent per action.
+    constructor(
+        CatentaRoles _roles,
+        PassportNFT _passports,
+        MaterialLots _lots,
+        CatentaCredit _credit
+    ) RoleAware(_roles) {
         PASSPORTS = _passports;
         LOTS = _lots;
+        CREDIT = _credit;
+    }
+
+    /// @notice Sets the number of credits burned per useful action.
+    /// @dev Admin-only. 0 disables charging (free pilot). Uniform across
+    ///      actions in this version.
+    /// @param _cost The new per-action cost.
+    function setActionCost(uint256 _cost) external onlyRole(ROLES.DEFAULT_ADMIN_ROLE()) {
+        emit ActionCostUpdated(actionCost, _cost);
+        actionCost = _cost;
     }
 
     // ==================================================
@@ -144,6 +185,7 @@ contract LifecycleModule is RoleAware {
     function declareLot(bytes32 _certHash, uint256 _quantity)
         external
         onlyRole(ROLES.LAB_ROLE())
+        costsCredit
         returns (uint64 lotId)
     {
         require(_quantity > 0, ZeroQuantity());
@@ -166,6 +208,7 @@ contract LifecycleModule is RoleAware {
     function mintPassport(uint64 _lotId, uint256 _quantity, bytes32 _conformityHash)
         external
         onlyRole(ROLES.LAB_ROLE())
+        costsCredit
         returns (uint256 tokenId)
     {
         require(LOTS.lotExists(_lotId), UnknownLot(_lotId));
@@ -190,6 +233,7 @@ contract LifecycleModule is RoleAware {
         onlyRole(ROLES.PRACTITIONER_ROLE())
         onlyHolder(_tokenId)
         onlyStatus(_tokenId, Status.Manufactured)
+        costsCredit
     {
         _status[_tokenId] = Status.Certified;
 
@@ -209,6 +253,7 @@ contract LifecycleModule is RoleAware {
         onlyRole(ROLES.PRACTITIONER_ROLE())
         onlyHolder(_tokenId)
         onlyStatus(_tokenId, Status.Certified)
+        costsCredit
     {
         require(_patientCommitment != bytes32(0), EmptyHash());
 
@@ -229,7 +274,11 @@ contract LifecycleModule is RoleAware {
     ///      actor who did not ask for it.
     /// @param _tokenId The passport being handed off.
     /// @param _to The designated recipient, which must be an approved actor.
-    function initiateHandoff(uint256 _tokenId, address _to) external onlyHolder(_tokenId) {
+    function initiateHandoff(uint256 _tokenId, address _to)
+        external
+        onlyHolder(_tokenId)
+        costsCredit
+    {
         require(_to != msg.sender, SelfHandoff());
         require(
             ROLES.hasRole(ROLES.LAB_ROLE(), _to)

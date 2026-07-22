@@ -15,7 +15,7 @@ Ce document répond à deux questions distinctes :
 | Rythme | 3 jours-homme par semaine | dépend du reste |
 | Expérience | stack Hardhat/Vue/ethers déjà pratiquée (projet précédent) | acquis |
 | Date de rendu | **inconnue** — le chiffrage est en jours-homme, converti en calendrier au §6 | ⚠️ à fixer en premier |
-| Point de départ | **socle v0 en place** — 5 contrats, 5 tests, lint propre (voir [RAPPORT_V0](RAPPORT_V0.md)) | vérifié |
+| Point de départ | **socle v0 + crédit + registrar** — 6 contrats, 14 tests, lint propre (voir [RAPPORT_V0](RAPPORT_V0.md)) | vérifié |
 
 > **Le seul point réellement bloquant est la date de rendu.** Tout le reste du document est robuste à sa valeur ; le §6 donne la conversion pour 4, 6 et 8 semaines.
 
@@ -45,7 +45,8 @@ Cette logique vient d'un constat sur le référentiel : **C3 est satisfait par u
 |---|---|
 | Fondations | `git init`, Hardhat 3, TypeScript, solhint, `.gitignore`, conventional commits, **`@openzeppelin/contracts` épinglé** |
 | Contrats | `CatentaRoles` + `RoleAware` (autorité) · `PassportNFT` et `MaterialLots` (stores permanents) · `LifecycleModule` (machine à états `Manufactured → Certified → Placed`, handoff 2 temps) |
-| OpenZeppelin | `AccessControl(Enumerable)`, `ERC721(Enumerable)`, `ERC1155(Supply, Burnable)` |
+| OpenZeppelin | `AccessControl(Enumerable)`, `ERC721(Enumerable)`, `ERC1155(Supply, Burnable)`, `ERC20` |
+| Modèle éco. | **`CatentaCredit`** (ERC-20 `$CATENTA`) : crédit d'usage non transférable, brûlé à chaque action ; abonnement hors chaîne, aucun jeton vendu (SPEC §8.3bis) |
 | Tests | scénarios TS sur les 3 axes + 3-4 propriétés fuzz (verrou soulbound, bornes) — **> 80 %** |
 | CI | `.github/workflows/ci.yml` : lint → compile → test → coverage (seuil bloquant) |
 | Déploiement | module Ignition, Sepolia, vérification Etherscan |

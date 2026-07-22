@@ -91,7 +91,7 @@ function download() {
   const url = URL.createObjectURL(new Blob([payload], { type: 'application/json' }))
   const a = document.createElement('a')
   a.href = url
-  a.download = `catenta-sel-${Date.now()}.json`
+  a.download = `catenta-secret-patient-${Date.now()}.json`
   a.click()
   URL.revokeObjectURL(url)
 }

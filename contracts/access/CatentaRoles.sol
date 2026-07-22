@@ -28,6 +28,21 @@ import {AccessControlEnumerable} from
 ///      semantic roles below are kept for auditability; AccessManager stays the
 ///      escape hatch if timelocked permissions become a requirement.
 contract CatentaRoles is AccessControlEnumerable {
+    // ---------- operational role ----------
+
+    /// @notice Onboards day-to-day actors (labs, practitioners, distributors).
+    /// @dev THE way to have several administrators without multiplying the
+    ///      super-root. REGISTRAR_ROLE is the admin-role of LAB / PRACTITIONER
+    ///      / DISTRIBUTOR (set in the constructor), so a registrar can approve
+    ///      those actors without holding DEFAULT_ADMIN_ROLE — separation of
+    ///      "operate" from "govern".
+    ///      REGISTRAR_ROLE is itself administered by DEFAULT_ADMIN_ROLE: only
+    ///      the root appoints or removes registrars. The sensitive roles
+    ///      (REGULATOR, module roles, credit roles) stay under the root too.
+    ///      This is also the design that survives AccessControlDefaultAdminRules
+    ///      later, which forces DEFAULT_ADMIN_ROLE to a single holder.
+    bytes32 public constant REGISTRAR_ROLE = keccak256("REGISTRAR_ROLE");
+
     // ---------- actor roles ----------
 
     /// @notice Laboratory: declares material lots, mints passports, stakes.
@@ -49,12 +64,30 @@ contract CatentaRoles is AccessControlEnumerable {
     bytes32 public constant LOT_MINTER_ROLE = keccak256("LOT_MINTER_ROLE");
     /// @notice Allowed to burn material consumed by manufacturing.
     bytes32 public constant LOT_BURNER_ROLE = keccak256("LOT_BURNER_ROLE");
+    /// @notice Allowed to mint usage credits (against an off-chain payment).
+    /// @dev Held by the admin / an onboarding module — the fiat-to-credit
+    ///      bridge lives off-chain, so minting is a deliberate, gated act.
+    bytes32 public constant CREDIT_MINTER_ROLE = keccak256("CREDIT_MINTER_ROLE");
+    /// @notice Allowed to spend (burn) a caller's usage credits on an action.
+    /// @dev Held by the modules that charge per action (LifecycleModule…), so
+    ///      they can burn the caller's credit in the same transaction without
+    ///      an ERC-20 allowance round-trip.
+    bytes32 public constant CREDIT_SPENDER_ROLE = keccak256("CREDIT_SPENDER_ROLE");
 
     /// @notice Deploys the authority and hands administration to `_admin`.
     /// @dev The admin is an explicit parameter rather than msg.sender so a
     ///      deployment script or factory gets no power over the registry.
+    ///      The admin is also seeded as a registrar so onboarding works out of
+    ///      the box; additional registrars are appointed at runtime by the root.
+    ///      Actor onboarding is delegated to REGISTRAR_ROLE via _setRoleAdmin;
+    ///      everything else keeps its default admin (DEFAULT_ADMIN_ROLE).
     /// @param _admin The consortium administrator, holder of DEFAULT_ADMIN_ROLE.
     constructor(address _admin) {
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
+        _grantRole(REGISTRAR_ROLE, _admin);
+
+        _setRoleAdmin(LAB_ROLE, REGISTRAR_ROLE);
+        _setRoleAdmin(PRACTITIONER_ROLE, REGISTRAR_ROLE);
+        _setRoleAdmin(DISTRIBUTOR_ROLE, REGISTRAR_ROLE);
     }
 }

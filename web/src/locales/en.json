@@ -21,7 +21,10 @@
     "PASSPORT_MINTER": "Passport issuance",
     "PASSPORT_CONTROLLER": "Transfer control",
     "LOT_MINTER": "Lot declaration",
-    "LOT_BURNER": "Material consumption"
+    "LOT_BURNER": "Material consumption",
+    "CREDIT_MINTER": "Credit issuance",
+    "CREDIT_SPENDER": "Credit spending",
+    "REGISTRAR": "Registrar"
   },
   "status": {
     "manufactured": "Manufactured",
@@ -38,7 +41,7 @@
       "1": "<b>One passport per prosthesis</b> — non-transferable, with traits frozen at manufacturing.",
       "2": "<b>Material lots traced</b> and burned in the very transaction that mints the passport.",
       "3": "<b>Every act timestamped and attributed</b> to an approved actor, never rewritable afterwards.",
-      "4": "<b>No patient data on-chain</b> — a salted commitment, never an identity."
+      "4": "<b>No patient data on the blockchain</b> — only an anonymous fingerprint, never an identity."
     },
     "rolesTitle": "Your role is read on-chain",
     "roles": {
@@ -88,7 +91,10 @@
     "quantityHint": "It will be burned permanently.",
     "conformityLabel": "Conformity file",
     "minted": "Passport issued.",
-    "scope": { "mine": "Mine", "all": "All" },
+    "scope": {
+      "mine": "Mine",
+      "all": "All"
+    },
     "empty": {
       "mine": "You hold no passport.",
       "all": "No passport issued yet."
@@ -113,13 +119,13 @@
       },
       "placed": {
         "title": "Placed",
-        "desc": "The device is in the mouth and bound to a patient by a salted commitment."
+        "desc": "The device is in the mouth, bound to a patient by an anonymous fingerprint."
       }
     },
     "factsTitle": "Frozen traits",
     "conformity": "Conformity",
-    "commitment": "Patient commitment",
-    "commitmentHint": "Salted fingerprint: without the salt kept off-chain, it points to nobody. Erasing the patient record makes it permanently unusable.",
+    "commitment": "Patient anonymous fingerprint",
+    "commitmentHint": "Anonymous fingerprint: without the secret you keep on your side, it points to nobody. Erasing the patient record permanently breaks the link.",
     "actionsTitle": "Available actions",
     "actions": {
       "accept": "Accept handoff",
@@ -136,16 +142,20 @@
   "commitment": {
     "identityLabel": "Patient identity",
     "identityPlaceholder": "Full name, date of birth",
-    "identityHint": "This value NEVER leaves your browser. Only its salted fingerprint goes on-chain.",
-    "saltTitle": "Salt to keep off-chain",
-    "saltWarning": "Store this salt with the patient record, in your usual system. Without it the on-chain commitment points to nobody — which is exactly what makes the right to erasure compatible with the immutability of the chain.",
+    "identityHint": "This value NEVER leaves your browser. Only an anonymous fingerprint is written to the blockchain — never the identity.",
+    "saltTitle": "Secret to keep on your side",
+    "saltWarning": "Store this secret with the patient record, in your usual software. Without it, the fingerprint on the blockchain points to nobody — which is exactly what lets you erase a patient's data even though the blockchain itself cannot be erased.",
     "download": "Download",
     "regenerate": "Regenerate",
-    "result": "Commitment:",
-    "fileNote": "Catenta salt — keep with the patient record. Without this salt the on-chain commitment is unusable."
+    "result": "Anonymous fingerprint:",
+    "fileNote": "Catenta secret — keep with the patient record. Without this secret the fingerprint on the blockchain is unusable."
   },
   "hashInput": {
-    "mode": { "file": "File", "text": "Reference", "raw": "Fingerprint" },
+    "mode": {
+      "file": "File",
+      "text": "Reference",
+      "raw": "Fingerprint"
+    },
     "hint": {
       "file": "The file never leaves your machine: only its fingerprint is computed, in the browser.",
       "text": "Fingerprint of a document reference — case number, internal id.",
@@ -175,7 +185,24 @@
     "knownModule": "Known module",
     "unknownModule": "Unrecognized",
     "stackTitle": "Deployed stack",
-    "stackSubtitle": "Discovered from the single configured address — the module exposes its dependencies."
+    "stackSubtitle": "Discovered from the single configured address — the module exposes its dependencies.",
+    "creditsTitle": "$CATENTA usage credits",
+    "creditsSubtitle": "Issued against an off-chain subscription, burned on each action. Non-transferable, no market price.",
+    "creditsFormTitle": "Credit an actor",
+    "creditAddressLabel": "Address",
+    "creditAmountLabel": "Amount",
+    "mintCredits": "Issue",
+    "grantInitial": "Grant the initial 100",
+    "creditHint": "The initial 100 can be granted only once per address. 'Issue' tops up freely.",
+    "creditsMinted": "{amount} credits issued.",
+    "initialGranted": "Initial 100 credits granted.",
+    "notAllowed": "This view is reserved for the administrator and registrars.",
+    "grantSubtitle": "Approve a laboratory, a practitioner or a distributor.",
+    "rootTitle": "Operators & regulator",
+    "rootSubtitle": "Root only: appoint a registrar or the regulator (Ordre / ARS).",
+    "rootHint": "A registrar can onboard actors without being an administrator. Only the root appoints them — the 'govern vs operate' split.",
+    "rootMembersTitle": "Operators & regulator",
+    "rootMembersSubtitle": "Holders of the sensitive roles, managed by the root alone."
   },
   "errors": {
     "rejected": "Signature rejected in the wallet.",
@@ -196,6 +223,13 @@
     "accessControl": "Your account does not hold the required role.",
     "insufficientMaterial": "The lot does not hold enough material left.",
     "unknownPassport": "This passport does not exist.",
-    "unknown": "The transaction failed."
+    "unknown": "The transaction failed.",
+    "insufficientCredits": "Not enough usage credits: top up to perform this action.",
+    "creditsNotTransferable": "Usage credits are not transferable.",
+    "initialAlreadyGranted": "This address already received its initial credits."
+  },
+  "credits": {
+    "unit": "credits",
+    "tooltip": "$CATENTA usage credits · {cost} per action. Non-transferable, unlisted — a prepaid allowance, not an investment."
   }
 }

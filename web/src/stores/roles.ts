@@ -26,6 +26,9 @@ export const useRolesStore = defineStore('roles', () => {
     PASSPORT_CONTROLLER: false,
     LOT_MINTER: false,
     LOT_BURNER: false,
+    CREDIT_MINTER: false,
+    CREDIT_SPENDER: false,
+    REGISTRAR: false,
   })
 
   /** Membres par rôle — offert par AccessControlEnumerable, sans indexeur. */
@@ -37,6 +40,7 @@ export const useRolesStore = defineStore('roles', () => {
   const isPractitioner = computed(() => held.value.PRACTITIONER)
   const isRegulator = computed(() => held.value.REGULATOR)
   const isDistributor = computed(() => held.value.DISTRIBUTOR)
+  const isRegistrar = computed(() => held.value.REGISTRAR)
 
   /** Les rôles de l'utilisateur, pour l'affichage. */
   const myRoles = computed<RoleKey[]>(() =>
@@ -122,6 +126,7 @@ export const useRolesStore = defineStore('roles', () => {
     isPractitioner,
     isRegulator,
     isDistributor,
+    isRegistrar,
     isSpectator,
     myRoles,
     refresh,

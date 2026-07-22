@@ -6,27 +6,30 @@
 
 ---
 
+> **Note de mise à jour.** Ce rapport décrivait le socle v0 initial. Depuis, se sont ajoutés — **déployés sur Sepolia** — le crédit d'usage `$CATENTA` (ERC-20) et l'agrément délégué (`REGISTRAR_ROLE`). Le design de ces deux ajouts est dans [SPEC §8.3bis](SPEC.md) et [§2](SPEC.md) ; les chiffres ci-dessous sont à jour, le raisonnement des §2 à §10 reste valable.
+
 ## 1. État vérifié
 
 Mesures réelles, reproductibles par les commandes ci-dessous :
 
 | Commande | Résultat |
 |---|---|
-| `npx hardhat compile` | ✅ 5 fichiers, solc `0.8.34` |
+| `npx hardhat compile` | ✅ 6 fichiers, solc `0.8.34` |
 | `npx solhint "contracts/**/*.sol"` | ✅ **0 problème** |
-| `npx hardhat test mocha` | ✅ **5/5** |
-| `npx hardhat test --coverage` | 95,70 % lignes · 94,20 % instructions — **à lire avec la §8** |
+| `npx hardhat test mocha` | ✅ **14/14** |
+| `npx hardhat test --coverage` | 95,90 % lignes · 94,68 % instructions — **à lire avec la §8** |
 
-| Fichier | Lignes | Nature |
-|---|---:|---|
-| `contracts/access/CatentaRoles.sol` | 60 | autorité |
-| `contracts/access/RoleAware.sol` | 38 | base abstraite |
-| `contracts/tokens/PassportNFT.sol` | 179 | **stockage permanent** |
-| `contracts/tokens/MaterialLots.sol` | 139 | **stockage permanent** |
-| `contracts/modules/LifecycleModule.sol` | 280 | **module remplaçable** |
-| `test/Lifecycle.smoke.ts` | 187 | tests de bout en bout, assertions d'événements incluses |
+| Fichier | Nature |
+|---|---|
+| `contracts/access/CatentaRoles.sol` | autorité (rôles acteurs, opérateurs, modules) |
+| `contracts/access/RoleAware.sol` | base abstraite |
+| `contracts/tokens/PassportNFT.sol` | **stockage permanent** (ERC-721) |
+| `contracts/tokens/MaterialLots.sol` | **stockage permanent** (ERC-1155) |
+| `contracts/tokens/CatentaCredit.sol` | **stockage permanent** (ERC-20, crédit d'usage) |
+| `contracts/modules/LifecycleModule.sol` | **module remplaçable** (cycle de vie + facturation) |
+| `test/Lifecycle.smoke.ts` | scénarios de bout en bout, crédit et agrément délégué inclus |
 
-**Ce qui n'existe pas encore** : rappel de lot, accusés de réception, caution qualité, CI GitHub Actions, module Ignition, déploiement Sepolia, front, tests de propriétés Solidity, rapport de gas, analyse Slither.
+**Ce qui n'existe pas encore** : rappel de lot, accusés de réception, caution qualité, CI GitHub Actions, vérification Etherscan, tests de propriétés Solidity, rapport de gas, analyse Slither.
 
 ---
 
@@ -176,7 +179,7 @@ Modules effectivement utilisés à ce stade : `AccessControlEnumerable`, `ERC721
 | **C1** | ✅ spécifié — besoin, apport blockchain, schéma fonctionnel, arborescence |
 | **C2** | 🟡 **partiel** — machine à états et RBAC codés ; rappel et caution non |
 | **C3** | 🟡 **partiel** — ERC-721 et ERC-1155 codés et justifiés ; ERC-20 non |
-| **C4** | 🟡 **partiel** — tableau des 16 attaques rédigé ; parades codées pour 4 d'entre elles |
+| **C4** | 🟡 **partiel** — tableau des 17 attaques rédigé ; parades codées pour 4 d'entre elles |
 | **C5** | ❌ **non fait** — Git initialisé, **aucune CI** |
 | **C6** | 🟡 **trompeur** — voir §8 |
 | **C7** | ❌ **non fait** |
@@ -212,7 +215,7 @@ C'est aussi le test qui distingue ce projet du comparable français le plus conn
 
 ## 8. Le chiffre de couverture, et pourquoi il ne vaut rien aujourd'hui
 
-`hardhat test --coverage` affiche **95,70 % de lignes**. Avec **5 tests**. Il faut le dire soi-même avant qu'on le découvre.
+`hardhat test --coverage` affiche **95,90 % de lignes**. Avec **14 tests**. Il faut le dire soi-même avant qu'on le découvre.
 
 **Ce que le chiffre mesure vraiment.** La couverture de lignes compte les lignes *exécutées*, pas les comportements *vérifiés*. Le test de bout en bout traverse presque tout le chemin nominal, donc il allume presque toutes les lignes. Mais :
 

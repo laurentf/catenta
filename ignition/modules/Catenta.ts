@@ -31,7 +31,8 @@ export default buildModule("CatentaModule", (m) => {
   const roles = m.contract("CatentaRoles", [admin]);
   const passports = m.contract("PassportNFT", [roles]);
   const lots = m.contract("MaterialLots", [roles]);
-  const lifecycle = m.contract("LifecycleModule", [roles, passports, lots]);
+  const credit = m.contract("CatentaCredit", [roles]);
+  const lifecycle = m.contract("LifecycleModule", [roles, passports, lots, credit]);
 
   // Rôles modules — accordés à un CONTRAT, jamais à une personne.
   const moduleRoles = {
@@ -39,11 +40,20 @@ export default buildModule("CatentaModule", (m) => {
     PASSPORT_CONTROLLER_ROLE: id("PASSPORT_CONTROLLER_ROLE"),
     LOT_MINTER_ROLE: id("LOT_MINTER_ROLE"),
     LOT_BURNER_ROLE: id("LOT_BURNER_ROLE"),
+    // le module brûle le crédit d'usage de l'appelant à chaque action
+    CREDIT_SPENDER_ROLE: id("CREDIT_SPENDER_ROLE"),
   };
 
   for (const [name, hash] of Object.entries(moduleRoles)) {
     m.call(roles, "grantRole", [hash, lifecycle], { id: `grant_${name}` });
   }
 
-  return { roles, passports, lots, lifecycle };
+  // L'admin émet les crédits (contre un abonnement hors chaîne). Rôle donné à
+  // l'admin, pas à un contrat — c'est un acte humain tant que le pont
+  // fiat → crédit reste manuel.
+  m.call(roles, "grantRole", [id("CREDIT_MINTER_ROLE"), admin], {
+    id: "grant_CREDIT_MINTER_ROLE_admin",
+  });
+
+  return { roles, passports, lots, credit, lifecycle };
 });

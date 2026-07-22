@@ -8,10 +8,12 @@ import { useRouter } from 'vue-router'
 import { useWalletStore } from '@/stores/wallet'
 import { useCatentaStore } from '@/stores/catenta'
 import { useRolesStore } from '@/stores/roles'
+import { useCreditsStore } from '@/stores/credits'
 
 const wallet = useWalletStore()
 const catenta = useCatentaStore()
 const roles = useRolesStore()
+const credits = useCreditsStore()
 const router = useRouter()
 
 /**
@@ -27,7 +29,7 @@ watch(
       return
     }
     if (!catenta.ready) await catenta.discover()
-    if (catenta.ready) await roles.refresh()
+    if (catenta.ready) await Promise.all([roles.refresh(), credits.refresh()])
   },
   { immediate: true },
 )

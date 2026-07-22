@@ -22,6 +22,15 @@
 
         <div class="flex items-center gap-2">
           <span
+            v-if="!roles.isSpectator"
+            class="inline-flex items-center gap-1.5 rounded-full bg-navy px-2.5 py-1
+                   text-[0.7rem] font-bold text-white"
+            :title="t('credits.tooltip', { cost: credits.actionCost })"
+          >
+            <span class="text-teal-accent">◈</span>
+            {{ credits.balance }} {{ t('credits.unit') }}
+          </span>
+          <span
             v-for="role in roles.myRoles"
             :key="role"
             class="rounded-full bg-teal-soft px-2.5 py-1 text-[0.68rem] font-bold
@@ -69,14 +78,16 @@ import UiButton from '@/components/ui/UiButton.vue'
 import { shortAddress } from '@/lib/format'
 import { useWalletStore } from '@/stores/wallet'
 import { useRolesStore } from '@/stores/roles'
+import { useCreditsStore } from '@/stores/credits'
 
 const { t, locale } = useI18n()
 const wallet = useWalletStore()
 const roles = useRolesStore()
+const credits = useCreditsStore()
 
 const links = computed(() => {
   const base = [{ name: 'passports' }, { name: 'lots' }]
-  return roles.isAdmin ? [...base, { name: 'admin' }] : base
+  return roles.isAdmin || roles.isRegistrar ? [...base, { name: 'admin' }] : base
 })
 
 function toggleLocale() {

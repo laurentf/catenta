@@ -2,7 +2,7 @@
 
 Traçabilité des **dispositifs médicaux sur mesure** (couronnes, bridges, implants) et de leurs **lots de matériaux**, sur un registre partagé entre acteurs concurrents : laboratoires, praticiens, distributeurs, Ordre et ARS.
 
-> **État du projet — socle v0 en place.** Cinq contrats compilent, cinq tests passent, le linter est propre. Ne sont **pas** faits : rappel de lot, caution qualité, CI, déploiement, front. L'état vérifié et ses limites sont dans le [rapport d'implémentation](docs/RAPPORT_V0.md).
+> **État du projet — socle v0 + crédit d'usage, déployé sur Sepolia.** Six contrats compilent, 14 tests passent, le linter est propre ; la pile tourne sur Sepolia et le front est fonctionnel. Restent à faire : rappel de lot, caution qualité, CI, vérification Etherscan. L'état vérifié et ses limites sont dans le [rapport d'implémentation](docs/RAPPORT_V0.md).
 
 ---
 
@@ -32,12 +32,13 @@ L'apport est donc **la confiance entre parties non coopératives**, pas la perfo
 - **Des lots de matériaux tracés** — ERC-1155, brûlés à la fabrication : le lien matière → prothèse est établi au mint et ne peut plus être réécrit.
 - **Un rappel de lot instantané et prouvable** — le régulateur marque *le lot* (une seule écriture) ; le statut « rappelé » de chaque passeport en est **dérivé**, et distributeurs et cabinets **accusent réception on-chain** : la preuve d'exécution qui manque aujourd'hui.
 - **Une caution qualité** — ERC-20 stakée par le laboratoire, *slashable* par le régulateur sur preuve, avec délai de retrait : le registre passe de passif à « à enjeux ».
+- **Un crédit d'usage `$CATENTA`** — ERC-20 non transférable et non coté : l'abonnement (hors chaîne) émet des crédits, chaque action en brûle un. Le modèle économique, sans jamais vendre de jeton ([SPEC §8.3bis](docs/SPEC.md)).
 
 ## Architecture
 
 ```
    Acteurs (RBAC)                              Stockage off-chain
-labo · praticien · distributeur · Ordre/ARS   IPFS (docs) · PII salée (RGPD)
+labo · praticien · distributeur · Ordre/ARS   IPFS (docs) · PII hors chaîne (RGPD)
                     │                                    │ hash / CID uniquement
                     v                                    v
         ┌───────────────────────────┐
@@ -45,18 +46,18 @@ labo · praticien · distributeur · Ordre/ARS   IPFS (docs) · PII salée (RGPD
         └─────────────┬─────────────┘   « ai-je ce rôle ? »
       ┌───────────────┼───────────────┬──────────────────┐
       v               v               v                  v
-┌─────────────┐ ┌─────────────┐ ┌──────────────┐  ┌──────────────┐
-│ PassportNFT │ │MaterialLots │ │  Lifecycle   │  │ Recall·Bond  │
-│ ERC-721     │ │ ERC-1155    │ │  Module      │  │   (v1)       │
-│ soulbound   │ │ burn        │ │              │  │              │
-├─────────────┤ ├─────────────┤ ├──────────────┤  ├──────────────┤
-│  PERMANENT  │ │  PERMANENT  │ │ REMPLAÇABLE  │  │   ADDITIF    │
-└─────────────┘ └─────────────┘ └──────────────┘  └──────────────┘
+┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌──────────────┐  ┌──────────────┐
+│ PassportNFT │ │MaterialLots │ │CatentaCredit│ │  Lifecycle   │  │ Recall·Bond  │
+│ ERC-721     │ │ ERC-1155    │ │ ERC-20      │ │  Module      │  │   (v1)       │
+│ soulbound   │ │ burn        │ │ crédit usage│ │  + facture   │  │              │
+├─────────────┤ ├─────────────┤ ├─────────────┤ ├──────────────┤  ├──────────────┤
+│  PERMANENT  │ │  PERMANENT  │ │  PERMANENT  │ │ REMPLAÇABLE  │  │   ADDITIF    │
+└─────────────┘ └─────────────┘ └─────────────┘ └──────────────┘  └──────────────┘
 ```
 
 **Ce qui doit survivre vit dans un stockage permanent ; ce qui évoluera vit dans un module qu'on peut remplacer.** Les jetons ne portent que l'immuable (lot d'origine, empreinte du dossier de conformité, figés au mint) ; les statuts vivent dans le module. **Aucun contrat ne connaît l'adresse d'un pair** : chacun demande un rôle à `CatentaRoles`. Conséquence directe — ajouter le rappel ou la caution ne touche aucun contrat existant : on déploie, on accorde un rôle.
 
-**Tout ce qui peut venir d'OpenZeppelin en vient.** Le code écrit à la main se limite à la logique métier dentaire — machine à états, handoff, rappel dérivé, comptabilité de la caution. Le reste (standards de jetons, rôles, réentrance, pause, signatures, ensembles, preuves de Merkle) provient de contrats audités. Conséquence directe : **9 des 16 parades du tableau des attaques sont fournies par la librairie**, et la surface de code non auditée se réduit à ce qui est propre au métier — là où se concentre l'effort de test.
+**Tout ce qui peut venir d'OpenZeppelin en vient.** Le code écrit à la main se limite à la logique métier dentaire — machine à états, handoff, rappel dérivé, comptabilité de la caution et du crédit d'usage. Le reste (standards de jetons, rôles, réentrance, pause, signatures, ensembles, preuves de Merkle) provient de contrats audités. Conséquence directe : **10 des 17 parades du tableau des attaques sont fournies par la librairie**, et la surface de code non auditée se réduit à ce qui est propre au métier — là où se concentre l'effort de test.
 
 → Détail complet : **[docs/SPEC.md](docs/SPEC.md)**
 
@@ -64,6 +65,7 @@ labo · praticien · distributeur · Ordre/ARS   IPFS (docs) · PII salée (RGPD
 
 | Couche | Choix |
 |---|---|
+| Modèle éco. | crédit d'usage **`$CATENTA`** (ERC-20, non transférable, brûlé à l'action) — abonnement hors chaîne, aucun jeton vendu |
 | Contrats | Solidity `0.8.34` (pragma figé) · **OpenZeppelin v5, massivement** — ~25 modules audités (jetons, `AccessControl*`, `ReentrancyGuardTransient`, `Pausable`, `EIP712`, `EnumerableSet`, `MerkleProof`, `Multicall`…), inventoriés et justifiés un par un en [SPEC §8.4](docs/SPEC.md) |
 | Outillage | Hardhat 3 · Ignition (déploiement) · keystore chiffré (secrets) |
 | Tests | double runner : **Solidity/forge-std** (propriétés, *fuzzing*) + **TypeScript/mocha + ethers v6** (scénarios) |
@@ -80,7 +82,7 @@ Ces choix reprennent **délibérément** la stack éprouvée du projet précéde
 catenta/
 ├── contracts/
 │   ├── access/           CatentaRoles · RoleAware
-│   ├── tokens/           PassportNFT (ERC-721) · MaterialLots (ERC-1155)
+│   ├── tokens/           PassportNFT (721) · MaterialLots (1155) · CatentaCredit (20)
 │   └── modules/          LifecycleModule · (Recall · Bond en v1)
 ├── test/                 *.ts (scénarios) · *.t.sol (propriétés / fuzz)
 ├── ignition/modules/     modules de déploiement
@@ -107,7 +109,7 @@ Hardhat 3 + Ignition, avec les secrets dans le **keystore chiffré** (jamais dan
 | Élément | Où l'obtenir |
 |---|---|
 | **Un compte de déploiement** | un compte MetaMask **dédié au dev** (jamais un compte à valeur réelle) |
-| **Du Sepolia ETH** dessus | un faucet — le déploiement enchaîne 8 transactions (4 contrats + 4 rôles) |
+| **Du Sepolia ETH** dessus | un faucet — le déploiement enchaîne ~11 transactions (5 contrats + 6 attributions de rôles) |
 | **Une URL RPC Sepolia** | Reown (voir plus bas), ou Alchemy / Infura (gratuit) |
 
 ### 1. Renseigner le keystore (interactif, une seule fois)
@@ -135,7 +137,7 @@ Endpoint pratique parce qu'un seul identifiant sert au front et au déploiement 
 npx hardhat ignition deploy ignition/modules/Catenta.ts --network sepolia
 ```
 
-Le module [`Catenta.ts`](ignition/modules/Catenta.ts) déploie les 4 contrats **et** accorde au `LifecycleModule` les 4 rôles techniques dans la foulée — sans quoi les stockages refusent toute écriture. Le **compte déployeur devient l'administrateur** (`DEFAULT_ADMIN_ROLE`).
+Le module [`Catenta.ts`](ignition/modules/Catenta.ts) déploie les 5 contrats **et** accorde au `LifecycleModule` ses 5 rôles techniques (dont `CREDIT_SPENDER`) plus le `CREDIT_MINTER_ROLE` à l'admin, dans la foulée — sans quoi les stockages refusent toute écriture. Le **compte déployeur devient l'administrateur** (`DEFAULT_ADMIN_ROLE`).
 
 > Confier l'admin à une autre adresse (multisig) dès l'origine :
 > `--parameters '{"CatentaModule":{"admin":"0x…"}}'`

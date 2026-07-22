@@ -12,6 +12,7 @@ export const ROLES_ABI = [
   'function PRACTITIONER_ROLE() view returns (bytes32)',
   'function DISTRIBUTOR_ROLE() view returns (bytes32)',
   'function REGULATOR_ROLE() view returns (bytes32)',
+  'function REGISTRAR_ROLE() view returns (bytes32)',
   'function DEFAULT_ADMIN_ROLE() view returns (bytes32)',
   // rôles modules (accordés à des contrats, jamais à des personnes)
   'function PASSPORT_MINTER_ROLE() view returns (bytes32)',
@@ -71,11 +72,35 @@ export const LOTS_ABI = [
   'error ERC1155InsufficientBalance(address sender, uint256 balance, uint256 needed, uint256 tokenId)',
 ] as const
 
+export const CREDIT_ABI = [
+  'function name() view returns (string)',
+  'function symbol() view returns (string)',
+  'function decimals() view returns (uint8)',
+  'function balanceOf(address account) view returns (uint256)',
+  'function totalSupply() view returns (uint256)',
+  'function INITIAL_CREDITS() view returns (uint256)',
+  'function hasReceivedInitial(address account) view returns (bool)',
+  // écritures — admin (CREDIT_MINTER_ROLE)
+  'function grantInitialCredits(address _to)',
+  'function mintCredits(address _to, uint256 _amount)',
+  // events
+  'event InitialCreditsGranted(address indexed account, uint256 amount)',
+  'event CreditsMinted(address indexed account, uint256 amount)',
+  'event CreditsSpent(address indexed account, uint256 amount)',
+  // erreurs
+  'error CreditsNotTransferable()',
+  'error InitialAlreadyGranted(address account)',
+  'error InsufficientCredits(address account, uint256 balance, uint256 needed)',
+  'error UnauthorizedRole(bytes32 role, address account)',
+] as const
+
 export const LIFECYCLE_ABI = [
   // pile
   'function ROLES() view returns (address)',
   'function PASSPORTS() view returns (address)',
   'function LOTS() view returns (address)',
+  'function CREDIT() view returns (address)',
+  'function actionCost() view returns (uint256)',
   // lectures
   'function statusOf(uint256 tokenId) view returns (uint8)',
   'function patientCommitmentOf(uint256 tokenId) view returns (bytes32)',
@@ -88,6 +113,8 @@ export const LIFECYCLE_ABI = [
   // écritures — handoff
   'function initiateHandoff(uint256 _tokenId, address _to)',
   'function acceptHandoff(uint256 _tokenId)',
+  // écritures — admin
+  'function setActionCost(uint256 _cost)',
   // events
   'event MaterialConsumed(uint256 indexed tokenId, uint64 indexed lotId, uint256 quantity)',
   'event ConformityAttested(uint256 indexed tokenId, address indexed practitioner)',
@@ -103,6 +130,7 @@ export const LIFECYCLE_ABI = [
   'error SelfHandoff()',
   'error NotPendingRecipient(uint256 tokenId, address caller)',
   'error PassportLocked(uint256 tokenId)',
+  'error InsufficientCredits(address account, uint256 balance, uint256 needed)',
   'error UnauthorizedRole(bytes32 role, address account)',
 ] as const
 
@@ -124,22 +152,31 @@ export const ROLE = {
   PRACTITIONER: id('PRACTITIONER_ROLE'),
   DISTRIBUTOR: id('DISTRIBUTOR_ROLE'),
   REGULATOR: id('REGULATOR_ROLE'),
+  REGISTRAR: id('REGISTRAR_ROLE'),
   PASSPORT_MINTER: id('PASSPORT_MINTER_ROLE'),
   PASSPORT_CONTROLLER: id('PASSPORT_CONTROLLER_ROLE'),
   LOT_MINTER: id('LOT_MINTER_ROLE'),
   LOT_BURNER: id('LOT_BURNER_ROLE'),
+  CREDIT_MINTER: id('CREDIT_MINTER_ROLE'),
+  CREDIT_SPENDER: id('CREDIT_SPENDER_ROLE'),
 } as const
 
 export type RoleKey = keyof typeof ROLE
 
-/** Les rôles accordés à des humains — les seuls proposés dans /admin. */
-export const ACTOR_ROLES: RoleKey[] = ['LAB', 'PRACTITIONER', 'DISTRIBUTOR', 'REGULATOR']
+/** Rôles d'acteurs agréables par un registrar (ou l'admin). */
+export const ONBOARDABLE_ROLES: RoleKey[] = ['LAB', 'PRACTITIONER', 'DISTRIBUTOR']
+/** Rôles sensibles réservés à la racine (DEFAULT_ADMIN). */
+export const ROOT_MANAGED_ROLES: RoleKey[] = ['REGISTRAR', 'REGULATOR']
+/** Tous les rôles humains affichés dans /admin. */
+export const ACTOR_ROLES: RoleKey[] = ['LAB', 'PRACTITIONER', 'DISTRIBUTOR', 'REGULATOR', 'REGISTRAR']
 /** Les rôles accordés à des contrats — affichés en lecture seule. */
 export const MODULE_ROLES: RoleKey[] = [
   'PASSPORT_MINTER',
   'PASSPORT_CONTROLLER',
   'LOT_MINTER',
   'LOT_BURNER',
+  'CREDIT_MINTER',
+  'CREDIT_SPENDER',
 ]
 
 export function roles(address: string, runner: ContractRunner): Contract {
@@ -153,6 +190,9 @@ export function lots(address: string, runner: ContractRunner): Contract {
 }
 export function lifecycle(address: string, runner: ContractRunner): Contract {
   return new Contract(address, LIFECYCLE_ABI, runner)
+}
+export function credit(address: string, runner: ContractRunner): Contract {
+  return new Contract(address, CREDIT_ABI, runner)
 }
 
 /** Erreurs custom → clé i18n. */
@@ -173,6 +213,9 @@ const ERROR_KEYS: Record<string, string> = {
   AccessControlUnauthorizedAccount: 'errors.accessControl',
   ERC1155InsufficientBalance: 'errors.insufficientMaterial',
   ERC721NonexistentToken: 'errors.unknownPassport',
+  InsufficientCredits: 'errors.insufficientCredits',
+  CreditsNotTransferable: 'errors.creditsNotTransferable',
+  InitialAlreadyGranted: 'errors.initialAlreadyGranted',
 }
 
 type EthersLikeError = {
