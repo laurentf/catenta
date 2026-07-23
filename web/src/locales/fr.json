@@ -1,5 +1,5 @@
 {
-  "footer": "Catenta — passeport dentaire on-chain · registre neutre entre acteurs concurrents",
+  "footer": "Catenta · le passeport on-chain de chaque prothèse dentaire, du laboratoire à la pose",
   "common": {
     "loading": "Chargement…",
     "close": "Fermer",
@@ -9,7 +9,8 @@
   "nav": {
     "passports": "Passeports",
     "lots": "Lots",
-    "admin": "Administration"
+    "admin": "Administration",
+    "architecture": "Architecture"
   },
   "roles": {
     "ADMIN": "Administrateur",
@@ -55,7 +56,14 @@
     "network": "Réseau attendu : {chain}",
     "wrongChain": "Votre wallet est sur un autre réseau. Basculez sur {chain} pour continuer.",
     "notConfiguredTitle": "Application non configurée.",
-    "notConfigured": "L'adresse du LifecycleModule est absente : renseignez VITE_LIFECYCLE_ADDRESS dans le fichier .env, puis rechargez."
+    "notConfigured": "L'adresse du LifecycleModule est absente : renseignez VITE_LIFECYCLE_ADDRESS dans le fichier .env, puis rechargez.",
+    "tagline": "Le passeport infalsifiable de chaque prothèse dentaire — du laboratoire à la pose.",
+    "value": {
+      "1": "<b>Un passeport par prothèse</b>, non transférable, du labo à la pose.",
+      "2": "<b>Rappel de lot prouvable</b>, sans boucle ni délai.",
+      "3": "<b>Votre rôle lu on-chain</b> — le registre décide, pas l'interface."
+    },
+    "learnMore": "Comprendre l'architecture"
   },
   "lots": {
     "eyebrow": "Matière première",
@@ -194,7 +202,7 @@
     "mintCredits": "Émettre",
     "grantInitial": "Attribuer les 100 initiaux",
     "creditHint": "Les 100 initiaux ne s'attribuent qu'une fois par adresse. « Émettre » recharge librement.",
-    "creditsMinted": "{amount} crédits émis.",
+    "creditsMinted": "Crédits émis.",
     "initialGranted": "100 crédits initiaux attribués.",
     "notAllowed": "Cette vue est réservée à l'administrateur et aux agents d'agrément.",
     "grantSubtitle": "Agréer un laboratoire, un praticien ou un distributeur.",
@@ -202,7 +210,14 @@
     "rootSubtitle": "Réservé à la racine : nommer un agent d'agrément ou l'Ordre / ARS.",
     "rootHint": "L'agent d'agrément peut agréer des acteurs sans être administrateur. Seule la racine le nomme — c'est la séparation « gouverner / opérer ».",
     "rootMembersTitle": "Opérateurs & régulateur",
-    "rootMembersSubtitle": "Titulaires des rôles sensibles, gérés par la seule racine."
+    "rootMembersSubtitle": "Titulaires des rôles sensibles, gérés par la seule racine.",
+    "tabs": {
+      "onboard": "Agréer un acteur",
+      "operators": "Opérateurs & régulateur",
+      "credits": "Crédits $CATENTA",
+      "system": "Contrats & rôles"
+    },
+    "tabLocked": "Réservé à l'administrateur racine."
   },
   "errors": {
     "rejected": "Signature refusée dans le wallet.",
@@ -231,5 +246,37 @@
   "credits": {
     "unit": "crédits",
     "tooltip": "Crédits d'usage $CATENTA · {cost} par action. Non transférable, non coté — un forfait prépayé, pas un placement."
+  },
+  "toast": {
+    "pending": "Transaction en cours…",
+    "viewTx": "Voir la transaction"
+  },
+  "arch": {
+    "subtitle": "Un registre neutre, partagé entre acteurs concurrents — comment il est bâti.",
+    "tokensTitle": "Un standard de token par besoin",
+    "tokensSubtitle": "Aucun jeton décoratif : chaque standard rend effective une fonctionnalité qui n'existerait pas sans lui.",
+    "soon": "à venir",
+    "tokens": {
+      "passport": {
+        "need": "Le passeport du dispositif",
+        "why": "ERC-721 soulbound : un token = une prothèse, non transférable, lié au patient et non un actif."
+      },
+      "lots": {
+        "need": "Les lots de matériaux",
+        "why": "ERC-1155 : une quantité semi-fongible par lot, brûlée à la fabrication — le lien matière → prothèse."
+      },
+      "credit": {
+        "need": "Le crédit d'usage $CATENTA",
+        "why": "ERC-20 non transférable : un forfait prépayé, brûlé à chaque action. Ni vendu, ni coté."
+      },
+      "bond": {
+        "need": "La caution qualité",
+        "why": "ERC-20 externe (stablecoin) : stakable par le labo, saisissable en cas de rappel. Jamais un jeton maison."
+      }
+    },
+    "whatTitle": "Ce que fait le registre",
+    "rolesTitle": "Les acteurs",
+    "layersTitle": "Trois couches, découplées",
+    "layers": "Une <b>autorité de rôles</b> unique ; des <b>stockages permanents</b> (passeports, lots, crédits) qu'on ne remplace jamais ; des <b>modules remplaçables</b> qui portent la logique. Aucun contrat ne connaît l'adresse d'un pair — tout passe par les rôles. Conséquence : on ajoute une fonction (rappel, caution) sans redéployer l'existant."
   }
 }

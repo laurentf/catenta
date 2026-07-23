@@ -179,7 +179,7 @@ Un événement qui ne serait ni l'un ni l'autre est un doublon : il faut choisir
 catenta/
 ├── contracts/
 │   ├── access/                  CatentaRoles.sol · RoleAware.sol
-│   ├── tokens/                  PassportNFT.sol · MaterialLots.sol      (permanents)
+│   ├── tokens/                  PassportNFT.sol · MaterialLots.sol · CatentaCredit.sol   (permanents)
 │   ├── modules/                 LifecycleModule.sol · RecallModule.sol ·
 │   │                            BondModule.sol · CatentaLens.sol        (remplaçables)
 │   └── mocks/                   ReentrantAttacker.sol · MockEUR.sol

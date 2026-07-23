@@ -23,7 +23,6 @@
           <UiButton type="submit" :loading="busy" :disabled="!canSubmit">
             {{ t('lots.declare') }}
           </UiButton>
-          <span v-if="feedback" class="text-sm" :class="feedbackTone">{{ feedback }}</span>
         </div>
       </form>
     </UiCard>
@@ -91,36 +90,34 @@ import { parseError } from '@/lib/contracts'
 import { useCatentaStore } from '@/stores/catenta'
 import { useLotsStore } from '@/stores/lots'
 import { useRolesStore } from '@/stores/roles'
+import { useToastsStore } from '@/stores/toasts'
 
 const { t } = useI18n()
 const catenta = useCatentaStore()
 const lots = useLotsStore()
 const roles = useRolesStore()
+const toasts = useToastsStore()
 
 const showForm = ref(false)
 const certHash = ref('')
 const quantity = ref('')
 const busy = ref(false)
-const feedback = ref('')
-const ok = ref(false)
 
-const feedbackTone = computed(() => (ok.value ? 'text-teal-deep' : 'text-amber-deep'))
 const canSubmit = computed(() => !!certHash.value && Number(quantity.value) > 0)
 
 async function submit() {
   busy.value = true
-  feedback.value = ''
   try {
-    await lots.declareLot(certHash.value, BigInt(quantity.value))
-    ok.value = true
-    feedback.value = t('lots.declared')
+    await toasts.run(() => lots.declareLot(certHash.value, BigInt(quantity.value)), {
+      pending: t('toast.pending'),
+      success: t('lots.declared'),
+      error: (err) => t(parseError(err).key),
+    })
     certHash.value = ''
     quantity.value = ''
     showForm.value = false
-  } catch (err) {
-    ok.value = false
-    const { key, raw } = parseError(err)
-    feedback.value = raw ? `${t(key)} (${raw})` : t(key)
+  } catch {
+    /* toast déjà affiché */
   } finally {
     busy.value = false
   }

@@ -75,7 +75,7 @@ export const useRolesStore = defineStore('roles', () => {
 
     loading.value = true
     try {
-      const keys: RoleKey[] = [...ACTOR_ROLES, ...MODULE_ROLES]
+      const keys: RoleKey[] = [...ACTOR_ROLES, ...MODULE_ROLES, 'CREDIT_MINTER']
       const next: Partial<Record<RoleKey, string[]>> = {}
       await Promise.all(
         keys.map(async (key) => {

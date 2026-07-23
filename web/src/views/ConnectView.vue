@@ -1,48 +1,49 @@
 <template>
-  <div class="w-full">
-    <p class="eyebrow">{{ t('connect.eyebrow') }}</p>
-    <h1 class="mt-3">{{ t('connect.title') }}</h1>
-    <p class="subtitle">{{ t('connect.subtitle') }}</p>
+  <div class="w-full py-4">
+    <!-- Héro : le diamant qui flotte + la baseline -->
+    <div class="flex flex-col items-center text-center">
+      <img src="/logo.svg" alt="Catenta" class="gem-float h-24 w-auto" />
+      <h1 class="wordmark mt-5 text-5xl sm:text-6xl">catenta</h1>
+      <p class="mt-4 max-w-xl text-lg text-slate-label">{{ t('connect.tagline') }}</p>
 
-    <div class="mt-8 grid gap-5 sm:grid-cols-2">
-      <UiCard tone="mint" :title="t('connect.whatTitle')" badge="◈">
-        <ul class="space-y-2.5 text-sm leading-relaxed text-navy">
-          <li v-for="i in 4" :key="i" class="flex gap-2">
-            <span class="font-bold text-teal">•</span>
-            <span v-html="t(`connect.what.${i}`)" />
-          </li>
-        </ul>
-      </UiCard>
-
-      <UiCard tone="panel" :title="t('connect.rolesTitle')" badge="◉" badge-tone="navy">
-        <ul class="space-y-2.5 text-sm leading-relaxed text-navy">
-          <li v-for="i in 4" :key="i" class="flex gap-2">
-            <span class="font-bold text-teal">•</span>
-            <span v-html="t(`connect.roles.${i}`)" />
-          </li>
-        </ul>
-      </UiCard>
+      <div class="mt-8 flex flex-wrap items-center justify-center gap-3">
+        <UiButton :disabled="!configured" @click="wallet.connect()">
+          {{ t('connect.cta') }}
+        </UiButton>
+        <UiButton
+          v-if="wallet.isConnected && !wallet.isCorrectChain"
+          variant="secondary"
+          @click="wallet.switchChain()"
+        >
+          {{ t('connect.switch', { chain: CHAIN_NAME }) }}
+        </UiButton>
+      </div>
+      <p class="mt-3 text-xs text-slate-muted">{{ t('connect.network', { chain: CHAIN_NAME }) }}</p>
+      <RouterLink
+        :to="{ name: 'architecture' }"
+        class="mt-4 text-sm font-semibold text-teal transition hover:text-teal-deep"
+      >
+        {{ t('connect.learnMore') }} →
+      </RouterLink>
     </div>
 
-    <div class="mt-8 flex flex-wrap items-center gap-3">
-      <UiButton :disabled="!configured" @click="wallet.connect()">
-        {{ t('connect.cta') }}
-      </UiButton>
-      <UiButton v-if="wallet.isConnected && !wallet.isCorrectChain" variant="secondary" @click="wallet.switchChain()">
-        {{ t('connect.switch', { chain: CHAIN_NAME }) }}
-      </UiButton>
-      <span class="text-xs text-slate-muted">{{ t('connect.network', { chain: CHAIN_NAME }) }}</span>
+    <!-- Trois lignes de valeur, compactes -->
+    <div class="mt-12 grid gap-4 sm:grid-cols-3">
+      <div v-for="i in 3" :key="i" class="rounded-card bg-teal-mist p-5 text-center">
+        <div class="mx-auto flex h-10 w-10 items-center justify-center rounded-full bg-teal-accent text-lg text-white">
+          {{ ['◈', '⚑', '◉'][i - 1] }}
+        </div>
+        <p class="mt-3 text-sm leading-relaxed text-navy" v-html="t(`connect.value.${i}`)" />
+      </div>
     </div>
 
-    <UiAlert v-if="!configured" tone="warn" class="mt-5">
+    <UiAlert v-if="!configured" tone="warn" class="mt-8">
       <strong>{{ t('connect.notConfiguredTitle') }}</strong>
       {{ t('connect.notConfigured') }}
     </UiAlert>
-
-    <UiAlert v-else-if="wallet.isConnected && !wallet.isCorrectChain" tone="warn" class="mt-5">
+    <UiAlert v-else-if="wallet.isConnected && !wallet.isCorrectChain" tone="warn" class="mt-8">
       {{ t('connect.wrongChain', { chain: CHAIN_NAME }) }}
     </UiAlert>
-
     <UiAlert v-if="wallet.error" tone="warn" class="mt-3">{{ wallet.error }}</UiAlert>
   </div>
 </template>
@@ -51,7 +52,6 @@
 import { watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import UiCard from '@/components/ui/UiCard.vue'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiAlert from '@/components/ui/UiAlert.vue'
 import { CHAIN_NAME, isConfigured } from '@/lib/constants'

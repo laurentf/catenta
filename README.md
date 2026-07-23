@@ -55,7 +55,7 @@ labo · praticien · distributeur · Ordre/ARS   IPFS (docs) · PII hors chaîne
 └─────────────┘ └─────────────┘ └─────────────┘ └──────────────┘  └──────────────┘
 ```
 
-**Ce qui doit survivre vit dans un stockage permanent ; ce qui évoluera vit dans un module qu'on peut remplacer.** Les jetons ne portent que l'immuable (lot d'origine, empreinte du dossier de conformité, figés au mint) ; les statuts vivent dans le module. **Aucun contrat ne connaît l'adresse d'un pair** : chacun demande un rôle à `CatentaRoles`. Conséquence directe — ajouter le rappel ou la caution ne touche aucun contrat existant : on déploie, on accorde un rôle.
+**Ce qui doit survivre vit dans un stockage permanent ; ce qui évoluera vit dans un module qu'on peut remplacer.** Les jetons ne portent que l'immuable (lot d'origine, empreinte du dossier de conformité, figés au mint) ; les statuts vivent dans le module. **Aucun contrat ne connaît l'adresse d'un pair** : chacun demande un rôle à `CatentaRoles`. Conséquence directe — ajouter le rappel ou la caution ne touche aucun contrat existant : on déploie, on accorde un rôle. **Plusieurs administrateurs sans multiplier la racine** : l'agrément des acteurs est délégué à un `REGISTRAR_ROLE` (donnable à X opérateurs), la racine `DEFAULT_ADMIN` restant unique pour les rôles sensibles ([SPEC §2](docs/SPEC.md)).
 
 **Tout ce qui peut venir d'OpenZeppelin en vient.** Le code écrit à la main se limite à la logique métier dentaire — machine à états, handoff, rappel dérivé, comptabilité de la caution et du crédit d'usage. Le reste (standards de jetons, rôles, réentrance, pause, signatures, ensembles, preuves de Merkle) provient de contrats audités. Conséquence directe : **10 des 17 parades du tableau des attaques sont fournies par la librairie**, et la surface de code non auditée se réduit à ce qui est propre au métier — là où se concentre l'effort de test.
 
@@ -75,6 +75,38 @@ labo · praticien · distributeur · Ordre/ARS   IPFS (docs) · PII hors chaîne
 | Réseau | Sepolia, contrats vérifiés sur Etherscan |
 
 Ces choix reprennent **délibérément** la stack éprouvée du projet précédent (`alyra-blockchain-projet-1`) : le temps disponible doit aller dans la logique métier, pas dans la découverte d'outils. Les conventions correspondantes sont figées dans **[docs/CONVENTIONS.md](docs/CONVENTIONS.md)**.
+
+## OpenZeppelin — capitaliser sur l'audité (C3)
+
+**Principe : tout ce qu'OpenZeppelin fournit est pris chez OpenZeppelin.** Le code écrit à la main se limite à la **logique métier dentaire** ; standards de jetons, contrôle d'accès, réentrance, pause, signatures, ensembles, preuves de Merkle viennent de contrats audités et attendus par le référentiel. Corollaire assumé : **aucun module n'est importé pour faire nombre** — chaque ligne dit ce qu'il remplace, et les modules écartés sont documentés avec leur raison ([SPEC §8.7](docs/SPEC.md)).
+
+### Ce qui est déjà en place (v0)
+
+| Notre contrat | Modules OpenZeppelin | Ce qu'ils rendent effectif, et pourquoi |
+|---|---|---|
+| `CatentaRoles` | `AccessControlEnumerable` | les rôles (RBAC) **et** l'énumération des titulaires (`getRoleMember`) — la vue `/admin` liste les agréés **sans indexeur**. `_setRoleAdmin` délègue l'agrément au `REGISTRAR_ROLE` |
+| `PassportNFT` | `ERC721` · `ERC721Enumerable` | le passeport ; `tokenOfOwnerByIndex` liste les passeports d'un cabinet **sans indexeur** ; `_update` surchargé = **soulbound** (tous les chemins de transfert y passent) |
+| `MaterialLots` | `ERC1155` · `ERC1155Supply` · `ERC1155Burnable` | un lot = une quantité semi-fongible ; `totalSupply(lotId)` **est** la quantité restante, gratuitement ; burn de la matière au mint |
+| `CatentaCredit` | `ERC20` | le crédit d'usage `$CATENTA` ; `_update` surchargé = **non transférable** (pas de marché, pas de cours) ; `decimals()=0` |
+| tous | `IERC165`, hooks internes | `supportsInterface`, `_update`, `_increaseBalance` surchargés proprement — les **coutures** que l'on teste une par une |
+
+### Ce qui est planifié (v1 / v2)
+
+| Besoin | Module OpenZeppelin | Jalon |
+|---|---|---|
+| Réentrance sur la caution | `ReentrancyGuardTransient` (EIP-1153, ~18 k gas de moins) | v1 |
+| Frein d'urgence (mint + rappel) | `Pausable` | v1 |
+| Accusés de réception « X/Y acteurs » | `EnumerableSet.AddressSet` | v1 |
+| Dépôt de caution en 1 transaction | `ERC20Permit` (EIP-2612) | v1 |
+| Batch (10 lots en 1 tx) | `Multicall` | v1 |
+| Caution en stablecoin externe | `IERC20` · `SafeERC20` | v1 |
+| Durcissement admin (transfert 2 temps + délai) | `AccessControlDefaultAdminRules` · `TimelockController` | v1 / v2 |
+| Admission déléguée à l'échelle (44 000 praticiens) | `EIP712` · `SignatureChecker` · `Nonces` — ou `MerkleProof` | v2 |
+| Meta-transactions (cabinets sans ETH) | `ERC2771Context` | v2 |
+
+### La conséquence, en une ligne
+
+**Dix des dix-sept parades du [tableau des attaques](docs/SPEC.md) sont fournies par la librairie.** La surface de code non auditée se réduit à ce qui est propre au métier — et c'est là que se concentre l'effort de test. Version **épinglée** (pas de caret), **imports nommés**, et on **ne rejoue pas** la suite de tests d'OpenZeppelin (cela gonflerait la couverture sans rien démontrer). Inventaire complet, module par module, et modules écartés : **[SPEC §8.4 / §8.7](docs/SPEC.md)**.
 
 ## Arborescence cible
 
@@ -176,6 +208,7 @@ VITE_LIFECYCLE_ADDRESS=0x…      # l'adresse LifecycleModule
 | **[docs/SPEC.md](docs/SPEC.md)** | Spécification fonctionnelle et technique — acteurs, cycle de vie, contrats, tableau des attaques, arbitrages ouverts |
 | **[docs/CONVENTIONS.md](docs/CONVENTIONS.md)** | Conventions de code — Solidity, tests, front, CI/CD, Git |
 | **[docs/ROADMAP.md](docs/ROADMAP.md)** | Découpage v0 / v1 / v2, chiffrage, risques, **évaluation de ce qui est réellement faisable** |
+| **[docs/TODO.md](docs/TODO.md)** | Checklist actionnable — **le rappel de lot en tête**, puis caution, CI, tests, durcissement |
 | **[docs/ETUDE_GALEON.md](docs/ETUDE_GALEON.md)** | Étude du comparable français (blockchain santé) : modèle de jeton, modèle économique, ce qu'on en reprend et ce qu'on en écarte — **et comment répondre au jury** |
 | **[docs/RAPPORT_V0.md](docs/RAPPORT_V0.md)** | Rapport d'implémentation du socle v0 — état vérifié, choix, avantages et limites, écrit pour être défendu |
 | **[web/README.md](web/README.md)** | La dApp — configuration `.env`, lancement, architecture, lecture on-chain sans indexeur |

@@ -1,5 +1,5 @@
 {
-  "footer": "Catenta — on-chain dental passport · a neutral registry between competing actors",
+  "footer": "Catenta · the on-chain passport of every dental prosthesis, from lab to placement",
   "common": {
     "loading": "Loading…",
     "close": "Close",
@@ -9,7 +9,8 @@
   "nav": {
     "passports": "Passports",
     "lots": "Lots",
-    "admin": "Administration"
+    "admin": "Administration",
+    "architecture": "Architecture"
   },
   "roles": {
     "ADMIN": "Administrator",
@@ -55,7 +56,14 @@
     "network": "Expected network: {chain}",
     "wrongChain": "Your wallet is on another network. Switch to {chain} to continue.",
     "notConfiguredTitle": "Application not configured.",
-    "notConfigured": "The LifecycleModule address is missing: set VITE_LIFECYCLE_ADDRESS in the .env file, then reload."
+    "notConfigured": "The LifecycleModule address is missing: set VITE_LIFECYCLE_ADDRESS in the .env file, then reload.",
+    "tagline": "The tamper-proof passport of every dental prosthesis — from lab to placement.",
+    "value": {
+      "1": "<b>One passport per prosthesis</b>, non-transferable, from lab to placement.",
+      "2": "<b>Provable lot recall</b>, no loop, no delay.",
+      "3": "<b>Your role read on-chain</b> — the registry decides, not the UI."
+    },
+    "learnMore": "Understand the architecture"
   },
   "lots": {
     "eyebrow": "Raw material",
@@ -194,7 +202,7 @@
     "mintCredits": "Issue",
     "grantInitial": "Grant the initial 100",
     "creditHint": "The initial 100 can be granted only once per address. 'Issue' tops up freely.",
-    "creditsMinted": "{amount} credits issued.",
+    "creditsMinted": "Credits issued.",
     "initialGranted": "Initial 100 credits granted.",
     "notAllowed": "This view is reserved for the administrator and registrars.",
     "grantSubtitle": "Approve a laboratory, a practitioner or a distributor.",
@@ -202,7 +210,14 @@
     "rootSubtitle": "Root only: appoint a registrar or the regulator (Ordre / ARS).",
     "rootHint": "A registrar can onboard actors without being an administrator. Only the root appoints them — the 'govern vs operate' split.",
     "rootMembersTitle": "Operators & regulator",
-    "rootMembersSubtitle": "Holders of the sensitive roles, managed by the root alone."
+    "rootMembersSubtitle": "Holders of the sensitive roles, managed by the root alone.",
+    "tabs": {
+      "onboard": "Onboard an actor",
+      "operators": "Operators & regulator",
+      "credits": "$CATENTA credits",
+      "system": "Contracts & roles"
+    },
+    "tabLocked": "Root administrator only."
   },
   "errors": {
     "rejected": "Signature rejected in the wallet.",
@@ -231,5 +246,37 @@
   "credits": {
     "unit": "credits",
     "tooltip": "$CATENTA usage credits · {cost} per action. Non-transferable, unlisted — a prepaid allowance, not an investment."
+  },
+  "toast": {
+    "pending": "Transaction pending…",
+    "viewTx": "View transaction"
+  },
+  "arch": {
+    "subtitle": "A neutral registry, shared between competing actors — how it is built.",
+    "tokensTitle": "One token standard per need",
+    "tokensSubtitle": "No decorative token: each standard makes a feature effective that would not exist without it.",
+    "soon": "coming",
+    "tokens": {
+      "passport": {
+        "need": "The device passport",
+        "why": "Soulbound ERC-721: one token = one prosthesis, non-transferable, bound to a patient, not an asset."
+      },
+      "lots": {
+        "need": "The material lots",
+        "why": "ERC-1155: a semi-fungible quantity per lot, burned at manufacturing — the matter → device link."
+      },
+      "credit": {
+        "need": "The $CATENTA usage credit",
+        "why": "Non-transferable ERC-20: a prepaid allowance, burned on each action. Never sold, never listed."
+      },
+      "bond": {
+        "need": "The quality bond",
+        "why": "External ERC-20 (stablecoin): staked by the lab, slashable on recall. Never a home-made token."
+      }
+    },
+    "whatTitle": "What the registry does",
+    "rolesTitle": "The actors",
+    "layersTitle": "Three decoupled layers",
+    "layers": "One <b>role authority</b>; <b>permanent stores</b> (passports, lots, credits) never replaced; <b>replaceable modules</b> carrying the logic. No contract knows a peer's address — everything goes through roles. Result: a feature (recall, bond) is added without redeploying the rest."
   }
 }

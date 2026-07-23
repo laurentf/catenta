@@ -43,9 +43,6 @@
           <UiButton type="submit" :loading="busy" :disabled="!canMint">
             {{ t('passports.mint') }}
           </UiButton>
-          <span v-if="feedback" class="text-sm" :class="ok ? 'text-teal-deep' : 'text-amber-deep'">
-            {{ feedback }}
-          </span>
         </div>
       </form>
     </UiCard>
@@ -131,6 +128,7 @@ import { usePassportsStore } from '@/stores/passports'
 import { useLotsStore } from '@/stores/lots'
 import { useRolesStore } from '@/stores/roles'
 import { useWalletStore } from '@/stores/wallet'
+import { useToastsStore } from '@/stores/toasts'
 
 const { t } = useI18n()
 const catenta = useCatentaStore()
@@ -138,6 +136,7 @@ const passports = usePassportsStore()
 const lots = useLotsStore()
 const roles = useRolesStore()
 const wallet = useWalletStore()
+const toasts = useToastsStore()
 
 const scopes = ['mine', 'all'] as const
 type Scope = (typeof scopes)[number]
@@ -148,8 +147,6 @@ const lotId = ref('')
 const quantity = ref('')
 const conformityHash = ref('')
 const busy = ref(false)
-const feedback = ref('')
-const ok = ref(false)
 
 const myLots = computed(() =>
   lots.list.filter((l) => eqAddress(l.lab, wallet.address) && l.mine > 0n),
@@ -168,20 +165,18 @@ function setScope(s: Scope) {
 
 async function submitMint() {
   busy.value = true
-  feedback.value = ''
   try {
-    await passports.mintPassport(Number(lotId.value), BigInt(quantity.value), conformityHash.value)
-    ok.value = true
-    feedback.value = t('passports.minted')
+    await toasts.run(
+      () => passports.mintPassport(Number(lotId.value), BigInt(quantity.value), conformityHash.value),
+      { pending: t('toast.pending'), success: t('passports.minted'), error: (err) => t(parseError(err).key) },
+    )
     lotId.value = ''
     quantity.value = ''
     conformityHash.value = ''
     showForm.value = false
     await Promise.all([reload(), lots.load()])
-  } catch (err) {
-    ok.value = false
-    const { key, raw } = parseError(err)
-    feedback.value = raw ? `${t(key)} (${raw})` : t(key)
+  } catch {
+    /* toast déjà affiché */
   } finally {
     busy.value = false
   }

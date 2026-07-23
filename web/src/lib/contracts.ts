@@ -165,8 +165,10 @@ export type RoleKey = keyof typeof ROLE
 
 /** Rôles d'acteurs agréables par un registrar (ou l'admin). */
 export const ONBOARDABLE_ROLES: RoleKey[] = ['LAB', 'PRACTITIONER', 'DISTRIBUTOR']
-/** Rôles sensibles réservés à la racine (DEFAULT_ADMIN). */
-export const ROOT_MANAGED_ROLES: RoleKey[] = ['REGISTRAR', 'REGULATOR']
+/** Rôles opérationnels sensibles, gérés par la seule racine (DEFAULT_ADMIN) —
+ *  y compris l'émission de crédits, qui est un acte humain (le pont
+ *  abonnement → crédits est hors chaîne), pas un rôle réservé aux contrats. */
+export const ROOT_MANAGED_ROLES: RoleKey[] = ['REGISTRAR', 'REGULATOR', 'CREDIT_MINTER']
 /** Tous les rôles humains affichés dans /admin. */
 export const ACTOR_ROLES: RoleKey[] = ['LAB', 'PRACTITIONER', 'DISTRIBUTOR', 'REGULATOR', 'REGISTRAR']
 /** Les rôles accordés à des contrats — affichés en lecture seule. */
@@ -175,7 +177,6 @@ export const MODULE_ROLES: RoleKey[] = [
   'PASSPORT_CONTROLLER',
   'LOT_MINTER',
   'LOT_BURNER',
-  'CREDIT_MINTER',
   'CREDIT_SPENDER',
 ]
 

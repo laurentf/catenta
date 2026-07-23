@@ -1,5 +1,6 @@
 <template>
   <RouterView />
+  <ToastHost />
 </template>
 
 <script setup lang="ts">
@@ -9,6 +10,7 @@ import { useWalletStore } from '@/stores/wallet'
 import { useCatentaStore } from '@/stores/catenta'
 import { useRolesStore } from '@/stores/roles'
 import { useCreditsStore } from '@/stores/credits'
+import ToastHost from '@/components/ui/ToastHost.vue'
 
 const wallet = useWalletStore()
 const catenta = useCatentaStore()

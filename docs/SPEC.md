@@ -282,6 +282,14 @@ function burnForManufacturing(address from, uint64 lotId, uint256 qty)   // ✅ 
     external;
 function lotOf(uint64 lotId) external view returns (LotInfo memory);     // ✅
 function totalSupply(uint256 lotId) external view returns (uint256);     // ✅ = quantité restante
+
+// ---- CatentaCredit (ERC-20, $CATENTA, décimales 0) ----
+function grantInitialCredits(address to) external;                       // ✅ CREDIT_MINTER_ROLE (100, 1×)
+function mintCredits(address to, uint256 amount) external;               // ✅ CREDIT_MINTER_ROLE
+function spend(address from, uint256 amount) external;                   // ✅ CREDIT_SPENDER_ROLE (burn)
+function balanceOf(address account) external view returns (uint256);     // ✅
+function hasReceivedInitial(address account) external view returns (bool);// ✅
+// transferts bloqués : _update n'autorise que mint et burn (§8.3bis)
 ```
 
 ### 7.2 Modules
@@ -297,7 +305,10 @@ function markPlaced(uint256 tokenId, bytes32 patientCommitment) external;// ✅ 
 function initiateHandoff(uint256 tokenId, address to) external;          // ✅ détenteur
 function acceptHandoff(uint256 tokenId) external;                        // ✅ destinataire armé
 function statusOf(uint256 tokenId) external view returns (Status);       // ✅ statut brut
+function setActionCost(uint256 cost) external;                           // ✅ DEFAULT_ADMIN (0 = gratuit)
+function actionCost() external view returns (uint256);                   // ✅ crédits/action (défaut 1)
 function reportIncident(uint256 tokenId, bytes32 evidenceHash) external;
+// chaque action utile ci-dessus brûle `actionCost` crédit(s) via costsCredit (§8.3bis)
 
 // ---- RecallModule (v1) ----
 function declareRecall(uint64 lotId, bytes32 evidenceHash) external;     // REGULATOR_ROLE
@@ -340,11 +351,17 @@ event HandoffArmed(                                                      // ✅
 event LotDeclared(                                                       // ✅
     uint64 indexed lotId, address indexed lab, bytes32 certHash, uint256 quantity);
 
+// ---- CatentaCredit ----                                   (+ Transfer d'ERC-20)
+event InitialCreditsGranted(address indexed account, uint256 amount);   // ✅
+event CreditsMinted(address indexed account, uint256 amount);           // ✅
+event CreditsSpent(address indexed account, uint256 amount);            // ✅
+
 // ---- LifecycleModule ----
 event MaterialConsumed(uint256 indexed tokenId, uint64 indexed lotId, uint256 quantity); // ✅
 event ConformityAttested(uint256 indexed tokenId, address indexed practitioner);         // ✅
 event PlacedInMouth(                                                                     // ✅
     uint256 indexed tokenId, address indexed practitioner, bytes32 patientCommitment);
+event ActionCostUpdated(uint256 previousCost, uint256 newCost);          // ✅
 event IncidentReported(uint256 indexed tokenId, address indexed practitioner, bytes32 evidenceHash);
 
 // ---- RecallModule (v1) ----
@@ -583,15 +600,24 @@ La question se pose naturellement : une adresse `0x3Ee3…` toute nue est illisi
 
 #### 9.4.2 L'identité est vérifiée à l'agrément, pas stockée
 
-Le lien de responsabilité existe déjà **sans** stocker le nom : l'admin n'accorde `LAB_ROLE` / `PRACTITIONER_ROLE` à une adresse qu'**après** avoir contrôlé, hors chaîne, le RPPS, le SIRET, la déclaration ANSM.
+Le lien de responsabilité existe déjà **sans** stocker le nom : un **agent d'agrément** (`REGISTRAR_ROLE`) n'accorde `LAB_ROLE` / `PRACTITIONER_ROLE` à une adresse qu'**après** avoir contrôlé, hors chaîne, le RPPS, le SIRET, la déclaration ANSM.
 
-> L'appartenance au rôle **est** le lien de responsabilité : *« cette adresse porte le rôle, accordé par l'admin qui a vérifié les papiers »*. Le registre n'a pas besoin de re-stocker l'identité.
+> L'appartenance au rôle **est** le lien de responsabilité : *« cette adresse porte le rôle, accordé par un agent d'agrément qui a vérifié les papiers »*. Le registre n'a pas besoin de re-stocker l'identité.
+
+**RBAC suffit pour tout le monde, sauf une échelle qu'on n'a pas.** L'agrément par `grantRole` (délégué au `REGISTRAR_ROLE`, §2) couvre régulateurs, distributeurs, laboratoires, et les praticiens à l'échelle d'un pilote ou du projet de certification. Le seul cas où il ne passe pas est **la France entière** : ~44 000 praticiens ne s'inscrivent pas un par un. C'est le **seul** motif d'introduire un mécanisme d'admission déléguée — et c'est un sujet de **v2**, pas du socle.
 
 #### 9.4.3 Trois niveaux, du plus léger au plus fort
 
 **Niveau 1 — annuaire off-chain (affichage).** Une table `adresse → {nom, RPPS, SIRET}` maintenue par le consortium, symétrique de la fiche patient : effaçable, corrigeable, gratuite en gas. Le front l'interroge pour **afficher un nom au lieu d'une adresse**. Aucun changement de contrat — le front résout un JSON d'annuaire, exactement là où il affiche aujourd'hui `shortAddress`.
 
-**Niveau 2 — ancrage cryptographique par racine de Merkle (le mécanisme retenu).** Pour prouver on-chain *« cette adresse = un professionnel réellement inscrit »* **sans** annuaire de confiance :
+**Niveau 2 — admission déléguée à l'échelle (v2), deux options.** Pour inscrire les 44 000 praticiens sans 44 000 transactions payées par le régulateur, on délègue l'admission — RBAC reste dessous, on ne fait que le *peupler* autrement. Deux mécanismes, et **le second est probablement le meilleur pour notre annuaire vivant** :
+
+- **2a — racine de Merkle** : le régulateur publie **une racine** de l'annuaire, chaque praticien réclame son rôle en prouvant son inscription. Idéal pour un **snapshot statique**, lourd si l'annuaire bouge (révoquer = republier tout l'arbre).
+- **2b — admission signée EIP-712** *(recommandée)* : le régulateur signe hors chaîne « cette adresse peut réclamer le rôle » ; le praticien présente la signature, le contrat l'accorde. Révocation par `nonce`/expiration, **sans recalculer d'arbre** — ce qui colle à un annuaire qui change en permanence (installations, départs). Briques OZ : `EIP712` + `SignatureChecker` + `Nonces`.
+
+Les deux préservent le RGPD (aucun nom ni RPPS en clair) et laissent le gas au réclamant. Détail du départage Merkle vs EIP-712 : voir la revue consultants ([Catenta_Revue_v0.pdf](Catenta_Revue_v0.pdf), slide « Gérer les acteurs »).
+
+Illustration avec l'option Merkle (2a) :
 
 - le régulateur (`REGULATOR_ROLE`) publie **une seule racine de Merkle** de l'annuaire officiel de l'Ordre / RPPS — une écriture, quel que soit le nombre de praticiens ;
 - chaque praticien **réclame son rôle lui-même** en prouvant son inscription : `claimRole(bytes32[] proof)` vérifie l'appartenance de `keccak256(msg.sender ‖ rppsCommitment)` à l'arbre, et attribue `PRACTITIONER_ROLE` à `msg.sender` ;
@@ -625,14 +651,14 @@ function claimPractitioner(bytes32 _rppsCommitment, bytes32[] calldata _proof) e
 }
 ```
 
-Ce niveau règle **trois problèmes d'un coup** : le passage à l'échelle (une écriture au lieu de 44 000 `grantRole`), la neutralité (le régulateur atteste l'annuaire, il n'adoube pas les acteurs un par un), et le RGPD (aucun nom, aucun RPPS en clair — la feuille est une empreinte salée, l'arbre reste off-chain). C'est aussi l'attaque **n°16** du tableau §10 et le module `MerkleProof` de l'inventaire §8.4.
+Ce niveau règle **trois problèmes d'un coup** : le passage à l'échelle (une écriture au lieu de 44 000 `grantRole`), la neutralité (le régulateur atteste l'annuaire, il n'adoube pas les acteurs un par un), et le RGPD (aucun nom, aucun RPPS en clair — la feuille est une empreinte salée, l'arbre reste off-chain). C'est l'attaque **n°16** du tableau §10 et le module `MerkleProof` de l'inventaire §8.4 — à mettre en balance avec l'option EIP-712 (2b) ci-dessus.
 
 **Niveau 3 — empreinte des credentials au grant (trace d'audit).** À l'agrément, émettre un event portant `keccak256(sel ‖ credentials)` : trace immuable de *« à cette date, ces pièces ont été vérifiées »*, sans les pièces en clair. Complémentaire des niveaux 1-2, utile si un audit doit prouver *a posteriori* la diligence de l'agrément.
 
 #### 9.4.4 Recommandation
 
 - **Laboratoire** : SIRET stockable on-chain sans risque RGPD si une lecture sans annuaire est souhaitée ; sinon niveau 1.
-- **Praticien** : **jamais** le RPPS en clair. **Niveau 2 (Merkle) retenu** pour la preuve à l'échelle, niveau 1 pour l'affichage confortable, niveau 3 pour la trace d'audit.
+- **Praticien** : **jamais** le RPPS en clair. **RBAC (via `REGISTRAR_ROLE`) par défaut** ; à l'échelle nationale seulement, admission déléguée en v2 — **EIP-712 (2b) de préférence** à Merkle pour un annuaire vivant. Niveau 1 pour l'affichage confortable, niveau 3 pour la trace d'audit.
 
 > Le raccourci d'oral : *« on identifie les acteurs à l'agrément, hors chaîne ; la chaîne n'en garde que le rôle et une racine de Merkle — jamais le nom ni le RPPS d'un praticien, pour la même raison qu'on ne met pas le patient. La cohérence de la doctrine RGPD, c'est qu'elle vaut pour tout le monde. »*
 
@@ -732,7 +758,7 @@ Détail des conventions dans [CONVENTIONS.md §3](CONVENTIONS.md). En résumé :
 | D4 | Qui paie le gas ? | chaque acteur / relayeur ERC-2771 | **chaque acteur en v1** (démo) ; meta-transactions documentées en v2 comme condition d'adoption réelle |
 | D5 | Montant de caution : fixe ou proportionnel au volume ? | fixe / par lot | **fixe en v1** ; le proportionnel ajoute une comptabilité par lot pour peu de valeur pédagogique |
 | D6 | Multisig admin dès Sepolia ? | EOA / Safe | **Safe si le temps le permet** — sinon documenter la limite explicitement (attaque n°13) |
-| D7 | Identité des acteurs on-chain ? | rien / annuaire off-chain / racine de Merkle | **racine de Merkle pour les praticiens** (§9.4, niveau 2) + annuaire off-chain pour l'affichage ; **jamais** le RPPS en clair. SIRET du labo tolérable on-chain (entité légale) |
+| D7 | Identité des acteurs on-chain ? | rien / annuaire off-chain / Merkle / EIP-712 | **RBAC via `REGISTRAR_ROLE` par défaut** (§2) ; admission déléguée seulement à l'échelle nationale (v2), **EIP-712 de préférence** à Merkle (§9.4). Annuaire off-chain pour l'affichage ; **jamais** le RPPS en clair ; SIRET du labo tolérable on-chain |
 | D8 | Crédit d'usage : brûlé ou recyclé ? | burn / recyclage vers un pot | **brûlé** (§8.3bis) — recycler ferait du crédit une monnaie qui circule (comptabilité, gouvernance, risque réglementaire). Récompenses par mint bonus, plus tard |
 
 Ces six points doivent être tranchés **avant l'écriture du premier contrat** : chacun a un impact structurel.

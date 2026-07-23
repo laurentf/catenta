@@ -3,8 +3,8 @@
     <header class="border-b border-slate-line bg-white/90 backdrop-blur">
       <div class="mx-auto flex max-w-6xl flex-wrap items-center gap-4 px-5 py-4">
         <RouterLink to="/passports" class="flex items-center gap-2.5">
-          <img src="/favicon.svg" alt="" class="h-8 w-8" />
-          <span class="text-lg font-extrabold tracking-tight text-teal">Catenta</span>
+          <img src="/logo.svg" alt="" class="gem-float h-8 w-auto" />
+          <span class="wordmark text-2xl">catenta</span>
         </RouterLink>
 
         <nav class="flex flex-1 flex-wrap items-center gap-1">

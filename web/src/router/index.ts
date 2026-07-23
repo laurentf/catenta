@@ -17,6 +17,7 @@ const router = createRouter({
       component: ConnectLayout,
       children: [
         { path: '', name: 'connect', component: () => import('@/views/ConnectView.vue') },
+        { path: 'architecture', name: 'architecture', component: () => import('@/views/ArchitectureView.vue') },
       ],
     },
     {

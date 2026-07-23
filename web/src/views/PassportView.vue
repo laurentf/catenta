@@ -108,9 +108,6 @@
           </UiButton>
         </div>
 
-        <p v-if="feedback" class="mt-4 text-sm" :class="ok ? 'text-teal-deep' : 'text-amber-deep'">
-          {{ feedback }}
-        </p>
       </UiCard>
 
       <UiAlert v-if="p.pendingHandoff" tone="warn" class="mt-5">
@@ -141,6 +138,7 @@ import { ZERO_ADDRESS } from '@/lib/constants'
 import { eqAddress, formatDate, isAddress } from '@/lib/format'
 import { useCatentaStore } from '@/stores/catenta'
 import { usePassportsStore } from '@/stores/passports'
+import { useToastsStore } from '@/stores/toasts'
 import { useRolesStore } from '@/stores/roles'
 import { useWalletStore } from '@/stores/wallet'
 
@@ -148,6 +146,7 @@ const { t } = useI18n()
 const route = useRoute()
 const catenta = useCatentaStore()
 const passports = usePassportsStore()
+const toasts = useToastsStore()
 const roles = useRolesStore()
 const wallet = useWalletStore()
 
@@ -155,8 +154,6 @@ const id = computed(() => Number(route.params.id))
 const p = computed(() => passports.current)
 
 const busy = ref<string | null>(null)
-const feedback = ref('')
-const ok = ref(false)
 const showHandoff = ref(false)
 const showPlace = ref(false)
 const recipient = ref('')
@@ -220,19 +217,18 @@ const actions = computed<Action[]>(() => {
 
 async function run(key: string, fn: () => Promise<string>) {
   busy.value = key
-  feedback.value = ''
   try {
-    await fn()
-    ok.value = true
-    feedback.value = t('common.done')
+    await toasts.run(fn, {
+      pending: t('toast.pending'),
+      success: t('common.done'),
+      error: (err) => t(parseError(err).key),
+    })
     showHandoff.value = false
     showPlace.value = false
     recipient.value = ''
     commitment.value = ''
-  } catch (err) {
-    ok.value = false
-    const { key: msgKey, raw } = parseError(err)
-    feedback.value = raw ? `${t(msgKey)} (${raw})` : t(msgKey)
+  } catch {
+    /* toast déjà affiché */
   } finally {
     busy.value = null
   }
