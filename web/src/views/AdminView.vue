@@ -4,7 +4,7 @@
     <h1 class="mt-2">{{ t('admin.title') }}</h1>
     <p class="subtitle">{{ t('admin.subtitle') }}</p>
 
-    <UiAlert v-if="!roles.isAdmin && !roles.isRegistrar" tone="warn" class="mt-6">
+    <UiAlert v-if="!roles.isAdmin && !roles.isRegistrar && !roles.isCreditMinter" tone="warn" class="mt-6">
       {{ t('admin.notAllowed') }}
     </UiAlert>
 
@@ -80,7 +80,7 @@
         </div>
       </template>
 
-      <!-- Crédits $CATENTA : racine uniquement -->
+      <!-- Crédits $CATENTA : racine ou émetteur de crédits (CREDIT_MINTER) -->
       <template v-else-if="tab === 'credits'">
         <UiCard tone="mint" :title="t('admin.creditsFormTitle')" :subtitle="t('admin.creditsSubtitle')" badge="◈">
           <form class="grid gap-4 sm:grid-cols-[1fr_140px_auto]" @submit.prevent="mintCredits">
@@ -143,7 +143,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, ref, watch, watchEffect } from 'vue'
 import { useI18n } from 'vue-i18n'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiButton from '@/components/ui/UiButton.vue'
@@ -170,15 +170,24 @@ const credits = useCreditsStore()
 const toasts = useToastsStore()
 
 const tab = ref('onboard')
-const tabs = computed<TabDef[]>(() => {
-  const locked = !roles.isAdmin
-  const hint = t('admin.tabLocked')
-  return [
-    { key: 'onboard', label: t('admin.tabs.onboard') },
-    { key: 'operators', label: t('admin.tabs.operators'), locked, hint },
-    { key: 'credits', label: t('admin.tabs.credits'), locked, hint },
-    { key: 'system', label: t('admin.tabs.system'), locked, hint },
-  ]
+const hint = computed(() => t('admin.tabLocked'))
+// Chaque onglet s'ouvre pour la capacité qui lui correspond ; les autres
+// restent affichés mais grisés (cadenas). La racine a tout.
+const tabs = computed<TabDef[]>(() => [
+  { key: 'onboard', label: t('admin.tabs.onboard'), locked: !(roles.isAdmin || roles.isRegistrar), hint: hint.value },
+  { key: 'operators', label: t('admin.tabs.operators'), locked: !roles.isAdmin, hint: hint.value },
+  { key: 'credits', label: t('admin.tabs.credits'), locked: !(roles.isAdmin || roles.isCreditMinter), hint: hint.value },
+  { key: 'system', label: t('admin.tabs.system'), locked: !roles.isAdmin, hint: hint.value },
+])
+
+// Si l'onglet actif est verrouillé pour ce compte, basculer sur le premier
+// onglet réellement utilisable (ex. un émetteur de crédits arrive sur Crédits).
+watchEffect(() => {
+  const current = tabs.value.find((x) => x.key === tab.value)
+  if (current?.locked) {
+    const open = tabs.value.find((x) => !x.locked)
+    if (open) tab.value = open.key
+  }
 })
 
 const role = ref<RoleKey>('LAB')

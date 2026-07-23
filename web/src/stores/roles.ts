@@ -41,10 +41,11 @@ export const useRolesStore = defineStore('roles', () => {
   const isRegulator = computed(() => held.value.REGULATOR)
   const isDistributor = computed(() => held.value.DISTRIBUTOR)
   const isRegistrar = computed(() => held.value.REGISTRAR)
+  const isCreditMinter = computed(() => held.value.CREDIT_MINTER)
 
   /** Les rôles de l'utilisateur, pour l'affichage. */
   const myRoles = computed<RoleKey[]>(() =>
-    (['ADMIN', ...ACTOR_ROLES] as RoleKey[]).filter((r) => held.value[r]),
+    (['ADMIN', ...ACTOR_ROLES, 'CREDIT_MINTER'] as RoleKey[]).filter((r) => held.value[r]),
   )
   /** Aucun rôle : spectateur, lecture seule. */
   const isSpectator = computed(() => myRoles.value.length === 0)
@@ -56,7 +57,7 @@ export const useRolesStore = defineStore('roles', () => {
 
     loading.value = true
     try {
-      const keys: RoleKey[] = ['ADMIN', ...ACTOR_ROLES]
+      const keys: RoleKey[] = ['ADMIN', ...ACTOR_ROLES, 'CREDIT_MINTER']
       const results = await Promise.all(
         keys.map((k) => c.roles.hasRole(ROLE[k], account) as Promise<boolean>),
       )
@@ -127,6 +128,7 @@ export const useRolesStore = defineStore('roles', () => {
     isRegulator,
     isDistributor,
     isRegistrar,
+    isCreditMinter,
     isSpectator,
     myRoles,
     refresh,

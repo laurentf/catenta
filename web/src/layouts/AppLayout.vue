@@ -87,7 +87,9 @@ const credits = useCreditsStore()
 
 const links = computed(() => {
   const base = [{ name: 'passports' }, { name: 'lots' }]
-  return roles.isAdmin || roles.isRegistrar ? [...base, { name: 'admin' }] : base
+  return roles.isAdmin || roles.isRegistrar || roles.isCreditMinter
+    ? [...base, { name: 'admin' }]
+    : base
 })
 
 function toggleLocale() {

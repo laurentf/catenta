@@ -217,7 +217,7 @@
       "credits": "$CATENTA credits",
       "system": "Contracts & roles"
     },
-    "tabLocked": "Root administrator only."
+    "tabLocked": "You lack the role required for this tab."
   },
   "errors": {
     "rejected": "Signature rejected in the wallet.",

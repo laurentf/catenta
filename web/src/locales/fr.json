@@ -217,7 +217,7 @@
       "credits": "Crédits $CATENTA",
       "system": "Contrats & rôles"
     },
-    "tabLocked": "Réservé à l'administrateur racine."
+    "tabLocked": "Rôle requis manquant pour cet onglet."
   },
   "errors": {
     "rejected": "Signature refusée dans le wallet.",
