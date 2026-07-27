@@ -3,6 +3,7 @@ pragma solidity 0.8.34;
 
 import {CatentaRoles} from "../access/CatentaRoles.sol";
 import {RoleAware} from "../access/RoleAware.sol";
+import {MaterialCatalog} from "../registry/MaterialCatalog.sol";
 import {CatentaCredit} from "../tokens/CatentaCredit.sol";
 import {MaterialLots} from "../tokens/MaterialLots.sol";
 import {PassportNFT} from "../tokens/PassportNFT.sol";
@@ -42,6 +43,8 @@ contract LifecycleModule is RoleAware {
     PassportNFT public immutable PASSPORTS;
     /// @notice The material lot store driven by this module.
     MaterialLots public immutable LOTS;
+    /// @notice The catalogue of materials a lot can be made of.
+    MaterialCatalog public immutable CATALOG;
     /// @notice The usage credit spent on each useful action.
     CatentaCredit public immutable CREDIT;
 
@@ -51,12 +54,55 @@ contract LifecycleModule is RoleAware {
     ///      later refinement and does not change the stores.
     uint256 public actionCost = 1;
 
+    /// @notice What became of a shipment.
+    /// @dev An enum rather than a "settled" boolean: accepted and cancelled are
+    ///      two very different facts, and a boolean conflates them. Storing the
+    ///      difference is what makes the custody history of a lot readable from
+    ///      storage alone - no event scan, no indexer.
+    enum ShipmentStatus {
+        Pending,
+        Accepted,
+        Cancelled
+    }
+
+    /// @notice A quantity of material on its way from one actor to the next.
+    /// @dev Slot 0 packs from (20) + status (1); slot 1 packs to (20) +
+    ///      lotId (8). The quantity takes the third.
+    struct Shipment {
+        address from;
+        ShipmentStatus status;
+        address to;
+        uint64 lotId;
+        uint256 quantity;
+    }
+
+    /// @notice Number of shipments declared since deployment.
+    uint256 public shipmentCount;
+
+    /// @dev shipmentId => the shipment record. Ids start at 1.
+    mapping(uint256 shipmentId => Shipment) private _shipments;
+
     /// @dev tokenId => current stage.
     mapping(uint256 tokenId => Status) private _status;
 
     /// @dev tokenId => salted commitment to the patient identity, set at
     ///      placement. Never a raw identity, never an unsalted hash.
     mapping(uint256 tokenId => bytes32) private _commitment;
+
+    /// @notice The clinical act itself: who placed the device, when, and where.
+    /// @dev Slot-packed: practitioner (20) + placedAt (5) + tooth (1) = 26
+    ///      bytes, one slot. Stored rather than left to the event, because a
+    ///      practitioner reading the passport must get "placed on DD/MM, tooth
+    ///      N, by whom" in a plain call - not by scanning logs a public RPC may
+    ///      refuse to serve.
+    struct Placement {
+        address practitioner;
+        uint40 placedAt;
+        uint8 tooth;
+    }
+
+    /// @dev tokenId => the clinical act. Zeroed until placement.
+    mapping(uint256 tokenId => Placement) private _placement;
 
     /// @notice Emitted when material is consumed to manufacture a device.
     /// @dev The business fact this module owns: it binds the ERC-1155 burn and
@@ -83,12 +129,42 @@ contract LifecycleModule is RoleAware {
     ///      Publishing it is safe precisely because it is salted (see below).
     /// @param tokenId The passport being placed.
     /// @param practitioner The practitioner who placed the device.
+    /// @param tooth The tooth it was placed on, in FDI notation.
     /// @param patientCommitment Salted commitment to the patient's identity.
     event PlacedInMouth(
         uint256 indexed tokenId,
         address indexed practitioner,
+        uint8 tooth,
         bytes32 patientCommitment
     );
+
+    /// @notice Emitted when a holder declares material shipped to an actor.
+    /// @param shipmentId The id of the shipment.
+    /// @param lotId The lot being shipped.
+    /// @param from The sender, who still holds the material until acceptance.
+    /// @param to The designated recipient.
+    /// @param quantity The quantity shipped.
+    event ShipmentDeclared(
+        uint256 indexed shipmentId,
+        uint64 indexed lotId,
+        address indexed from,
+        address to,
+        uint256 quantity
+    );
+
+    /// @notice Emitted when the recipient confirms reception and takes custody.
+    /// @dev The custody move itself is announced by the ERC-1155 store
+    ///      (TransferSingle) — only the business fact is repeated here.
+    /// @param shipmentId The id of the shipment.
+    /// @param lotId The lot received.
+    /// @param to The recipient that now holds the material.
+    event ShipmentAccepted(uint256 indexed shipmentId, uint64 indexed lotId, address indexed to);
+
+    /// @notice Emitted when the sender cancels a shipment nobody accepted.
+    /// @param shipmentId The id of the shipment.
+    /// @param lotId The lot that stays with the sender.
+    /// @param from The sender that cancelled it.
+    event ShipmentCancelled(uint256 indexed shipmentId, uint64 indexed lotId, address indexed from);
 
     /// @notice Emitted when the admin changes the per-action credit cost.
     /// @param previousCost The cost before the change.
@@ -99,12 +175,28 @@ contract LifecycleModule is RoleAware {
     error WrongStatus(uint256 tokenId, Status expected, Status current);
     /// @notice The lot id does not exist.
     error UnknownLot(uint64 lotId);
-    /// @notice Only the laboratory that declared the lot can consume it.
-    error NotLotOwner(uint64 lotId, address caller);
+    /// @notice A manufacturer can only declare lots of its own materials.
+    error NotMaterialOwner(uint32 materialId, address caller);
+    /// @notice The material is no longer produced; existing lots stay readable.
+    error MaterialDiscontinued(uint32 materialId);
+    /// @notice The caller does not hold enough of this lot to ship it.
+    error InsufficientMaterial(address holder, uint64 lotId, uint256 needed);
+    /// @notice A shipment to oneself is a no-op and is rejected.
+    error SelfShipment();
+    /// @notice The caller is not the designated recipient of this shipment.
+    error NotShipmentRecipient(uint256 shipmentId, address caller);
+    /// @notice The caller did not declare this shipment.
+    error NotShipmentSender(uint256 shipmentId, address caller);
+    /// @notice The shipment has already been accepted or cancelled.
+    error ShipmentSettled(uint256 shipmentId);
     /// @notice A quantity of zero would record a consumption that never happened.
     error ZeroQuantity();
+    /// @notice The quantity does not fit the passport's frozen traits.
+    error QuantityTooLarge(uint256 quantity);
     /// @notice A document fingerprint is required and cannot be empty.
     error EmptyHash();
+    /// @notice The tooth number is not valid FDI notation (ISO 3950).
+    error InvalidTooth(uint8 tooth);
     /// @notice The caller does not hold the passport.
     error NotPassportHolder(uint256 tokenId, address caller);
     /// @notice The recipient of a handoff must be an approved actor.
@@ -152,15 +244,18 @@ contract LifecycleModule is RoleAware {
     /// @param _roles The shared access authority.
     /// @param _passports The passport store.
     /// @param _lots The material lot store.
+    /// @param _catalog The catalogue of materials.
     /// @param _credit The usage credit token spent per action.
     constructor(
         CatentaRoles _roles,
         PassportNFT _passports,
         MaterialLots _lots,
+        MaterialCatalog _catalog,
         CatentaCredit _credit
     ) RoleAware(_roles) {
         PASSPORTS = _passports;
         LOTS = _lots;
+        CATALOG = _catalog;
         CREDIT = _credit;
     }
 
@@ -174,25 +269,124 @@ contract LifecycleModule is RoleAware {
     }
 
     // ==================================================
-    //                    LAB FUNCTIONS
+    //                MANUFACTURER FUNCTIONS
     // ==================================================
 
     /// @notice Declares a material lot with the fingerprint of its conformity
     ///         certificate (CE / ISO), kept off-chain.
+    /// @dev The manufacturer is the first link of the chain: it produces the
+    ///      raw material (blanks, discs, ingots) and is the only actor that can
+    ///      bring a lot into existence. A laboratory never declares a lot — it
+    ///      receives one and consumes it.
+    /// @param _materialId The catalogue entry the lot is made of.
     /// @param _certHash Fingerprint of the off-chain material certificate.
-    /// @param _quantity Quantity available in the lot, in the lab's own unit.
+    /// @param _quantity Quantity produced, in the material's own unit.
     /// @return lotId The id of the declared lot.
-    function declareLot(bytes32 _certHash, uint256 _quantity)
+    function declareLot(uint32 _materialId, bytes32 _certHash, uint256 _quantity)
         external
-        onlyRole(ROLES.LAB_ROLE())
+        onlyRole(ROLES.MANUFACTURER_ROLE())
         costsCredit
         returns (uint64 lotId)
     {
         require(_quantity > 0, ZeroQuantity());
         require(_certHash != bytes32(0), EmptyHash());
 
-        lotId = LOTS.declareLot(msg.sender, _certHash, _quantity);
+        // The catalogue check lives here, not in the store: business rules
+        // belong to the replaceable module, so MaterialLots keeps no dependency
+        // on the catalogue and both stores stay independent.
+        MaterialCatalog.Material memory material = CATALOG.materialOf(_materialId);
+        require(
+            material.manufacturer == msg.sender,
+            NotMaterialOwner(_materialId, msg.sender)
+        );
+        require(material.active, MaterialDiscontinued(_materialId));
+
+        lotId = LOTS.declareLot(msg.sender, _materialId, _certHash, _quantity);
     }
+
+    // ==================================================
+    //               SHIPMENT (2 STEPS)
+    // ==================================================
+
+    /// @notice Step 1: the holder declares a quantity of material shipped to an
+    ///         approved actor. Responsibility starts moving here.
+    /// @dev Two steps for the same reason the passport handoff has two: nobody
+    ///      can be handed material they never accepted — which matters most for
+    ///      a lot that turns out to be recalled. The quantity is NOT escrowed:
+    ///      it stays with the sender until acceptance, and the transfer simply
+    ///      reverts if it is gone by then. Escrowing would strand material in a
+    ///      module that is meant to be replaceable.
+    /// @param _lotId The lot being shipped.
+    /// @param _quantity The quantity shipped.
+    /// @param _to The recipient, which must be an approved actor.
+    /// @return shipmentId The id of the declared shipment.
+    function declareShipment(uint64 _lotId, uint256 _quantity, address _to)
+        external
+        costsCredit
+        returns (uint256 shipmentId)
+    {
+        require(LOTS.lotExists(_lotId), UnknownLot(_lotId));
+        require(_quantity > 0, ZeroQuantity());
+        require(_to != msg.sender, SelfShipment());
+        require(_holdsMaterialRole(_to), RecipientNotEligible(_to));
+        require(
+            LOTS.balanceOf(msg.sender, _lotId) >= _quantity,
+            InsufficientMaterial(msg.sender, _lotId, _quantity)
+        );
+
+        shipmentId = ++shipmentCount;
+        _shipments[shipmentId] = Shipment({
+            from: msg.sender,
+            to: _to,
+            lotId: _lotId,
+            quantity: _quantity,
+            status: ShipmentStatus.Pending
+        });
+
+        emit ShipmentDeclared(shipmentId, _lotId, msg.sender, _to, _quantity);
+    }
+
+    /// @notice Step 2: the recipient confirms reception and takes custody.
+    /// @dev Free of charge: the sender already paid for the shipment, exactly
+    ///      like the passport handoff.
+    /// @param _shipmentId The shipment being accepted.
+    function acceptShipment(uint256 _shipmentId) external {
+        Shipment storage shipment = _shipments[_shipmentId];
+        require(shipment.to == msg.sender, NotShipmentRecipient(_shipmentId, msg.sender));
+        require(shipment.status == ShipmentStatus.Pending, ShipmentSettled(_shipmentId));
+
+        shipment.status = ShipmentStatus.Accepted;
+        LOTS.transferCustody(shipment.from, msg.sender, shipment.lotId, shipment.quantity);
+
+        emit ShipmentAccepted(_shipmentId, shipment.lotId, msg.sender);
+    }
+
+    /// @notice Cancels a shipment that was never accepted.
+    /// @dev Open to the sender only. Without it a mistyped recipient would pin
+    ///      a quantity to a shipment nobody will ever accept.
+    /// @param _shipmentId The shipment being cancelled.
+    function cancelShipment(uint256 _shipmentId) external {
+        Shipment storage shipment = _shipments[_shipmentId];
+        require(shipment.from == msg.sender, NotShipmentSender(_shipmentId, msg.sender));
+        require(shipment.status == ShipmentStatus.Pending, ShipmentSettled(_shipmentId));
+
+        shipment.status = ShipmentStatus.Cancelled;
+
+        emit ShipmentCancelled(_shipmentId, shipment.lotId, msg.sender);
+    }
+
+    /// @dev The actors allowed to hold material. The regulator is not one of
+    ///      them: it reads and recalls, it never takes custody.
+    function _holdsMaterialRole(address _account) private view returns (bool) {
+        return ROLES.hasRole(ROLES.MANUFACTURER_ROLE(), _account)
+            || ROLES.hasRole(ROLES.DISTRIBUTOR_ROLE(), _account)
+            || ROLES.hasRole(ROLES.LAB_ROLE(), _account)
+            || ROLES.hasRole(ROLES.PRACTITIONER_ROLE(), _account);
+    }
+
+    // ==================================================
+    //                    LAB FUNCTIONS
+    // ==================================================
 
     /// @notice Mints the passport of a manufactured device and consumes the
     ///         material it was made of.
@@ -201,6 +395,10 @@ contract LifecycleModule is RoleAware {
     ///      the fact. The burn runs before the mint (checks-effects-
     ///      interactions on the material side) and reverts on insufficient
     ///      balance through the ERC-1155 store itself.
+    ///
+    ///      What matters is HOLDING the material, not having produced it: the
+    ///      laboratory consumes a lot it received from a distributor, and the
+    ///      lot keeps pointing at the manufacturer that made it.
     /// @param _lotId The lot the device was made from.
     /// @param _quantity The quantity of material consumed.
     /// @param _conformityHash Fingerprint of the off-chain conformity file.
@@ -212,12 +410,12 @@ contract LifecycleModule is RoleAware {
         returns (uint256 tokenId)
     {
         require(LOTS.lotExists(_lotId), UnknownLot(_lotId));
-        require(LOTS.lotOf(_lotId).lab == msg.sender, NotLotOwner(_lotId, msg.sender));
         require(_quantity > 0, ZeroQuantity());
+        require(_quantity <= type(uint128).max, QuantityTooLarge(_quantity));
         require(_conformityHash != bytes32(0), EmptyHash());
 
         LOTS.burnForManufacturing(msg.sender, _lotId, _quantity);
-        tokenId = PASSPORTS.mint(msg.sender, _lotId, _conformityHash);
+        tokenId = PASSPORTS.mint(msg.sender, _lotId, uint128(_quantity), _conformityHash);
 
         emit MaterialConsumed(tokenId, _lotId, _quantity);
     }
@@ -246,9 +444,14 @@ contract LifecycleModule is RoleAware {
     ///      hash of civil status is brute-forceable, hence still personal data;
     ///      erasing the off-chain record destroys the salt and makes the
     ///      on-chain commitment permanently unusable (docs/SPEC.md section 9.2).
+    ///      The tooth is in FDI notation (ISO 3950), the international standard
+    ///      a dentist already uses: first digit the quadrant, second the
+    ///      position - 11 to 18, 21 to 28, and so on. It is clinical data about
+    ///      a device, not about a person: on its own it identifies nobody.
     /// @param _tokenId The passport being placed.
+    /// @param _tooth The tooth it is placed on, in FDI notation.
     /// @param _patientCommitment Salted commitment to the patient's identity.
-    function markPlaced(uint256 _tokenId, bytes32 _patientCommitment)
+    function markPlaced(uint256 _tokenId, uint8 _tooth, bytes32 _patientCommitment)
         external
         onlyRole(ROLES.PRACTITIONER_ROLE())
         onlyHolder(_tokenId)
@@ -256,11 +459,22 @@ contract LifecycleModule is RoleAware {
         costsCredit
     {
         require(_patientCommitment != bytes32(0), EmptyHash());
+        uint8 quadrant = _tooth / 10;
+        uint8 position = _tooth % 10;
+        require(
+            quadrant >= 1 && quadrant <= 8 && position >= 1 && position <= 8,
+            InvalidTooth(_tooth)
+        );
 
         _status[_tokenId] = Status.Placed;
         _commitment[_tokenId] = _patientCommitment;
+        _placement[_tokenId] = Placement({
+            practitioner: msg.sender,
+            placedAt: uint40(block.timestamp),
+            tooth: _tooth
+        });
 
-        emit PlacedInMouth(_tokenId, msg.sender, _patientCommitment);
+        emit PlacedInMouth(_tokenId, msg.sender, _tooth, _patientCommitment);
     }
 
     // ==================================================
@@ -320,10 +534,26 @@ contract LifecycleModule is RoleAware {
         return _status[_tokenId];
     }
 
+    /// @notice A shipment record.
+    /// @param _shipmentId The shipment to read.
+    /// @return The stored shipment.
+    function shipmentOf(uint256 _shipmentId) external view returns (Shipment memory) {
+        return _shipments[_shipmentId];
+    }
+
     /// @notice The salted commitment binding a device to a patient.
     /// @param _tokenId The passport to read.
     /// @return The commitment, or zero before placement.
     function patientCommitmentOf(uint256 _tokenId) external view returns (bytes32) {
         return _commitment[_tokenId];
+    }
+
+    /// @notice The clinical act: who placed the device, when, and on which tooth.
+    /// @dev A single call, no log scan: this is what a practitioner scanning a
+    ///      patient's passport needs to read on the spot.
+    /// @param _tokenId The passport to read.
+    /// @return The placement record, zeroed before placement.
+    function placementOf(uint256 _tokenId) external view returns (Placement memory) {
+        return _placement[_tokenId];
     }
 }

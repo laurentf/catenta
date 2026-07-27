@@ -28,6 +28,7 @@ const router = createRouter({
         { path: 'passports', name: 'passports', component: () => import('@/views/PassportsView.vue') },
         { path: 'passports/:id', name: 'passport', component: () => import('@/views/PassportView.vue') },
         { path: 'lots', name: 'lots', component: () => import('@/views/LotsView.vue') },
+        { path: 'lots/:id', name: 'lot', component: () => import('@/views/LotView.vue') },
         { path: 'admin', name: 'admin', component: () => import('@/views/AdminView.vue') },
       ],
     },

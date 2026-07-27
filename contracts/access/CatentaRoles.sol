@@ -14,8 +14,8 @@ import {AccessControlEnumerable} from
 ///      redeployment of the token contracts, no passport lost.
 ///
 ///      Two families of roles, deliberately kept apart:
-///      - actor roles (LAB, PRACTITIONER, DISTRIBUTOR, REGULATOR) are granted
-///        to humans and organizations on an approval allowlist;
+///      - actor roles (MANUFACTURER, LAB, PRACTITIONER, DISTRIBUTOR, REGULATOR)
+///        are granted to humans and organizations on an approval allowlist;
 ///      - module roles (*_MINTER, *_CONTROLLER, *_BURNER) are granted to
 ///        contracts only. Granting one to an externally owned account would
 ///        bypass the business logic entirely, so it is an admin-level mistake
@@ -45,11 +45,17 @@ contract CatentaRoles is AccessControlEnumerable {
 
     // ---------- actor roles ----------
 
-    /// @notice Laboratory: declares material lots, mints passports, stakes.
+    /// @notice Manufacturer: produces the raw material and declares its lots.
+    /// @dev The first link of the chain. It declares the lot and ships it; it
+    ///      never manufactures a device, which is what separates it from a
+    ///      laboratory (docs/Catenta Parcours Prothese Tracabilite, p.3).
+    bytes32 public constant MANUFACTURER_ROLE = keccak256("MANUFACTURER_ROLE");
+    /// @notice Laboratory: consumes material and mints prosthesis passports.
     bytes32 public constant LAB_ROLE = keccak256("LAB_ROLE");
     /// @notice Practitioner: attests conformity, records placement.
     bytes32 public constant PRACTITIONER_ROLE = keccak256("PRACTITIONER_ROLE");
-    /// @notice Dental depot: relays and acknowledges recalls.
+    /// @notice Dental depot: buys lots from manufacturers and resells them to
+    ///         laboratories or practitioners; relays and acknowledges recalls.
     bytes32 public constant DISTRIBUTOR_ROLE = keccak256("DISTRIBUTOR_ROLE");
     /// @notice Ordre / ARS: full read, declares recalls, slashes bonds.
     bytes32 public constant REGULATOR_ROLE = keccak256("REGULATOR_ROLE");
@@ -64,6 +70,12 @@ contract CatentaRoles is AccessControlEnumerable {
     bytes32 public constant LOT_MINTER_ROLE = keccak256("LOT_MINTER_ROLE");
     /// @notice Allowed to burn material consumed by manufacturing.
     bytes32 public constant LOT_BURNER_ROLE = keccak256("LOT_BURNER_ROLE");
+    /// @notice Allowed to move the custody of material between approved actors.
+    /// @dev Material is not freely transferable: only a module holding this role
+    ///      can move it, and only at the end of the two-step shipment the
+    ///      recipient has accepted. Same shape as PASSPORT_CONTROLLER_ROLE for
+    ///      passports — the store enforces "nobody moves this on their own".
+    bytes32 public constant LOT_CUSTODIAN_ROLE = keccak256("LOT_CUSTODIAN_ROLE");
     /// @notice Allowed to mint usage credits (against an off-chain payment).
     /// @dev Held by the admin / an onboarding module — the fiat-to-credit
     ///      bridge lives off-chain, so minting is a deliberate, gated act.
@@ -86,6 +98,7 @@ contract CatentaRoles is AccessControlEnumerable {
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
         _grantRole(REGISTRAR_ROLE, _admin);
 
+        _setRoleAdmin(MANUFACTURER_ROLE, REGISTRAR_ROLE);
         _setRoleAdmin(LAB_ROLE, REGISTRAR_ROLE);
         _setRoleAdmin(PRACTITIONER_ROLE, REGISTRAR_ROLE);
         _setRoleAdmin(DISTRIBUTOR_ROLE, REGISTRAR_ROLE);

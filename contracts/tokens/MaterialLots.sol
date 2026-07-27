@@ -23,11 +23,24 @@ import {RoleAware} from "../access/RoleAware.sol";
 ///      material left, for free, instead of a counter to maintain by hand.
 contract MaterialLots is ERC1155, ERC1155Supply, ERC1155Burnable, RoleAware {
     /// @notice The administrative record of a lot.
-    /// @dev Slot 0 holds lab (20) + declaredAt (5); the certificate
-    ///      fingerprint takes the next one.
+    /// @dev Slot 0 holds manufacturer (20) + declaredAt (5) + materialId (4) =
+    ///      29 bytes; the certificate fingerprint takes the next one. The link
+    ///      to the material catalogue therefore costs nothing: it fits in a slot
+    ///      the lot already pays for.
+    ///
+    ///      `manufacturer` is the ORIGIN, not the current holder. Custody moves
+    ///      along the chain (manufacturer -> distributor -> laboratory) and is
+    ///      read from the ERC-1155 balances; the origin never changes, which is
+    ///      what a recall needs to walk back to.
+    ///
+    ///      `materialId` points into MaterialCatalog - what the lot is made of,
+    ///      and in which unit its quantity is counted. Stored as an opaque
+    ///      number: validating it is the calling module's job, which keeps this
+    ///      permanent store free of any dependency on the catalogue.
     struct LotInfo {
-        address lab;
+        address manufacturer;
         uint40 declaredAt;
+        uint32 materialId;
         bytes32 certHash;
     }
 
@@ -37,20 +50,23 @@ contract MaterialLots is ERC1155, ERC1155Supply, ERC1155Burnable, RoleAware {
     /// @dev lotId => administrative record. Never deleted.
     mapping(uint64 lotId => LotInfo) private _lots;
 
-    /// @notice Emitted when a laboratory declares a material lot.
+    /// @notice Emitted when a manufacturer declares a material lot.
     /// @param lotId The id assigned to the lot.
-    /// @param lab The laboratory declaring it.
+    /// @param manufacturer The manufacturer declaring it.
+    /// @param materialId The catalogue entry the lot is made of.
     /// @param certHash Fingerprint of the off-chain material certificate.
     /// @param quantity Quantity minted at declaration.
     event LotDeclared(
         uint64 indexed lotId,
-        address indexed lab,
+        address indexed manufacturer,
+        uint32 indexed materialId,
         bytes32 certHash,
         uint256 quantity
     );
 
-    /// @notice A lot belongs to the laboratory that declared it and cannot be
-    ///         moved to another holder.
+    /// @notice Material never moves on its holder's sole decision: custody is
+    ///         transferred by a module holding LOT_CUSTODIAN_ROLE, at the end of
+    ///         a shipment the recipient accepted.
     error LotNotTransferable();
     /// @notice The lot id does not exist.
     error UnknownLot(uint64 lotId);
@@ -61,27 +77,57 @@ contract MaterialLots is ERC1155, ERC1155Supply, ERC1155Burnable, RoleAware {
     ///      document storage milestone and needs no change to this store.
     constructor(CatentaRoles _roles) ERC1155("") RoleAware(_roles) {}
 
-    /// @notice Declares a lot and credits its quantity to the laboratory.
-    /// @dev Business checks (approved lab) belong to the calling module.
-    /// @param _lab The laboratory the lot belongs to.
+    /// @notice Declares a lot and credits its quantity to the manufacturer.
+    /// @dev Business checks (approved manufacturer) belong to the calling module.
+    /// @param _manufacturer The manufacturer that produced the lot.
+    /// @param _materialId The catalogue entry the lot is made of.
     /// @param _certHash Fingerprint of the off-chain material certificate.
-    /// @param _quantity Quantity available in the lot, in the lab's own unit.
+    /// @param _quantity Quantity produced, in the material's own unit.
     /// @return lotId The id of the declared lot.
-    function declareLot(address _lab, bytes32 _certHash, uint256 _quantity)
-        external
-        onlyRole(ROLES.LOT_MINTER_ROLE())
-        returns (uint64 lotId)
-    {
+    function declareLot(
+        address _manufacturer,
+        uint32 _materialId,
+        bytes32 _certHash,
+        uint256 _quantity
+    ) external onlyRole(ROLES.LOT_MINTER_ROLE()) returns (uint64 lotId) {
         lotId = _nextLotId;
         ++_nextLotId;
         _lots[lotId] = LotInfo({
-            lab: _lab,
+            manufacturer: _manufacturer,
             declaredAt: uint40(block.timestamp),
+            materialId: _materialId,
             certHash: _certHash
         });
-        _mint(_lab, lotId, _quantity, "");
+        _mint(_manufacturer, lotId, _quantity, "");
 
-        emit LotDeclared(lotId, _lab, _certHash, _quantity);
+        emit LotDeclared(lotId, _manufacturer, _materialId, _certHash, _quantity);
+    }
+
+    /// @notice Moves the custody of a quantity of material along the chain.
+    /// @dev Role-gated, and deliberately the ONLY way material changes hands:
+    ///      the store refuses any direct transfer (see _update), so custody only
+    ///      moves through a module that made the recipient accept it first. That
+    ///      is what keeps "nobody can be handed material they did not ask for"
+    ///      true for lots, exactly as the two-step handoff does for passports.
+    ///
+    ///      Goes through _update rather than _safeTransferFrom on purpose: the
+    ///      recipient has already been checked against the role allowlist by the
+    ///      module, so the ERC1155Receiver probe adds no safety while it would
+    ///      reject legitimate contract wallets (multisigs).
+    /// @param _from The current holder.
+    /// @param _to The new holder.
+    /// @param _lotId The lot being moved.
+    /// @param _quantity The quantity moved.
+    function transferCustody(address _from, address _to, uint64 _lotId, uint256 _quantity)
+        external
+        onlyRole(ROLES.LOT_CUSTODIAN_ROLE())
+    {
+        uint256[] memory ids = new uint256[](1);
+        uint256[] memory values = new uint256[](1);
+        ids[0] = _lotId;
+        values[0] = _quantity;
+
+        _update(_from, _to, ids, values);
     }
 
     /// @notice Burns the quantity of material consumed by manufacturing.
@@ -105,7 +151,7 @@ contract MaterialLots is ERC1155, ERC1155Supply, ERC1155Burnable, RoleAware {
     /// @return The stored lot record.
     function lotOf(uint64 _lotId) external view returns (LotInfo memory) {
         LotInfo memory info = _lots[_lotId];
-        require(info.lab != address(0), UnknownLot(_lotId));
+        require(info.manufacturer != address(0), UnknownLot(_lotId));
         return info;
     }
 
@@ -113,7 +159,7 @@ contract MaterialLots is ERC1155, ERC1155Supply, ERC1155Burnable, RoleAware {
     /// @param _lotId The lot to check.
     /// @return True when the lot exists.
     function lotExists(uint64 _lotId) external view returns (bool) {
-        return _lots[_lotId].lab != address(0);
+        return _lots[_lotId].manufacturer != address(0);
     }
 
     /// @notice Number of lots declared so far.
@@ -122,18 +168,25 @@ contract MaterialLots is ERC1155, ERC1155Supply, ERC1155Burnable, RoleAware {
         return _nextLotId - 1;
     }
 
-    /// @dev Lots are non-transferable: a lot belongs to the laboratory that
-    ///      declared it. Allowing a transfer would break the matter-to-lab
-    ///      attribution the whole traceability rests on - and a multi-lab lot
-    ///      needs a custody model this version deliberately does not have.
-    ///      Mint (from == 0) and burn (to == 0) stay open.
+    /// @dev Material moves along the chain, but never on its holder's sole
+    ///      decision. A direct `safeTransferFrom` reverts: shipping material to
+    ///      an actor who never accepted it would break the custody trail the
+    ///      whole traceability rests on, and would let anyone dump a recalled
+    ///      lot on someone else. Only a module holding LOT_CUSTODIAN_ROLE moves
+    ///      custody, and only once the recipient has accepted the shipment.
+    ///
+    ///      Mint (from == 0) and burn (to == 0) stay open to their own roles.
     function _update(
         address from,
         address to,
         uint256[] memory ids,
         uint256[] memory values
     ) internal override(ERC1155, ERC1155Supply) {
-        require(from == address(0) || to == address(0), LotNotTransferable());
+        require(
+            from == address(0) || to == address(0)
+                || ROLES.hasRole(ROLES.LOT_CUSTODIAN_ROLE(), msg.sender),
+            LotNotTransferable()
+        );
         super._update(from, to, ids, values);
     }
 }

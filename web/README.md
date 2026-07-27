@@ -21,7 +21,6 @@ cp .env.example .env
 | `VITE_LIFECYCLE_ADDRESS` | **requis** — adresse du `LifecycleModule` déployé |
 | `VITE_CHAIN_ID` | Sepolia = `11155111`, Holesky = `17000` |
 | `VITE_CHAIN_NAME` · `VITE_CURRENCY_SYMBOL` · `VITE_EXPLORER_URL` | affichage et liens explorateur |
-| `VITE_DEPLOY_BLOCK` | bloc de déploiement (réservé aux lectures de logs) |
 | `VITE_REOWN_PROJECT_ID` | **requis** — Project ID gratuit sur [cloud.reown.com](https://cloud.reown.com) |
 
 > Sans `VITE_REOWN_PROJECT_ID`, la modale de connexion ne s'ouvre pas.

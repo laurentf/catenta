@@ -6,7 +6,6 @@ interface ImportMetaEnv {
   readonly VITE_CHAIN_NAME: string
   readonly VITE_CURRENCY_SYMBOL: string
   readonly VITE_EXPLORER_URL: string
-  readonly VITE_DEPLOY_BLOCK: string
   readonly VITE_REOWN_PROJECT_ID: string
 }
 

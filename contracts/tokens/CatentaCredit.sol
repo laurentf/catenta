@@ -21,7 +21,8 @@ import {RoleAware} from "../access/RoleAware.sol";
 ///         order book, no market, no price discovery — it cannot be listed or
 ///         traded, by construction.
 ///      2. MINT-CONTROLLED, NO CAP. Only CREDIT_MINTER_ROLE creates credits,
-///         against an off-chain payment. No hard cap, because credits are
+///         against an off-chain payment - a single path, with no privileged
+///         "welcome" allocation to track per address. No hard cap, because credits are
 ///         continuously burned and must be re-issued at each renewal — a cap
 ///         would eventually freeze the system. Circulating supply at any time
 ///         equals the credits prepaid but not yet used.
@@ -35,17 +36,6 @@ import {RoleAware} from "../access/RoleAware.sol";
 ///      Decimals = 0: a credit is a whole unit. Balances read "100", "99"…,
 ///      and "1 credit" is literally 1.
 contract CatentaCredit is ERC20, RoleAware {
-    /// @notice Credits granted once to a freshly onboarded actor.
-    uint256 public constant INITIAL_CREDITS = 100;
-
-    /// @dev Tracks the one-time initial grant, so it cannot be claimed twice.
-    mapping(address account => bool) private _initialGranted;
-
-    /// @notice Emitted on the one-time initial allocation to an actor.
-    /// @param account The onboarded actor.
-    /// @param amount The number of credits granted (INITIAL_CREDITS).
-    event InitialCreditsGranted(address indexed account, uint256 amount);
-
     /// @notice Emitted when credits are minted against a paid subscription.
     /// @param account The actor credited.
     /// @param amount The number of credits minted.
@@ -58,8 +48,6 @@ contract CatentaCredit is ERC20, RoleAware {
 
     /// @notice Credits cannot be transferred between accounts.
     error CreditsNotTransferable();
-    /// @notice The initial allocation has already been granted to this account.
-    error InitialAlreadyGranted(address account);
     /// @notice The account does not hold enough credits for this action.
     error InsufficientCredits(address account, uint256 balance, uint256 needed);
 
@@ -70,23 +58,11 @@ contract CatentaCredit is ERC20, RoleAware {
         RoleAware(_roles)
     {}
 
-    /// @notice Grants the one-time initial allocation to a freshly onboarded actor.
-    /// @dev Idempotent per address: guarded so it cannot be farmed. Ongoing
-    ///      top-ups go through mintCredits.
-    /// @param _to The actor to credit.
-    function grantInitialCredits(address _to)
-        external
-        onlyRole(ROLES.CREDIT_MINTER_ROLE())
-    {
-        require(!_initialGranted[_to], InitialAlreadyGranted(_to));
-        _initialGranted[_to] = true;
-        _mint(_to, INITIAL_CREDITS);
-
-        emit InitialCreditsGranted(_to, INITIAL_CREDITS);
-    }
-
-    /// @notice Mints credits against an off-chain payment (subscription renewal).
+    /// @notice Mints credits against an off-chain payment.
     /// @dev The fiat-to-credit bridge is off-chain; this is its on-chain side.
+    ///      The ONLY way credits come into existence: onboarding a new actor is
+    ///      just a first mint, with no special case and no per-address ledger to
+    ///      maintain. Whoever holds CREDIT_MINTER_ROLE decides how much and when.
     /// @param _to The actor to credit.
     /// @param _amount The number of credits to mint.
     function mintCredits(address _to, uint256 _amount)
@@ -114,13 +90,6 @@ contract CatentaCredit is ERC20, RoleAware {
         _burn(_from, _amount);
 
         emit CreditsSpent(_from, _amount);
-    }
-
-    /// @notice Whether an account has already received its initial allocation.
-    /// @param _account The account to check.
-    /// @return True once grantInitialCredits has run for it.
-    function hasReceivedInitial(address _account) external view returns (bool) {
-        return _initialGranted[_account];
     }
 
     /// @notice A credit is a whole, countable unit.

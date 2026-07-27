@@ -8,6 +8,7 @@ import { Contract, id, type ContractRunner } from 'ethers'
 
 export const ROLES_ABI = [
   // rôles acteurs
+  'function MANUFACTURER_ROLE() view returns (bytes32)',
   'function LAB_ROLE() view returns (bytes32)',
   'function PRACTITIONER_ROLE() view returns (bytes32)',
   'function DISTRIBUTOR_ROLE() view returns (bytes32)',
@@ -19,6 +20,7 @@ export const ROLES_ABI = [
   'function PASSPORT_CONTROLLER_ROLE() view returns (bytes32)',
   'function LOT_MINTER_ROLE() view returns (bytes32)',
   'function LOT_BURNER_ROLE() view returns (bytes32)',
+  'function LOT_CUSTODIAN_ROLE() view returns (bytes32)',
   // lectures
   'function hasRole(bytes32 role, address account) view returns (bool)',
   'function getRoleMemberCount(bytes32 role) view returns (uint256)',
@@ -43,7 +45,7 @@ export const PASSPORT_ABI = [
   'function totalSupply() view returns (uint256)',
   'function tokenByIndex(uint256 index) view returns (uint256)',
   'function mintedCount() view returns (uint256)',
-  'function traitsOf(uint256 tokenId) view returns (tuple(uint64 lotId, uint40 mintedAt, bytes32 conformityHash))',
+  'function traitsOf(uint256 tokenId) view returns (tuple(uint64 lotId, uint40 mintedAt, uint128 quantity, bytes32 conformityHash))',
   'function pendingHandoff(uint256 tokenId) view returns (address)',
   'function ROLES() view returns (address)',
   // events
@@ -56,14 +58,31 @@ export const PASSPORT_ABI = [
   'error ERC721NonexistentToken(uint256 tokenId)',
 ] as const
 
+export const CATALOG_ABI = [
+  'function materialOf(uint32 materialId) view returns (tuple(address manufacturer, bool active, string name, string unit))',
+  'function materialExists(uint32 materialId) view returns (bool)',
+  'function materialCount() view returns (uint32)',
+  // écritures — fabricant
+  'function registerMaterial(string _name, string _unit) returns (uint32)',
+  'function setMaterialActive(uint32 _materialId, bool _active)',
+  // events
+  'event MaterialRegistered(uint32 indexed materialId, address indexed manufacturer, string name, string unit)',
+  'event MaterialActiveUpdated(uint32 indexed materialId, bool active)',
+  // erreurs
+  'error EmptyField()',
+  'error UnknownMaterial(uint32 materialId)',
+  'error NotMaterialOwner(uint32 materialId, address caller)',
+  'error UnauthorizedRole(bytes32 role, address account)',
+] as const
+
 export const LOTS_ABI = [
-  'function lotOf(uint64 lotId) view returns (tuple(address lab, uint40 declaredAt, bytes32 certHash))',
+  'function lotOf(uint64 lotId) view returns (tuple(address manufacturer, uint40 declaredAt, uint32 materialId, bytes32 certHash))',
   'function lotExists(uint64 lotId) view returns (bool)',
   'function lotCount() view returns (uint64)',
   'function totalSupply(uint256 lotId) view returns (uint256)',
   'function balanceOf(address account, uint256 id) view returns (uint256)',
   // events
-  'event LotDeclared(uint64 indexed lotId, address indexed lab, bytes32 certHash, uint256 quantity)',
+  'event LotDeclared(uint64 indexed lotId, address indexed manufacturer, uint32 indexed materialId, bytes32 certHash, uint256 quantity)',
   'event TransferSingle(address indexed operator, address indexed from, address indexed to, uint256 id, uint256 value)',
   // erreurs
   'error LotNotTransferable()',
@@ -78,18 +97,13 @@ export const CREDIT_ABI = [
   'function decimals() view returns (uint8)',
   'function balanceOf(address account) view returns (uint256)',
   'function totalSupply() view returns (uint256)',
-  'function INITIAL_CREDITS() view returns (uint256)',
-  'function hasReceivedInitial(address account) view returns (bool)',
-  // écritures — admin (CREDIT_MINTER_ROLE)
-  'function grantInitialCredits(address _to)',
+  // écriture — admin (CREDIT_MINTER_ROLE) : la seule façon de créditer
   'function mintCredits(address _to, uint256 _amount)',
   // events
-  'event InitialCreditsGranted(address indexed account, uint256 amount)',
   'event CreditsMinted(address indexed account, uint256 amount)',
   'event CreditsSpent(address indexed account, uint256 amount)',
   // erreurs
   'error CreditsNotTransferable()',
-  'error InitialAlreadyGranted(address account)',
   'error InsufficientCredits(address account, uint256 balance, uint256 needed)',
   'error UnauthorizedRole(bytes32 role, address account)',
 ] as const
@@ -99,17 +113,26 @@ export const LIFECYCLE_ABI = [
   'function ROLES() view returns (address)',
   'function PASSPORTS() view returns (address)',
   'function LOTS() view returns (address)',
+  'function CATALOG() view returns (address)',
   'function CREDIT() view returns (address)',
   'function actionCost() view returns (uint256)',
   // lectures
   'function statusOf(uint256 tokenId) view returns (uint8)',
   'function patientCommitmentOf(uint256 tokenId) view returns (bytes32)',
+  'function placementOf(uint256 tokenId) view returns (tuple(address practitioner, uint40 placedAt, uint8 tooth))',
+  'function shipmentCount() view returns (uint256)',
+  'function shipmentOf(uint256 shipmentId) view returns (tuple(address from, uint8 status, address to, uint64 lotId, uint256 quantity))',
+  // écritures — fabricant
+  'function declareLot(uint32 _materialId, bytes32 _certHash, uint256 _quantity) returns (uint64)',
+  // écritures — circulation de la matière (2 temps)
+  'function declareShipment(uint64 _lotId, uint256 _quantity, address _to) returns (uint256)',
+  'function acceptShipment(uint256 _shipmentId)',
+  'function cancelShipment(uint256 _shipmentId)',
   // écritures — laboratoire
-  'function declareLot(bytes32 _certHash, uint256 _quantity) returns (uint64)',
   'function mintPassport(uint64 _lotId, uint256 _quantity, bytes32 _conformityHash) returns (uint256)',
   // écritures — praticien
   'function attestConformity(uint256 _tokenId)',
-  'function markPlaced(uint256 _tokenId, bytes32 _patientCommitment)',
+  'function markPlaced(uint256 _tokenId, uint8 _tooth, bytes32 _patientCommitment)',
   // écritures — handoff
   'function initiateHandoff(uint256 _tokenId, address _to)',
   'function acceptHandoff(uint256 _tokenId)',
@@ -118,13 +141,25 @@ export const LIFECYCLE_ABI = [
   // events
   'event MaterialConsumed(uint256 indexed tokenId, uint64 indexed lotId, uint256 quantity)',
   'event ConformityAttested(uint256 indexed tokenId, address indexed practitioner)',
-  'event PlacedInMouth(uint256 indexed tokenId, address indexed practitioner, bytes32 patientCommitment)',
+  'event PlacedInMouth(uint256 indexed tokenId, address indexed practitioner, uint8 tooth, bytes32 patientCommitment)',
+  'event ShipmentDeclared(uint256 indexed shipmentId, uint64 indexed lotId, address indexed from, address to, uint256 quantity)',
+  'event ShipmentAccepted(uint256 indexed shipmentId, uint64 indexed lotId, address indexed to)',
+  'event ShipmentCancelled(uint256 indexed shipmentId, uint64 indexed lotId, address indexed from)',
   // erreurs
   'error WrongStatus(uint256 tokenId, uint8 expected, uint8 current)',
   'error UnknownLot(uint64 lotId)',
-  'error NotLotOwner(uint64 lotId, address caller)',
+  'error UnknownMaterial(uint32 materialId)',
+  'error NotMaterialOwner(uint32 materialId, address caller)',
+  'error MaterialDiscontinued(uint32 materialId)',
+  'error InsufficientMaterial(address holder, uint64 lotId, uint256 needed)',
+  'error SelfShipment()',
+  'error NotShipmentRecipient(uint256 shipmentId, address caller)',
+  'error NotShipmentSender(uint256 shipmentId, address caller)',
+  'error ShipmentSettled(uint256 shipmentId)',
   'error ZeroQuantity()',
   'error EmptyHash()',
+  'error InvalidTooth(uint8 tooth)',
+  'error QuantityTooLarge(uint256 quantity)',
   'error NotPassportHolder(uint256 tokenId, address caller)',
   'error RecipientNotEligible(address to)',
   'error SelfHandoff()',
@@ -133,6 +168,13 @@ export const LIFECYCLE_ABI = [
   'error InsufficientCredits(address account, uint256 balance, uint256 needed)',
   'error UnauthorizedRole(bytes32 role, address account)',
 ] as const
+
+/** Miroir de LifecycleModule.ShipmentStatus. */
+export enum ShipmentStatus {
+  Pending = 0,
+  Accepted = 1,
+  Cancelled = 2,
+}
 
 /** Miroir de LifecycleModule.Status. */
 export enum Status {
@@ -148,6 +190,7 @@ export enum Status {
  */
 export const ROLE = {
   ADMIN: '0x' + '0'.repeat(64),
+  MANUFACTURER: id('MANUFACTURER_ROLE'),
   LAB: id('LAB_ROLE'),
   PRACTITIONER: id('PRACTITIONER_ROLE'),
   DISTRIBUTOR: id('DISTRIBUTOR_ROLE'),
@@ -157,6 +200,7 @@ export const ROLE = {
   PASSPORT_CONTROLLER: id('PASSPORT_CONTROLLER_ROLE'),
   LOT_MINTER: id('LOT_MINTER_ROLE'),
   LOT_BURNER: id('LOT_BURNER_ROLE'),
+  LOT_CUSTODIAN: id('LOT_CUSTODIAN_ROLE'),
   CREDIT_MINTER: id('CREDIT_MINTER_ROLE'),
   CREDIT_SPENDER: id('CREDIT_SPENDER_ROLE'),
 } as const
@@ -164,19 +208,32 @@ export const ROLE = {
 export type RoleKey = keyof typeof ROLE
 
 /** Rôles d'acteurs agréables par un registrar (ou l'admin). */
-export const ONBOARDABLE_ROLES: RoleKey[] = ['LAB', 'PRACTITIONER', 'DISTRIBUTOR']
+export const ONBOARDABLE_ROLES: RoleKey[] = [
+  'MANUFACTURER',
+  'DISTRIBUTOR',
+  'LAB',
+  'PRACTITIONER',
+]
 /** Rôles opérationnels sensibles, gérés par la seule racine (DEFAULT_ADMIN) —
  *  y compris l'émission de crédits, qui est un acte humain (le pont
  *  abonnement → crédits est hors chaîne), pas un rôle réservé aux contrats. */
 export const ROOT_MANAGED_ROLES: RoleKey[] = ['REGISTRAR', 'REGULATOR', 'CREDIT_MINTER']
-/** Tous les rôles humains affichés dans /admin. */
-export const ACTOR_ROLES: RoleKey[] = ['LAB', 'PRACTITIONER', 'DISTRIBUTOR', 'REGULATOR', 'REGISTRAR']
+/** Tous les rôles humains affichés dans /admin, dans l'ordre de la chaîne. */
+export const ACTOR_ROLES: RoleKey[] = [
+  'MANUFACTURER',
+  'DISTRIBUTOR',
+  'LAB',
+  'PRACTITIONER',
+  'REGULATOR',
+  'REGISTRAR',
+]
 /** Les rôles accordés à des contrats — affichés en lecture seule. */
 export const MODULE_ROLES: RoleKey[] = [
   'PASSPORT_MINTER',
   'PASSPORT_CONTROLLER',
   'LOT_MINTER',
   'LOT_BURNER',
+  'LOT_CUSTODIAN',
   'CREDIT_SPENDER',
 ]
 
@@ -189,6 +246,9 @@ export function passports(address: string, runner: ContractRunner): Contract {
 export function lots(address: string, runner: ContractRunner): Contract {
   return new Contract(address, LOTS_ABI, runner)
 }
+export function catalog(address: string, runner: ContractRunner): Contract {
+  return new Contract(address, CATALOG_ABI, runner)
+}
 export function lifecycle(address: string, runner: ContractRunner): Contract {
   return new Contract(address, LIFECYCLE_ABI, runner)
 }
@@ -200,9 +260,19 @@ export function credit(address: string, runner: ContractRunner): Contract {
 const ERROR_KEYS: Record<string, string> = {
   WrongStatus: 'errors.wrongStatus',
   UnknownLot: 'errors.unknownLot',
-  NotLotOwner: 'errors.notLotOwner',
+  UnknownMaterial: 'errors.unknownMaterial',
+  NotMaterialOwner: 'errors.notMaterialOwner',
+  MaterialDiscontinued: 'errors.materialDiscontinued',
+  EmptyField: 'errors.emptyField',
+  InsufficientMaterial: 'errors.insufficientMaterial',
+  SelfShipment: 'errors.selfShipment',
+  NotShipmentRecipient: 'errors.notShipmentRecipient',
+  NotShipmentSender: 'errors.notShipmentSender',
+  ShipmentSettled: 'errors.shipmentSettled',
   ZeroQuantity: 'errors.zeroQuantity',
   EmptyHash: 'errors.emptyHash',
+  InvalidTooth: 'errors.invalidTooth',
+  QuantityTooLarge: 'errors.quantityTooLarge',
   NotPassportHolder: 'errors.notPassportHolder',
   RecipientNotEligible: 'errors.recipientNotEligible',
   SelfHandoff: 'errors.selfHandoff',
@@ -216,7 +286,6 @@ const ERROR_KEYS: Record<string, string> = {
   ERC721NonexistentToken: 'errors.unknownPassport',
   InsufficientCredits: 'errors.insufficientCredits',
   CreditsNotTransferable: 'errors.creditsNotTransferable',
-  InitialAlreadyGranted: 'errors.initialAlreadyGranted',
 }
 
 type EthersLikeError = {

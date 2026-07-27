@@ -12,7 +12,6 @@ export const CHAIN_NAME = import.meta.env.VITE_CHAIN_NAME || 'Sepolia'
 export const CURRENCY_SYMBOL = import.meta.env.VITE_CURRENCY_SYMBOL || 'ETH'
 export const EXPLORER_URL =
   import.meta.env.VITE_EXPLORER_URL || 'https://sepolia.etherscan.io'
-export const DEPLOY_BLOCK = Number(import.meta.env.VITE_DEPLOY_BLOCK || '0')
 
 export const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
 

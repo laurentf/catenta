@@ -18,6 +18,7 @@ export const useRolesStore = defineStore('roles', () => {
 
   const held = ref<Record<RoleKey, boolean>>({
     ADMIN: false,
+    MANUFACTURER: false,
     LAB: false,
     PRACTITIONER: false,
     DISTRIBUTOR: false,
@@ -26,6 +27,7 @@ export const useRolesStore = defineStore('roles', () => {
     PASSPORT_CONTROLLER: false,
     LOT_MINTER: false,
     LOT_BURNER: false,
+    LOT_CUSTODIAN: false,
     CREDIT_MINTER: false,
     CREDIT_SPENDER: false,
     REGISTRAR: false,
@@ -36,6 +38,7 @@ export const useRolesStore = defineStore('roles', () => {
   const loading = ref(false)
 
   const isAdmin = computed(() => held.value.ADMIN)
+  const isManufacturer = computed(() => held.value.MANUFACTURER)
   const isLab = computed(() => held.value.LAB)
   const isPractitioner = computed(() => held.value.PRACTITIONER)
   const isRegulator = computed(() => held.value.REGULATOR)
@@ -123,6 +126,7 @@ export const useRolesStore = defineStore('roles', () => {
     members,
     loading,
     isAdmin,
+    isManufacturer,
     isLab,
     isPractitioner,
     isRegulator,

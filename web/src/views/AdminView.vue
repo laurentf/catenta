@@ -96,12 +96,7 @@
               {{ t('admin.mintCredits') }}
             </UiButton>
           </form>
-          <div class="mt-3 flex flex-wrap items-center gap-3">
-            <UiButton size="sm" variant="ghost" :loading="creditBusy" :disabled="!isAddress(creditTo)" @click="grantInitial">
-              {{ t('admin.grantInitial') }}
-            </UiButton>
-            <span class="hint !mt-0">{{ t('admin.creditHint') }}</span>
-          </div>
+          <p class="hint mt-3">{{ t('admin.creditHint') }}</p>
         </UiCard>
       </template>
 
@@ -207,6 +202,7 @@ const stack = computed(() => [
   { label: 'CatentaRoles', address: catenta.rolesAddress ?? '' },
   { label: 'PassportNFT', address: catenta.passportsAddress ?? '' },
   { label: 'MaterialLots', address: catenta.lotsAddress ?? '' },
+  { label: 'MaterialCatalog', address: catenta.catalogAddress ?? '' },
   { label: 'CatentaCredit', address: catenta.creditAddress ?? '' },
 ])
 
@@ -271,16 +267,6 @@ async function mintCredits() {
   creditBusy.value = true
   try {
     await tx(() => credits.mint(creditTo.value.trim(), BigInt(creditAmount.value)), 'admin.creditsMinted')
-  } catch {
-    /* */
-  } finally {
-    creditBusy.value = false
-  }
-}
-async function grantInitial() {
-  creditBusy.value = true
-  try {
-    await tx(() => credits.grantInitial(creditTo.value.trim()), 'admin.initialGranted')
   } catch {
     /* */
   } finally {

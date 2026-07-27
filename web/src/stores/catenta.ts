@@ -20,6 +20,7 @@ export const useCatentaStore = defineStore('catenta', () => {
   const rolesAddress = ref<string | null>(null)
   const passportsAddress = ref<string | null>(null)
   const lotsAddress = ref<string | null>(null)
+  const catalogAddress = ref<string | null>(null)
   const creditAddress = ref<string | null>(null)
 
   const loading = ref(false)
@@ -29,6 +30,7 @@ export const useCatentaStore = defineStore('catenta', () => {
       !!rolesAddress.value &&
       !!passportsAddress.value &&
       !!lotsAddress.value &&
+      !!catalogAddress.value &&
       !!creditAddress.value,
   )
 
@@ -53,15 +55,17 @@ export const useCatentaStore = defineStore('catenta', () => {
     error.value = null
     try {
       const module = C.lifecycle(LIFECYCLE_ADDRESS, runner)
-      const [r, p, l, cr] = await Promise.all([
+      const [r, p, l, cat, cr] = await Promise.all([
         module.ROLES(),
         module.PASSPORTS(),
         module.LOTS(),
+        module.CATALOG(),
         module.CREDIT(),
       ])
       rolesAddress.value = r
       passportsAddress.value = p
       lotsAddress.value = l
+      catalogAddress.value = cat
       creditAddress.value = cr
     } catch (err) {
       // Cause la plus fréquente : adresse d'un contrat qui n'est pas un
@@ -81,6 +85,7 @@ export const useCatentaStore = defineStore('catenta', () => {
       roles: C.roles(rolesAddress.value!, runner),
       passports: C.passports(passportsAddress.value!, runner),
       lots: C.lots(lotsAddress.value!, runner),
+      catalog: C.catalog(catalogAddress.value!, runner),
       credit: C.credit(creditAddress.value!, runner),
       lifecycle: C.lifecycle(LIFECYCLE_ADDRESS, runner),
     }
@@ -92,6 +97,7 @@ export const useCatentaStore = defineStore('catenta', () => {
     if (!signer || !ready.value) return null
     return {
       roles: C.roles(rolesAddress.value!, signer),
+      catalog: C.catalog(catalogAddress.value!, signer),
       credit: C.credit(creditAddress.value!, signer),
       lifecycle: C.lifecycle(LIFECYCLE_ADDRESS, signer),
     }
@@ -102,6 +108,7 @@ export const useCatentaStore = defineStore('catenta', () => {
     rolesAddress,
     passportsAddress,
     lotsAddress,
+    catalogAddress,
     creditAddress,
     loading,
     error,

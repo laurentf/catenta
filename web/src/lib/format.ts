@@ -39,6 +39,13 @@ export function formatDate(timestamp: bigint | number, locale = 'fr-FR'): string
   })
 }
 
-export function formatQuantity(value: bigint | number): string {
-  return new Intl.NumberFormat('fr-FR').format(Number(value))
+/**
+ * Une quantité de matière, avec son unité si on en connaît une.
+ * Sans unité, « 10 » est ambigu : dix ébauches ou dix grammes ? Le contrat ne
+ * tranche pas — il compte des unités ERC-1155. L'unité viendra du catalogue
+ * matière on-chain, écrit par le fabricant.
+ */
+export function formatQuantity(value: bigint | number, unit?: string): string {
+  const formatted = new Intl.NumberFormat('fr-FR').format(Number(value))
+  return unit ? `${formatted} ${unit}` : formatted
 }

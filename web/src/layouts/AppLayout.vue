@@ -54,7 +54,7 @@
             {{ locale === 'fr' ? 'EN' : 'FR' }}
           </button>
 
-          <UiButton size="sm" variant="ghost" @click="wallet.disconnect()">
+          <UiButton size="sm" variant="ghost" :title="wallet.address" @click="wallet.disconnect()">
             {{ shortAddress(wallet.address) }}
           </UiButton>
         </div>

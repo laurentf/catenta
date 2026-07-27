@@ -29,6 +29,7 @@ contract PassportNFT is ERC721, ERC721Enumerable, RoleAware {
     struct Traits {
         uint64 lotId;
         uint40 mintedAt;
+        uint128 quantity;
         bytes32 conformityHash;
     }
 
@@ -87,16 +88,18 @@ contract PassportNFT is ERC721, ERC721Enumerable, RoleAware {
     /// @param _lotId The material lot the device was made from.
     /// @param _conformityHash Fingerprint of the off-chain conformity file.
     /// @return tokenId The id of the freshly minted passport.
-    function mint(address _to, uint64 _lotId, bytes32 _conformityHash)
-        external
-        onlyRole(ROLES.PASSPORT_MINTER_ROLE())
-        returns (uint256 tokenId)
-    {
+    function mint(
+        address _to,
+        uint64 _lotId,
+        uint128 _quantity,
+        bytes32 _conformityHash
+    ) external onlyRole(ROLES.PASSPORT_MINTER_ROLE()) returns (uint256 tokenId) {
         tokenId = _nextTokenId;
         ++_nextTokenId;
         _traits[tokenId] = Traits({
             lotId: _lotId,
             mintedAt: uint40(block.timestamp),
+            quantity: _quantity,
             conformityHash: _conformityHash
         });
         _safeMint(_to, tokenId);

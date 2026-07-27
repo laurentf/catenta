@@ -31,8 +31,15 @@ export default buildModule("CatentaModule", (m) => {
   const roles = m.contract("CatentaRoles", [admin]);
   const passports = m.contract("PassportNFT", [roles]);
   const lots = m.contract("MaterialLots", [roles]);
+  const catalog = m.contract("MaterialCatalog", [roles]);
   const credit = m.contract("CatentaCredit", [roles]);
-  const lifecycle = m.contract("LifecycleModule", [roles, passports, lots, credit]);
+  const lifecycle = m.contract("LifecycleModule", [
+    roles,
+    passports,
+    lots,
+    catalog,
+    credit,
+  ]);
 
   // Rôles modules — accordés à un CONTRAT, jamais à une personne.
   const moduleRoles = {
@@ -40,6 +47,8 @@ export default buildModule("CatentaModule", (m) => {
     PASSPORT_CONTROLLER_ROLE: id("PASSPORT_CONTROLLER_ROLE"),
     LOT_MINTER_ROLE: id("LOT_MINTER_ROLE"),
     LOT_BURNER_ROLE: id("LOT_BURNER_ROLE"),
+    // le module déplace la garde de la matière au bout d'une expédition acceptée
+    LOT_CUSTODIAN_ROLE: id("LOT_CUSTODIAN_ROLE"),
     // le module brûle le crédit d'usage de l'appelant à chaque action
     CREDIT_SPENDER_ROLE: id("CREDIT_SPENDER_ROLE"),
   };
@@ -55,5 +64,5 @@ export default buildModule("CatentaModule", (m) => {
     id: "grant_CREDIT_MINTER_ROLE_admin",
   });
 
-  return { roles, passports, lots, credit, lifecycle };
+  return { roles, passports, lots, catalog, credit, lifecycle };
 });

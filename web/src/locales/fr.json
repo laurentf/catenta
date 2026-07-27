@@ -1,5 +1,5 @@
 {
-  "footer": "Catenta · le passeport on-chain de chaque prothèse dentaire, du laboratoire à la pose",
+  "footer": "Catenta · le passeport on-chain de chaque prothèse dentaire, du fabricant de matière à la pose en bouche",
   "common": {
     "loading": "Chargement…",
     "close": "Fermer",
@@ -7,8 +7,8 @@
     "done": "Transaction confirmée."
   },
   "nav": {
-    "passports": "Passeports",
-    "lots": "Lots",
+    "passports": "Prothèses",
+    "lots": "Matière",
     "admin": "Administration",
     "architecture": "Architecture"
   },
@@ -25,7 +25,9 @@
     "LOT_BURNER": "Consommation de matière",
     "CREDIT_MINTER": "Émission de crédits",
     "CREDIT_SPENDER": "Consommation de crédits",
-    "REGISTRAR": "Agent d'agrément"
+    "REGISTRAR": "Agent d'agrément",
+    "MANUFACTURER": "Fabricant",
+    "LOT_CUSTODIAN": "Garde de la matière"
   },
   "status": {
     "manufactured": "Fabriqué",
@@ -36,20 +38,20 @@
   "connect": {
     "eyebrow": "Registre partagé — Ordre · ARS · laboratoires · cabinets",
     "title": "Passeport dentaire on-chain",
-    "subtitle": "Traçabilité des dispositifs sur mesure, du lot de matière jusqu'à la pose en bouche.",
+    "subtitle": "Traçabilité des prothèses dentaires sur mesure, du lot de matière jusqu'à la pose en bouche.",
     "whatTitle": "Ce que fait le registre",
     "what": {
       "1": "<b>Un passeport par prothèse</b> — non transférable, avec ses traits figés à la fabrication.",
-      "2": "<b>Les lots de matériaux tracés</b> et brûlés dans la transaction même du mint.",
+      "2": "<b>La matière suivie de bout en bout</b> — déclarée par le fabricant, chaque changement de garde accepté, brûlée à la fabrication.",
       "3": "<b>Chaque acte horodaté et attribué</b> à un acteur agréé, non réécrivable après coup.",
       "4": "<b>Aucune donnée patient sur la blockchain</b> — seulement une empreinte anonyme, jamais une identité."
     },
     "rolesTitle": "Votre rôle est lu on-chain",
     "roles": {
-      "1": "<b>Laboratoire</b> — déclare les lots, émet les passeports.",
-      "2": "<b>Praticien</b> — atteste la conformité, enregistre la pose.",
-      "3": "<b>Ordre / ARS</b> — lecture totale du registre.",
-      "4": "<b>Sans rôle</b> — accès en lecture seule, sur une chaîne publique tout est lisible."
+      "1": "<b>Fabricant</b> — produit la matière, déclare ses lots et les expédie.",
+      "2": "<b>Distributeur</b> — réceptionne les lots et les revend au laboratoire ou au cabinet.",
+      "3": "<b>Laboratoire</b> — consomme la matière reçue et crée le passeport de la prothèse.",
+      "4": "<b>Praticien</b> — atteste la conformité, pose la prothèse et enregistre la dent."
     },
     "cta": "Connecter un wallet",
     "switch": "Basculer sur {chain}",
@@ -68,84 +70,129 @@
   "lots": {
     "eyebrow": "Matière première",
     "title": "Lots de matériaux",
-    "subtitle": "Un identifiant par lot, une quantité consommable — brûlée à la fabrication.",
+    "subtitle": "Le fabricant déclare le lot, il circule jusqu'au laboratoire, il est brûlé à la fabrication.",
     "declare": "Déclarer un lot",
     "formTitle": "Nouveau lot",
+    "formSubtitle": "Réservé au fabricant : c'est le premier maillon de la chaîne. Seule l'empreinte du certificat matière part on-chain.",
     "certLabel": "Certificat matière (CE / ISO)",
+    "exhausted": "Épuisé",
     "quantityLabel": "Quantité",
-    "quantityHint": "Dans l'unité du laboratoire — grammes, unités, peu importe : c'est la cohérence qui compte.",
+    "quantityHint": "Dans l'unité du fabricant — la même tout au long de la chaîne, sinon les quantités ne se comparent plus.",
     "declared": "Lot déclaré.",
-    "readOnly": "Seul un laboratoire agréé peut déclarer un lot. Vous consultez le registre en lecture.",
+    "readOnly": "Seul un fabricant agréé peut déclarer un lot. Vous consultez le registre en lecture.",
     "empty": "Aucun lot déclaré pour l'instant.",
+    "devices": "{count} prothèse issue de ce lot | {count} prothèses issues de ce lot",
+    "noDevice": "Aucune prothèse fabriquée à partir de ce lot pour l'instant.",
     "lot": "Lot",
     "remaining": "restant",
-    "mine": "À moi",
-    "lab": "Laboratoire",
     "cert": "Certificat",
-    "declaredAt": "Déclaré le"
+    "declaredAt": "Déclaré le",
+    "manufacturer": "Fabricant",
+    "inMyCustody": "{qty} à moi",
+    "ship": "Expédier",
+    "shipHint": "Le destinataire devra réceptionner : personne ne peut se voir imposer de la matière — surtout si le lot est rappelé.",
+    "shipped": "Expédition déclarée.",
+    "accept": "Réceptionner",
+    "accepted": "Réception confirmée, la garde vous est transférée.",
+    "cancel": "Annuler",
+    "cancelled": "Expédition annulée.",
+    "incomingTitle": "Matière à réceptionner",
+    "incomingSubtitle": "Elle n'est pas encore à vous : elle le devient à la réception.",
+    "outgoingTitle": "Expéditions en attente",
+    "outgoingSubtitle": "Déclarées, pas encore réceptionnées. La matière reste chez vous jusque-là.",
+    "shippedBy": "Expédié par",
+    "shippedTo": "Destinataire",
+    "materialLabel": "Matière (catalogue)",
+    "materialPlaceholder": "Choisir une matière…",
+    "materialHint": "Elle vient de votre catalogue on-chain : c'est elle qui fixe l'unité du lot.",
+    "noMaterial": "Aucune matière au catalogue : enregistrez-en une d'abord, ci-dessous.",
+    "catalogTitle": "Votre catalogue matière",
+    "catalogSubtitle": "Ce que vous produisez, décrit une fois par produit — et inscrit on-chain, unité comprise.",
+    "materialNameLabel": "Nom commercial",
+    "materialUnitLabel": "Unité",
+    "registerMaterial": "Enregistrer",
+    "materialRegistered": "Matière enregistrée au catalogue.",
+    "countedIn": "compté en {unit}",
+    "unitHint": "L'unité est on-chain parce qu'elle décide comment se lit une quantité : « 10 » ne veut rien dire sans elle. Dans un fichier modifiable, elle rendrait un nombre immuable réinterprétable après coup."
   },
   "passports": {
-    "eyebrow": "Dispositifs médicaux sur mesure",
-    "title": "Passeports",
-    "subtitle": "Un token = un dispositif. Non transférable, sauf remise de dossier acceptée.",
-    "passport": "Passeport",
-    "mint": "Émettre un passeport",
-    "formTitle": "Nouveau passeport",
-    "formSubtitle": "La matière est brûlée dans la transaction même qui crée le passeport : le lien ne peut pas être reconstruit ensuite.",
-    "lotLabel": "Lot consommé",
+    "eyebrow": "Prothèses dentaires sur mesure",
+    "title": "Prothèses",
+    "subtitle": "Un passeport = une prothèse. Non transférable, sauf remise de dossier acceptée.",
+    "passport": "Prothèse",
+    "mint": "Créer une prothèse",
+    "formTitle": "Nouvelle prothèse",
+    "formSubtitle": "Le laboratoire consomme la matière reçue : elle est brûlée dans la transaction même qui crée le passeport, donc le lien matière → prothèse ne peut pas être reconstruit ensuite.",
+    "lotLabel": "Lot de matière consommé",
     "lotPlaceholder": "Choisir un lot…",
-    "noLot": "Aucun lot disponible : déclarez-en un d'abord.",
+    "noLot": "Aucune matière en votre garde : un distributeur doit vous en expédier.",
     "quantityLabel": "Quantité consommée",
     "quantityHint": "Elle sera brûlée définitivement.",
     "conformityLabel": "Dossier de conformité",
-    "minted": "Passeport émis.",
+    "minted": "Prothèse créée, son passeport est émis.",
+    "overdraft": "La quantité demandée dépasse ce qui reste dans ce lot.",
     "scope": {
       "mine": "Les miens",
+      "pending": "À accepter",
       "all": "Tous"
     },
     "empty": {
-      "mine": "Vous ne détenez aucun passeport.",
-      "all": "Aucun passeport émis pour l'instant."
+      "mine": "Vous ne détenez aucune prothèse.",
+      "pending": "Aucune remise de dossier ne vous attend.",
+      "all": "Aucune prothèse créée pour l'instant.",
+      "lot": "Aucune prothèse issue du lot #{lot}."
     },
+    "pendingHint": "Ces prothèses vous ont été remises mais ne sont pas encore à vous : ouvrez la fiche et acceptez pour en prendre la garde.",
     "lot": "Lot",
     "holder": "Détenteur",
     "mintedAt": "Émis le",
-    "handoffPending": "Remise de dossier en attente d'acceptation"
+    "handoffForMe": "Remise à accepter — elle vous est destinée",
+    "handoffPendingFor": "Remise en attente, réservée à {who}"
   },
   "passport": {
-    "eyebrow": "Fiche dispositif",
-    "subtitle": "Historique horodaté, attribué, et non réécrivable.",
-    "timelineTitle": "Cycle de vie",
+    "eyebrow": "Fiche prothèse",
+    "subtitle": "Chaque étape horodatée, attribuée, et non réécrivable.",
+    "timelineTitle": "Parcours de la prothèse",
     "steps": {
       "manufactured": {
-        "title": "Fabriqué",
-        "desc": "Le laboratoire a émis le passeport en consommant la matière de son lot."
+        "title": "Fabriquée",
+        "desc": "Le laboratoire a créé la prothèse en consommant la matière d'un lot reçu — le lot d'origine reste attaché au passeport."
       },
       "certified": {
         "title": "Conforme",
-        "desc": "Le praticien a validé le contrôle de conformité à réception."
+        "desc": "Le praticien a reçu la prothèse et validé le contrôle de conformité."
       },
       "placed": {
-        "title": "Posé",
-        "desc": "Le dispositif est en bouche, lié au patient par une empreinte anonyme."
+        "title": "Posée",
+        "desc": "La prothèse est en bouche, sur une dent identifiée, liée au patient par une empreinte anonyme."
       }
     },
     "factsTitle": "Traits figés",
+    "consumed": "Matière consommée",
     "conformity": "Conformité",
     "commitment": "Empreinte anonyme du patient",
     "commitmentHint": "Empreinte anonyme : sans le secret conservé de votre côté, elle ne permet de remonter à personne. Effacer la fiche patient rompt définitivement le lien.",
     "actionsTitle": "Actions disponibles",
     "actions": {
       "accept": "Accepter la remise",
-      "initiate": "Remettre le dossier",
+      "initiate": "Remettre au praticien",
+      "redirect": "Rediriger la remise",
       "attest": "Attester la conformité",
       "openPlace": "Enregistrer la pose",
       "place": "Confirmer la pose"
     },
     "handoffLabel": "Destinataire",
-    "handoffHint": "Doit être un laboratoire ou un praticien agréé. Il devra accepter : personne ne peut se voir imposer un passeport.",
+    "handoffHint": "Doit être un laboratoire ou un praticien agréé. Il devra accepter : personne ne peut se voir imposer une prothèse.",
+    "handoffReplace": "Une remise est déjà armée : désigner quelqu'un d'autre remplace la précédente, qui devient caduque.",
     "pendingFor": "Remise en attente, réservée à",
-    "nothingToDo": "Aucune action ne vous est ouverte sur ce passeport à ce stade."
+    "pendingForMe": "Cette remise vous est destinée :",
+    "nothingToDo": "Aucune action ne vous est ouverte sur cette prothèse à ce stade.",
+    "tooth": "Dent",
+    "toothValue": "n° {tooth} (FDI)",
+    "toothLabel": "Numéro de dent (FDI)",
+    "toothHint": "Notation FDI / ISO 3950 : premier chiffre le quadrant (1 à 8), second la position (1 à 8). Exemple : 26 = première molaire supérieure gauche.",
+    "placedAt": "Posée le",
+    "placedBy": "Posée par"
   },
   "commitment": {
     "identityLabel": "Identité du patient",
@@ -200,10 +247,7 @@
     "creditAddressLabel": "Adresse",
     "creditAmountLabel": "Montant",
     "mintCredits": "Émettre",
-    "grantInitial": "Attribuer les 100 initiaux",
-    "creditHint": "Les 100 initiaux ne s'attribuent qu'une fois par adresse. « Émettre » recharge librement.",
     "creditsMinted": "Crédits émis.",
-    "initialGranted": "100 crédits initiaux attribués.",
     "notAllowed": "Cette vue est réservée à l'administrateur et aux agents d'agrément.",
     "grantSubtitle": "Agréer un laboratoire, un praticien ou un distributeur.",
     "rootTitle": "Opérateurs & régulateur",
@@ -217,35 +261,45 @@
       "credits": "Crédits $CATENTA",
       "system": "Contrats & rôles"
     },
-    "tabLocked": "Rôle requis manquant pour cet onglet."
+    "tabLocked": "Rôle requis manquant pour cet onglet.",
+    "creditHint": "Créditer un acteur, c'est un simple mint : autant de crédits que voulu, autant de fois que nécessaire. Il n'y a pas d'allocation de bienvenue à part."
   },
   "errors": {
     "rejected": "Signature refusée dans le wallet.",
     "insufficientFunds": "Solde insuffisant pour payer les frais de transaction.",
     "wrongStatus": "Le passeport n'est pas à l'étape attendue pour cette action.",
     "unknownLot": "Ce lot n'existe pas.",
-    "notLotOwner": "Seul le laboratoire ayant déclaré ce lot peut le consommer.",
     "zeroQuantity": "La quantité doit être supérieure à zéro.",
     "emptyHash": "Une empreinte de document est requise.",
-    "notPassportHolder": "Vous ne détenez pas ce passeport.",
+    "notPassportHolder": "Vous ne détenez pas cette prothèse.",
     "recipientNotEligible": "Le destinataire doit être un laboratoire ou un praticien agréé.",
     "selfHandoff": "Une remise à soi-même n'a pas de sens.",
     "notPendingRecipient": "Cette remise ne vous est pas destinée.",
-    "passportLocked": "Un dispositif posé est verrouillé : sa remise exige le régulateur.",
+    "passportLocked": "Une prothèse posée est verrouillée : sa remise exige le régulateur.",
     "unauthorizedRole": "Votre compte n'a pas le rôle requis pour cette action.",
     "soulbound": "Le passeport n'est pas transférable : passez par la remise de dossier.",
     "lotNotTransferable": "Un lot appartient au laboratoire qui l'a déclaré et ne peut pas être transféré.",
     "accessControl": "Votre compte n'a pas le rôle requis.",
     "insufficientMaterial": "Le lot ne contient pas assez de matière restante.",
-    "unknownPassport": "Ce passeport n'existe pas.",
+    "unknownPassport": "Cette prothèse n'existe pas.",
     "unknown": "La transaction a échoué.",
     "insufficientCredits": "Crédits d'usage insuffisants : rechargez pour effectuer cette action.",
     "creditsNotTransferable": "Les crédits d'usage ne sont pas transférables.",
-    "initialAlreadyGranted": "Cette adresse a déjà reçu ses crédits initiaux."
+    "selfShipment": "Une expédition à soi-même n'a pas de sens.",
+    "notShipmentRecipient": "Cette expédition ne vous est pas destinée.",
+    "notShipmentSender": "Vous n'êtes pas l'expéditeur de cette expédition.",
+    "shipmentSettled": "Cette expédition a déjà été réceptionnée ou annulée.",
+    "unknownMaterial": "Cette matière n'existe pas au catalogue.",
+    "notMaterialOwner": "Un fabricant ne déclare que des lots de ses propres matières.",
+    "materialDiscontinued": "Cette matière n'est plus produite : aucun nouveau lot ne peut en être déclaré.",
+    "emptyField": "Le nom et l'unité sont requis.",
+    "invalidTooth": "Numéro de dent invalide : la notation FDI attend un quadrant de 1 à 8 et une position de 1 à 8.",
+    "quantityTooLarge": "Quantité trop grande pour être inscrite dans les traits du passeport."
   },
   "credits": {
     "unit": "crédits",
-    "tooltip": "Crédits d'usage $CATENTA · {cost} par action. Non transférable, non coté — un forfait prépayé, pas un placement."
+    "tooltip": "Crédits d'usage $CATENTA · {cost} par action. Non transférable, non coté — un forfait prépayé, pas un placement.",
+    "insufficient": "Crédits d'usage insuffisants : {balance} en solde, {cost} requis par action. Rechargez pour agir."
   },
   "toast": {
     "pending": "Transaction en cours…",
@@ -278,5 +332,32 @@
     "rolesTitle": "Les acteurs",
     "layersTitle": "Trois couches, découplées",
     "layers": "Une <b>autorité de rôles</b> unique ; des <b>stockages permanents</b> (passeports, lots, crédits) qu'on ne remplace jamais ; des <b>modules remplaçables</b> qui portent la logique. Aucun contrat ne connaît l'adresse d'un pair — tout passe par les rôles. Conséquence : on ajoute une fonction (rappel, caution) sans redéployer l'existant."
+  },
+  "qr": {
+    "cardTitle": "QR code du passeport",
+    "title": "Tout l'historique en un scan",
+    "hint": "À présenter à n'importe quel praticien : il ouvre la fiche et lit la prothèse, sa matière, son origine, la dent et la date de pose. Le QR n'encode aucune donnée — seulement l'adresse de la fiche, relue on-chain à chaque ouverture. Un QR imprimé ne périme donc jamais.",
+    "copy": "Copier le lien",
+    "copied": "Lien copié",
+    "download": "Télécharger le QR"
+  },
+  "lot": {
+    "eyebrow": "Parcours de la matière",
+    "unknownMaterial": "Matière inconnue du catalogue",
+    "journeyTitle": "Parcours du lot",
+    "journeySubtitle": "Reconstitué depuis le registre lui-même : chaque étape est un enregistrement on-chain, aucun journal d'events n'est lu.",
+    "factsTitle": "Origine",
+    "custodyTitle": "Garde actuelle",
+    "custodySubtitle": "Qui détient encore de cette matière, aujourd'hui.",
+    "noCustody": "Plus rien en circulation : tout a été consommé.",
+    "devicesTitle": "Ce que la matière est devenue",
+    "devicesSubtitle": "{consumed} consommés en fabrication.",
+    "stepDeclared": "Lot déclaré le {date}",
+    "stepAccepted": "{qty} — réception confirmée",
+    "stepCancelled": "{qty} — expédition annulée",
+    "stepCancelledNote": "aucune matière déplacée",
+    "stepPending": "{qty} — expédition en attente",
+    "stepPendingNote": "pas encore réceptionnée",
+    "stepManufactured": "{qty} consommés — prothèse #{id}"
   }
 }

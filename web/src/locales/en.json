@@ -1,5 +1,5 @@
 {
-  "footer": "Catenta · the on-chain passport of every dental prosthesis, from lab to placement",
+  "footer": "Catenta · the on-chain passport of every dental prosthesis, from material manufacturer to placement",
   "common": {
     "loading": "Loading…",
     "close": "Close",
@@ -7,8 +7,8 @@
     "done": "Transaction confirmed."
   },
   "nav": {
-    "passports": "Passports",
-    "lots": "Lots",
+    "passports": "Prostheses",
+    "lots": "Material",
     "admin": "Administration",
     "architecture": "Architecture"
   },
@@ -25,7 +25,9 @@
     "LOT_BURNER": "Material consumption",
     "CREDIT_MINTER": "Credit issuance",
     "CREDIT_SPENDER": "Credit spending",
-    "REGISTRAR": "Registrar"
+    "REGISTRAR": "Registrar",
+    "MANUFACTURER": "Manufacturer",
+    "LOT_CUSTODIAN": "Material custody"
   },
   "status": {
     "manufactured": "Manufactured",
@@ -36,20 +38,20 @@
   "connect": {
     "eyebrow": "Shared registry — regulators · laboratories · practices",
     "title": "On-chain dental passport",
-    "subtitle": "Traceability of custom-made devices, from the material lot to placement in the mouth.",
+    "subtitle": "Traceability of custom-made dental prostheses, from the material lot to placement in the mouth.",
     "whatTitle": "What the registry does",
     "what": {
       "1": "<b>One passport per prosthesis</b> — non-transferable, with traits frozen at manufacturing.",
-      "2": "<b>Material lots traced</b> and burned in the very transaction that mints the passport.",
+      "2": "<b>Material tracked end to end</b> — declared by the manufacturer, every custody change accepted, burned at manufacturing.",
       "3": "<b>Every act timestamped and attributed</b> to an approved actor, never rewritable afterwards.",
       "4": "<b>No patient data on the blockchain</b> — only an anonymous fingerprint, never an identity."
     },
     "rolesTitle": "Your role is read on-chain",
     "roles": {
-      "1": "<b>Laboratory</b> — declares lots, issues passports.",
-      "2": "<b>Practitioner</b> — attests conformity, records placement.",
-      "3": "<b>Regulator</b> — full read access to the registry.",
-      "4": "<b>No role</b> — read-only access; on a public chain everything is readable anyway."
+      "1": "<b>Manufacturer</b> — produces the material, declares its lots and ships them.",
+      "2": "<b>Distributor</b> — receives lots and resells them to laboratories or practices.",
+      "3": "<b>Laboratory</b> — consumes received material and creates the prosthesis passport.",
+      "4": "<b>Practitioner</b> — attests conformity, places the prosthesis and records the tooth."
     },
     "cta": "Connect a wallet",
     "switch": "Switch to {chain}",
@@ -68,84 +70,129 @@
   "lots": {
     "eyebrow": "Raw material",
     "title": "Material lots",
-    "subtitle": "One id per lot, a consumable quantity — burned at manufacturing.",
+    "subtitle": "The manufacturer declares the lot, it travels to the laboratory, it is burned at manufacturing.",
     "declare": "Declare a lot",
     "formTitle": "New lot",
+    "formSubtitle": "Manufacturers only: this is the first link of the chain. Only the material certificate fingerprint goes on-chain.",
     "certLabel": "Material certificate (CE / ISO)",
+    "exhausted": "Exhausted",
     "quantityLabel": "Quantity",
-    "quantityHint": "In the laboratory's own unit — grams, pieces, whatever: consistency is what matters.",
+    "quantityHint": "In the manufacturer's unit — the same all along the chain, otherwise quantities cannot be compared.",
     "declared": "Lot declared.",
-    "readOnly": "Only an approved laboratory can declare a lot. You are browsing the registry read-only.",
+    "readOnly": "Only an approved manufacturer can declare a lot. You are browsing the registry read-only.",
     "empty": "No lot declared yet.",
+    "devices": "{count} prosthesis made from this lot | {count} prostheses made from this lot",
+    "noDevice": "No prosthesis manufactured from this lot yet.",
     "lot": "Lot",
     "remaining": "left",
-    "mine": "Mine",
-    "lab": "Laboratory",
     "cert": "Certificate",
-    "declaredAt": "Declared on"
+    "declaredAt": "Declared on",
+    "manufacturer": "Manufacturer",
+    "inMyCustody": "{qty} mine",
+    "ship": "Ship",
+    "shipHint": "The recipient must confirm reception: nobody can be handed material they did not accept — least of all a recalled lot.",
+    "shipped": "Shipment declared.",
+    "accept": "Confirm reception",
+    "accepted": "Reception confirmed, custody is now yours.",
+    "cancel": "Cancel",
+    "cancelled": "Shipment cancelled.",
+    "incomingTitle": "Material to receive",
+    "incomingSubtitle": "Not yours yet: it becomes yours on reception.",
+    "outgoingTitle": "Pending shipments",
+    "outgoingSubtitle": "Declared, not yet received. The material stays with you until then.",
+    "shippedBy": "Shipped by",
+    "shippedTo": "Recipient",
+    "materialLabel": "Material (catalogue)",
+    "materialPlaceholder": "Pick a material…",
+    "materialHint": "It comes from your on-chain catalogue: it is what sets the lot's unit.",
+    "noMaterial": "No material in your catalogue: register one below first.",
+    "catalogTitle": "Your material catalogue",
+    "catalogSubtitle": "What you produce, described once per product — written on-chain, unit included.",
+    "materialNameLabel": "Commercial name",
+    "materialUnitLabel": "Unit",
+    "registerMaterial": "Register",
+    "materialRegistered": "Material registered in the catalogue.",
+    "countedIn": "counted in {unit}",
+    "unitHint": "The unit is on-chain because it decides how a quantity reads: “10” means nothing without it. Left in an editable file, it would make an immutable number reinterpretable after the fact."
   },
   "passports": {
-    "eyebrow": "Custom-made medical devices",
-    "title": "Passports",
-    "subtitle": "One token = one device. Non-transferable, except through an accepted handoff.",
-    "passport": "Passport",
-    "mint": "Issue a passport",
-    "formTitle": "New passport",
-    "formSubtitle": "Material is burned in the very transaction that creates the passport: the link cannot be reconstructed afterwards.",
-    "lotLabel": "Lot consumed",
+    "eyebrow": "Custom-made dental prostheses",
+    "title": "Prostheses",
+    "subtitle": "One passport = one prosthesis. Non-transferable, except through an accepted handoff.",
+    "passport": "Prosthesis",
+    "mint": "Create a prosthesis",
+    "formTitle": "New prosthesis",
+    "formSubtitle": "The laboratory consumes material it received: it is burned in the very transaction that creates the passport, so the material-to-prosthesis link cannot be reconstructed afterwards.",
+    "lotLabel": "Material lot consumed",
     "lotPlaceholder": "Pick a lot…",
-    "noLot": "No lot available: declare one first.",
+    "noLot": "No material in your custody: a distributor must ship you some.",
     "quantityLabel": "Quantity consumed",
     "quantityHint": "It will be burned permanently.",
     "conformityLabel": "Conformity file",
-    "minted": "Passport issued.",
+    "minted": "Prosthesis created, its passport is issued.",
+    "overdraft": "The requested quantity exceeds what is left in this lot.",
     "scope": {
       "mine": "Mine",
+      "pending": "To accept",
       "all": "All"
     },
     "empty": {
-      "mine": "You hold no passport.",
-      "all": "No passport issued yet."
+      "mine": "You hold no prosthesis.",
+      "pending": "No handoff is waiting for you.",
+      "all": "No prosthesis created yet.",
+      "lot": "No prosthesis made from lot #{lot}."
     },
+    "pendingHint": "These prostheses were handed off to you but are not yours yet: open the record and accept to take custody.",
     "lot": "Lot",
     "holder": "Holder",
     "mintedAt": "Issued on",
-    "handoffPending": "Handoff waiting for acceptance"
+    "handoffForMe": "Handoff to accept — it is meant for you",
+    "handoffPendingFor": "Handoff pending, reserved for {who}"
   },
   "passport": {
-    "eyebrow": "Device record",
-    "subtitle": "Timestamped, attributed, and never rewritable.",
-    "timelineTitle": "Lifecycle",
+    "eyebrow": "Prosthesis record",
+    "subtitle": "Every step timestamped, attributed, and never rewritable.",
+    "timelineTitle": "Prosthesis journey",
     "steps": {
       "manufactured": {
         "title": "Manufactured",
-        "desc": "The laboratory issued the passport by consuming material from its lot."
+        "desc": "The laboratory created the prosthesis by consuming material from a lot it received — the origin lot stays attached to the passport."
       },
       "certified": {
         "title": "Certified",
-        "desc": "The practitioner validated the conformity check on reception."
+        "desc": "The practitioner received the prosthesis and validated the conformity check."
       },
       "placed": {
         "title": "Placed",
-        "desc": "The device is in the mouth, bound to a patient by an anonymous fingerprint."
+        "desc": "The prosthesis is in the mouth, on an identified tooth, bound to a patient by an anonymous fingerprint."
       }
     },
     "factsTitle": "Frozen traits",
+    "consumed": "Material consumed",
     "conformity": "Conformity",
     "commitment": "Patient anonymous fingerprint",
     "commitmentHint": "Anonymous fingerprint: without the secret you keep on your side, it points to nobody. Erasing the patient record permanently breaks the link.",
     "actionsTitle": "Available actions",
     "actions": {
       "accept": "Accept handoff",
-      "initiate": "Hand off the device",
+      "initiate": "Hand off to practitioner",
+      "redirect": "Redirect the handoff",
       "attest": "Attest conformity",
       "openPlace": "Record placement",
       "place": "Confirm placement"
     },
     "handoffLabel": "Recipient",
-    "handoffHint": "Must be an approved laboratory or practitioner. They will have to accept: nobody can be forced to hold a passport.",
+    "handoffHint": "Must be an approved laboratory or practitioner. They will have to accept: nobody can be forced to hold a prosthesis.",
+    "handoffReplace": "A handoff is already armed: designating someone else replaces the previous one, which becomes void.",
     "pendingFor": "Handoff pending, reserved for",
-    "nothingToDo": "No action is open to you on this passport at this stage."
+    "pendingForMe": "This handoff is meant for you:",
+    "nothingToDo": "No action is open to you on this prosthesis at this stage.",
+    "tooth": "Tooth",
+    "toothValue": "no. {tooth} (FDI)",
+    "toothLabel": "Tooth number (FDI)",
+    "toothHint": "FDI / ISO 3950 notation: first digit the quadrant (1 to 8), second the position (1 to 8). Example: 26 = upper left first molar.",
+    "placedAt": "Placed on",
+    "placedBy": "Placed by"
   },
   "commitment": {
     "identityLabel": "Patient identity",
@@ -200,10 +247,7 @@
     "creditAddressLabel": "Address",
     "creditAmountLabel": "Amount",
     "mintCredits": "Issue",
-    "grantInitial": "Grant the initial 100",
-    "creditHint": "The initial 100 can be granted only once per address. 'Issue' tops up freely.",
     "creditsMinted": "Credits issued.",
-    "initialGranted": "Initial 100 credits granted.",
     "notAllowed": "This view is reserved for the administrator and registrars.",
     "grantSubtitle": "Approve a laboratory, a practitioner or a distributor.",
     "rootTitle": "Operators & regulator",
@@ -217,35 +261,45 @@
       "credits": "$CATENTA credits",
       "system": "Contracts & roles"
     },
-    "tabLocked": "You lack the role required for this tab."
+    "tabLocked": "You lack the role required for this tab.",
+    "creditHint": "Crediting an actor is a plain mint: as many credits as you want, as often as needed. There is no separate welcome allocation."
   },
   "errors": {
     "rejected": "Signature rejected in the wallet.",
     "insufficientFunds": "Insufficient balance to pay transaction fees.",
     "wrongStatus": "The passport is not at the stage this action requires.",
     "unknownLot": "This lot does not exist.",
-    "notLotOwner": "Only the laboratory that declared this lot can consume it.",
     "zeroQuantity": "Quantity must be greater than zero.",
     "emptyHash": "A document fingerprint is required.",
-    "notPassportHolder": "You do not hold this passport.",
+    "notPassportHolder": "You do not hold this prosthesis.",
     "recipientNotEligible": "The recipient must be an approved laboratory or practitioner.",
     "selfHandoff": "A handoff to yourself makes no sense.",
     "notPendingRecipient": "This handoff is not addressed to you.",
-    "passportLocked": "A placed device is locked: handing it off requires the regulator.",
+    "passportLocked": "A placed prosthesis is locked: handing it off requires the regulator.",
     "unauthorizedRole": "Your account does not hold the role required for this action.",
-    "soulbound": "The passport is not transferable: use the handoff flow.",
+    "soulbound": "The passport is not transferable: use the handoff.",
     "lotNotTransferable": "A lot belongs to the laboratory that declared it and cannot be transferred.",
     "accessControl": "Your account does not hold the required role.",
     "insufficientMaterial": "The lot does not hold enough material left.",
-    "unknownPassport": "This passport does not exist.",
+    "unknownPassport": "This prosthesis does not exist.",
     "unknown": "The transaction failed.",
     "insufficientCredits": "Not enough usage credits: top up to perform this action.",
     "creditsNotTransferable": "Usage credits are not transferable.",
-    "initialAlreadyGranted": "This address already received its initial credits."
+    "selfShipment": "A shipment to yourself makes no sense.",
+    "notShipmentRecipient": "This shipment is not meant for you.",
+    "notShipmentSender": "You are not the sender of this shipment.",
+    "shipmentSettled": "This shipment has already been received or cancelled.",
+    "unknownMaterial": "This material is not in the catalogue.",
+    "notMaterialOwner": "A manufacturer only declares lots of its own materials.",
+    "materialDiscontinued": "This material is discontinued: no new lot can be declared from it.",
+    "emptyField": "Both a name and a unit are required.",
+    "invalidTooth": "Invalid tooth number: FDI notation expects a quadrant from 1 to 8 and a position from 1 to 8.",
+    "quantityTooLarge": "Quantity too large to fit the passport's frozen traits."
   },
   "credits": {
     "unit": "credits",
-    "tooltip": "$CATENTA usage credits · {cost} per action. Non-transferable, unlisted — a prepaid allowance, not an investment."
+    "tooltip": "$CATENTA usage credits · {cost} per action. Non-transferable, unlisted — a prepaid allowance, not an investment.",
+    "insufficient": "Not enough usage credits: {balance} in balance, {cost} required per action. Top up to act."
   },
   "toast": {
     "pending": "Transaction pending…",
@@ -278,5 +332,32 @@
     "rolesTitle": "The actors",
     "layersTitle": "Three decoupled layers",
     "layers": "One <b>role authority</b>; <b>permanent stores</b> (passports, lots, credits) never replaced; <b>replaceable modules</b> carrying the logic. No contract knows a peer's address — everything goes through roles. Result: a feature (recall, bond) is added without redeploying the rest."
+  },
+  "qr": {
+    "cardTitle": "Passport QR code",
+    "title": "The whole history in one scan",
+    "hint": "Show it to any practitioner: it opens the record and reveals the prosthesis, its material, its origin, the tooth and the placement date. The QR encodes no data — only the record's address, read back on-chain every time. A printed QR therefore never goes stale.",
+    "copy": "Copy link",
+    "copied": "Link copied",
+    "download": "Download QR"
+  },
+  "lot": {
+    "eyebrow": "Material journey",
+    "unknownMaterial": "Material unknown to the catalogue",
+    "journeyTitle": "Lot journey",
+    "journeySubtitle": "Rebuilt from the registry itself: every step is an on-chain record, no event log is read.",
+    "factsTitle": "Origin",
+    "custodyTitle": "Current custody",
+    "custodySubtitle": "Who still holds some of this material today.",
+    "noCustody": "Nothing left in circulation: all of it was consumed.",
+    "devicesTitle": "What the material became",
+    "devicesSubtitle": "{consumed} consumed in manufacturing.",
+    "stepDeclared": "Lot declared on {date}",
+    "stepAccepted": "{qty} — reception confirmed",
+    "stepCancelled": "{qty} — shipment cancelled",
+    "stepCancelledNote": "no material moved",
+    "stepPending": "{qty} — shipment pending",
+    "stepPendingNote": "not received yet",
+    "stepManufactured": "{qty} consumed — prosthesis #{id}"
   }
 }

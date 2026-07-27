@@ -1,8 +1,10 @@
 # Catenta — Passeport Dentaire On-Chain
 
-Traçabilité des **dispositifs médicaux sur mesure** (couronnes, bridges, implants) et de leurs **lots de matériaux**, sur un registre partagé entre acteurs concurrents : laboratoires, praticiens, distributeurs, Ordre et ARS.
+Traçabilité des **prothèses dentaires sur mesure** (couronnes, bridges, implants) et de la **matière dont elles sont faites**, sur un registre partagé entre acteurs concurrents : fabricants de matière, distributeurs, laboratoires, praticiens, Ordre et ARS.
 
-> **État du projet — socle v0 + crédit d'usage, déployé sur Sepolia.** Six contrats compilent, 14 tests passent, le linter est propre ; la pile tourne sur Sepolia et le front est fonctionnel. Restent à faire : rappel de lot, caution qualité, CI, vérification Etherscan. L'état vérifié et ses limites sont dans le [rapport d'implémentation](docs/RAPPORT_V0.md).
+> **État du projet — chaîne complète fabricant → patient, à redéployer.** Sept contrats compilent, 28 tests passent. La chaîne du [parcours fonctionnel](docs/Catenta%20Parcours%20Prothese%20Tracabilite.pdf) est implémentée : le fabricant déclare la matière depuis son catalogue on-chain, elle circule par expéditions acceptées jusqu'au laboratoire, qui crée le passeport de la prothèse ; le praticien atteste, pose, et enregistre la dent.
+>
+> **Le déploiement Sepolia précédent est périmé** — l'ABI a changé partout. Restent à faire : rappel de lot, commande/empreinte du praticien (étape 0), statut « déposée » au remplacement, caution qualité, CI, vérification Etherscan.
 
 ---
 
@@ -28,8 +30,10 @@ L'apport est donc **la confiance entre parties non coopératives**, pas la perfo
 
 ## Ce que fait l'application
 
-- **Un passeport par prothèse** — un ERC-721 *soulbound* : un token = un dispositif, du labo jusqu'à la pose en bouche.
-- **Des lots de matériaux tracés** — ERC-1155, brûlés à la fabrication : le lien matière → prothèse est établi au mint et ne peut plus être réécrit.
+- **Un passeport par prothèse** — un ERC-721 *soulbound* : un passeport = une prothèse, du laboratoire jusqu'à la pose en bouche, avec la dent (notation FDI), la date et le praticien inscrits à la pose.
+- **Un catalogue matière on-chain** — le fabricant décrit ses produits une fois : nom commercial et **unité**. L'unité est on-chain parce qu'elle décide comment se lit une quantité : « 10 » ne veut rien dire sans elle.
+- **Une chaîne de garde de la matière** — ERC-1155, déclarée par le fabricant puis expédiée de maillon en maillon. Chaque changement de garde est **accepté par son destinataire** : personne ne peut se voir imposer un lot, surtout s'il est rappelé. La matière est brûlée à la fabrication : le lien matière → prothèse est établi au mint et ne peut plus être réécrit.
+- **Un QR code par prothèse** — il n'encode rien d'autre que l'adresse de la fiche : tout est relu on-chain à l'ouverture, donc un QR imprimé ne périme jamais.
 - **Un rappel de lot instantané et prouvable** — le régulateur marque *le lot* (une seule écriture) ; le statut « rappelé » de chaque passeport en est **dérivé**, et distributeurs et cabinets **accusent réception on-chain** : la preuve d'exécution qui manque aujourd'hui.
 - **Une caution qualité** — ERC-20 stakée par le laboratoire, *slashable* par le régulateur sur preuve, avec délai de retrait : le registre passe de passif à « à enjeux ».
 - **Un crédit d'usage `$CATENTA`** — ERC-20 non transférable et non coté : l'abonnement (hors chaîne) émet des crédits, chaque action en brûle un. Le modèle économique, sans jamais vendre de jeton ([SPEC §8.3bis](docs/SPEC.md)).
@@ -37,8 +41,8 @@ L'apport est donc **la confiance entre parties non coopératives**, pas la perfo
 ## Architecture
 
 ```
-   Acteurs (RBAC)                              Stockage off-chain
-labo · praticien · distributeur · Ordre/ARS   IPFS (docs) · PII hors chaîne (RGPD)
+              Acteurs (RBAC)                             Stockage off-chain
+fabricant · distributeur · labo · praticien · Ordre/ARS   IPFS (docs) · PII hors chaîne (RGPD)
                     │                                    │ hash / CID uniquement
                     v                                    v
         ┌───────────────────────────┐
@@ -46,13 +50,13 @@ labo · praticien · distributeur · Ordre/ARS   IPFS (docs) · PII hors chaîne
         └─────────────┬─────────────┘   « ai-je ce rôle ? »
       ┌───────────────┼───────────────┬──────────────────┐
       v               v               v                  v
-┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌──────────────┐  ┌──────────────┐
-│ PassportNFT │ │MaterialLots │ │CatentaCredit│ │  Lifecycle   │  │ Recall·Bond  │
-│ ERC-721     │ │ ERC-1155    │ │ ERC-20      │ │  Module      │  │   (v1)       │
-│ soulbound   │ │ burn        │ │ crédit usage│ │  + facture   │  │              │
-├─────────────┤ ├─────────────┤ ├─────────────┤ ├──────────────┤  ├──────────────┤
-│  PERMANENT  │ │  PERMANENT  │ │  PERMANENT  │ │ REMPLAÇABLE  │  │   ADDITIF    │
-└─────────────┘ └─────────────┘ └─────────────┘ └──────────────┘  └──────────────┘
+┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌──────────────┐  ┌──────────────┐
+│ PassportNFT │ │MaterialLots │ │ Material    │ │CatentaCredit│ │  Lifecycle   │  │ Recall·Bond  │
+│ ERC-721     │ │ ERC-1155    │ │ Catalog     │ │ ERC-20      │ │  Module      │  │   (v1)       │
+│ soulbound   │ │ garde+burn  │ │ nom · unité │ │ crédit usage│ │  + facture   │  │              │
+├─────────────┤ ├─────────────┤ ├─────────────┤ ├─────────────┤ ├──────────────┤  ├──────────────┤
+│  PERMANENT  │ │  PERMANENT  │ │  PERMANENT  │ │  PERMANENT  │ │ REMPLAÇABLE  │  │   ADDITIF    │
+└─────────────┘ └─────────────┘ └─────────────┘ └─────────────┘ └──────────────┘  └──────────────┘
 ```
 
 **Ce qui doit survivre vit dans un stockage permanent ; ce qui évoluera vit dans un module qu'on peut remplacer.** Les jetons ne portent que l'immuable (lot d'origine, empreinte du dossier de conformité, figés au mint) ; les statuts vivent dans le module. **Aucun contrat ne connaît l'adresse d'un pair** : chacun demande un rôle à `CatentaRoles`. Conséquence directe — ajouter le rappel ou la caution ne touche aucun contrat existant : on déploie, on accorde un rôle. **Plusieurs administrateurs sans multiplier la racine** : l'agrément des acteurs est délégué à un `REGISTRAR_ROLE` (donnable à X opérateurs), la racine `DEFAULT_ADMIN` restant unique pour les rôles sensibles ([SPEC §2](docs/SPEC.md)).
@@ -86,7 +90,8 @@ Ces choix reprennent **délibérément** la stack éprouvée du projet précéde
 |---|---|---|
 | `CatentaRoles` | `AccessControlEnumerable` | les rôles (RBAC) **et** l'énumération des titulaires (`getRoleMember`) — la vue `/admin` liste les agréés **sans indexeur**. `_setRoleAdmin` délègue l'agrément au `REGISTRAR_ROLE` |
 | `PassportNFT` | `ERC721` · `ERC721Enumerable` | le passeport ; `tokenOfOwnerByIndex` liste les passeports d'un cabinet **sans indexeur** ; `_update` surchargé = **soulbound** (tous les chemins de transfert y passent) |
-| `MaterialLots` | `ERC1155` · `ERC1155Supply` · `ERC1155Burnable` | un lot = une quantité semi-fongible ; `totalSupply(lotId)` **est** la quantité restante, gratuitement ; burn de la matière au mint |
+| `MaterialLots` | `ERC1155` · `ERC1155Supply` · `ERC1155Burnable` | un lot = une quantité semi-fongible ; `totalSupply(lotId)` **est** la quantité restante, gratuitement ; `balanceOf` **est** la garde du moment ; `_update` surchargé = pas de transfert direct, la garde ne bouge qu'au bout d'une expédition acceptée |
+| `MaterialCatalog` | — (logique métier propre) | ce dont un lot est fait : nom commercial et **unité**, déclarés par le fabricant. Le lot n'en porte qu'un `uint32`, logé dans un slot qu'il payait déjà |
 | `CatentaCredit` | `ERC20` | le crédit d'usage `$CATENTA` ; `_update` surchargé = **non transférable** (pas de marché, pas de cours) ; `decimals()=0` |
 | tous | `IERC165`, hooks internes | `supportsInterface`, `_update`, `_increaseBalance` surchargés proprement — les **coutures** que l'on teste une par une |
 
@@ -115,6 +120,7 @@ catenta/
 ├── contracts/
 │   ├── access/           CatentaRoles · RoleAware
 │   ├── tokens/           PassportNFT (721) · MaterialLots (1155) · CatentaCredit (20)
+│   ├── registry/         MaterialCatalog (nom + unité de chaque matière)
 │   └── modules/          LifecycleModule · (Recall · Bond en v1)
 ├── test/                 *.ts (scénarios) · *.t.sol (propriétés / fuzz)
 ├── ignition/modules/     modules de déploiement
@@ -141,8 +147,8 @@ Hardhat 3 + Ignition, avec les secrets dans le **keystore chiffré** (jamais dan
 | Élément | Où l'obtenir |
 |---|---|
 | **Un compte de déploiement** | un compte MetaMask **dédié au dev** (jamais un compte à valeur réelle) |
-| **Du Sepolia ETH** dessus | un faucet — le déploiement enchaîne ~11 transactions (5 contrats + 6 attributions de rôles) |
-| **Une URL RPC Sepolia** | Reown (voir plus bas), ou Alchemy / Infura (gratuit) |
+| **Du Sepolia ETH** dessus | un faucet — le déploiement enchaîne ~13 transactions (6 contrats + 7 attributions de rôles) |
+| **Une URL RPC Sepolia** | Alchemy ou Infura (gratuit). **Pas** l'endpoint Reown — voir l'avertissement plus bas |
 
 ### 1. Renseigner le keystore (interactif, une seule fois)
 
@@ -155,28 +161,38 @@ Chaque commande demande la **valeur** puis un **mot de passe de keystore**. La v
 
 > **Clé privée, pas phrase de récupération.** Dans MetaMask : compte de dev → ⋮ → *Détails du compte* → *Afficher la clé privée* → une chaîne hex de 64 caractères (**pas** les 12/24 mots — ceux-là ne vont JAMAIS dans un outil). Ajouter `0x` devant.
 
-**URL RPC via Reown** (réutilise le Project ID du front — voir [`web/.env.example`](web/.env.example)) :
+**URL RPC — prendre un fournisseur, pas l'endpoint du wallet.** Alchemy ou Infura, offre gratuite, ~30 secondes d'inscription :
 
 ```
-https://rpc.walletconnect.org/v1?chainId=eip155:11155111&projectId=<REOWN_PROJECT_ID>
+https://eth-sepolia.g.alchemy.com/v2/<API_KEY>
 ```
 
-Endpoint pratique parce qu'un seul identifiant sert au front et au déploiement ; s'il renvoie des `429`/timeouts pendant les 8 transactions, basculer sur un Alchemy/Infura et **relancer la même commande** (Ignition reprend où il s'est arrêté, il ne redéploie rien de déjà passé).
+> ⚠️ **`rpc.walletconnect.org` ne tient pas un déploiement.** Il répond correctement transaction par transaction, mais Ignition envoie chaque **batch en parallèle** — 5 contrats d'un coup au batch #2 — et l'endpoint étrangle la rafale. Son load balancer renvoie alors un `403 Forbidden` là où on attendrait un `429`, ce qui se lit comme une panne alors que c'est une limite de débit. Le déploiement s'arrête au milieu.
+>
+> Le Project ID Reown reste nécessaire au **front** (`web/.env`), où les appels sont espacés et l'origine autorisée. Pour le déploiement, prendre un fournisseur qui accepte les rafales.
+
+**Si le déploiement s'interrompt** (RPC qui coupe, 429, timeout), ce n'est pas grave : Ignition tient un journal. Corriger l'URL RPC dans le keystore puis **relancer exactement la même commande, avec le même `--deployment-id`** — il reprend où il s'est arrêté et ne redéploie rien de déjà passé.
+
+```bash
+npx hardhat keystore set SEPOLIA_RPC_URL      # écrase la valeur précédente
+```
 
 ### 2. Déployer
 
 ```bash
-npx hardhat ignition deploy ignition/modules/Catenta.ts --network sepolia
+npx hardhat ignition deploy ignition/modules/Catenta.ts --network sepolia --deployment-id catenta-v1
 ```
 
-Le module [`Catenta.ts`](ignition/modules/Catenta.ts) déploie les 5 contrats **et** accorde au `LifecycleModule` ses 5 rôles techniques (dont `CREDIT_SPENDER`) plus le `CREDIT_MINTER_ROLE` à l'admin, dans la foulée — sans quoi les stockages refusent toute écriture. Le **compte déployeur devient l'administrateur** (`DEFAULT_ADMIN_ROLE`).
+Un `--deployment-id` explicite plutôt que celui par défaut (`chain-11155111`) : le journal de la pile précédente reste intact, donc ses adresses restent retrouvables. Sans lui, un module qui a changé de forme déclenche une **erreur de réconciliation** (« a dependency has been added ») — Ignition refuse de mélanger deux architectures dans un même déploiement. `--reset` marche aussi mais efface l'historique.
+
+Le module [`Catenta.ts`](ignition/modules/Catenta.ts) déploie les 6 contrats **et** accorde au `LifecycleModule` ses 6 rôles techniques (dont `LOT_CUSTODIAN` et `CREDIT_SPENDER`) plus le `CREDIT_MINTER_ROLE` à l'admin, dans la foulée — sans quoi les stockages refusent toute écriture. Le **compte déployeur devient l'administrateur** (`DEFAULT_ADMIN_ROLE`).
 
 > Confier l'admin à une autre adresse (multisig) dès l'origine :
 > `--parameters '{"CatentaModule":{"admin":"0x…"}}'`
 
 ### 3. Brancher le front
 
-Ignition affiche 4 adresses. **Une seule est nécessaire** : celle du `LifecycleModule` — il expose `ROLES`, `PASSPORTS` et `LOTS`, que le front dérive au démarrage. La reporter dans `web/.env` :
+Ignition affiche 6 adresses. **Une seule est nécessaire** : celle du `LifecycleModule` — il expose `ROLES`, `PASSPORTS`, `LOTS`, `CATALOG` et `CREDIT`, que le front dérive au démarrage. La reporter dans `web/.env` :
 
 ```bash
 VITE_LIFECYCLE_ADDRESS=0x…      # l'adresse LifecycleModule
@@ -184,7 +200,9 @@ VITE_LIFECYCLE_ADDRESS=0x…      # l'adresse LifecycleModule
 
 ### 4. Amorcer les rôles acteurs
 
-À froid, seuls les rôles **techniques** sont attribués. Pour dérouler le parcours, l'admin s'accorde `LAB_ROLE` / `PRACTITIONER_ROLE` depuis la vue **Administration** du front. Tant que c'est vide, l'app se connecte mais reste en lecture seule — comportement normal, pas un bug.
+À froid, seuls les rôles **techniques** sont attribués. Pour dérouler le parcours, l'admin agrée les acteurs depuis la vue **Administration** — au minimum un `MANUFACTURER_ROLE`, sans quoi aucun lot ne peut naître, puis `DISTRIBUTOR` / `LAB` / `PRACTITIONER`. Tant que c'est vide, l'app se connecte mais reste en lecture seule — comportement normal, pas un bug.
+
+Ordre de la démo : le fabricant enregistre une matière au catalogue (nom + unité) → déclare un lot → l'expédie au distributeur → qui l'accepte et en revend au laboratoire → qui l'accepte, crée la prothèse, et la remet au praticien → qui accepte, atteste, et pose en indiquant la dent. Chaque acteur a besoin de crédits `$CATENTA`, que l'admin émet depuis l'onglet **Crédits**.
 
 > Vérification d'Etherscan (`hardhat verify`) : à ajouter, non couvert par cette version.
 

@@ -51,10 +51,20 @@
             </div>
             <div class="flex items-center justify-between gap-2">
               <dt class="text-slate-label">{{ t('passports.lot') }}</dt>
-              <dd>
-                <RouterLink :to="{ name: 'lots' }" class="font-semibold text-teal hover:underline">
+              <dd class="min-w-0">
+                <!-- Vers LE lot, pas vers la liste : c'est le lien matière → dispositif -->
+                <RouterLink
+                  :to="{ name: 'lot', params: { id: p.lotId } }"
+                  class="block truncate text-right font-semibold text-teal hover:underline"
+                >
                   #{{ p.lotId }}
                 </RouterLink>
+              </dd>
+            </div>
+            <div class="flex items-center justify-between gap-2">
+              <dt class="text-slate-label">{{ t('passport.consumed') }}</dt>
+              <dd class="font-semibold text-navy-soft">
+                {{ formatQuantity(p.quantity, consumedUnit) }}
               </dd>
             </div>
             <div class="flex items-center justify-between gap-2">
@@ -65,6 +75,22 @@
               <dt class="text-slate-label">{{ t('passport.conformity') }}</dt>
               <dd><HashChip :value="p.conformityHash" /></dd>
             </div>
+            <template v-if="isPlaced">
+              <div class="flex items-center justify-between gap-2">
+                <dt class="text-slate-label">{{ t('passport.tooth') }}</dt>
+                <dd class="font-semibold text-navy">
+                  {{ t('passport.toothValue', { tooth: p.tooth }) }}
+                </dd>
+              </div>
+              <div class="flex items-center justify-between gap-2">
+                <dt class="text-slate-label">{{ t('passport.placedAt') }}</dt>
+                <dd class="text-navy-soft">{{ formatDate(p.placedAt) }}</dd>
+              </div>
+              <div class="flex items-center justify-between gap-2">
+                <dt class="text-slate-label">{{ t('passport.placedBy') }}</dt>
+                <dd><AddressChip :address="p.practitioner" /></dd>
+              </div>
+            </template>
             <div v-if="hasCommitment" class="flex items-center justify-between gap-2">
               <dt class="text-slate-label">{{ t('passport.commitment') }}</dt>
               <dd><HashChip :value="p.patientCommitment" /></dd>
@@ -82,36 +108,80 @@
             :key="a.key"
             :variant="a.variant"
             :loading="busy === a.key"
+            :disabled="!a.free && !credits.canAfford"
             @click="a.run()"
           >
             {{ t(`passport.actions.${a.key}`) }}
           </UiButton>
         </div>
 
+        <p v-if="!credits.canAfford" class="mt-3 text-xs font-semibold text-amber-deep">
+          {{ t('credits.insufficient', { cost: credits.actionCost, balance: credits.balance }) }}
+        </p>
+
         <!-- Handoff : on désigne un destinataire nominatif -->
         <form v-if="showHandoff" class="mt-5 grid gap-3 sm:grid-cols-[1fr_auto]" @submit.prevent="doInitiate">
           <div>
             <label class="label">{{ t('passport.handoffLabel') }}</label>
-            <input v-model="recipient" class="input mono" placeholder="0x…" />
-            <p class="hint">{{ t('passport.handoffHint') }}</p>
+            <input
+              v-model="recipient"
+              class="input mono"
+              list="handoff-recipients"
+              placeholder="0x…"
+            />
+            <!-- Les acteurs éligibles sont lus on-chain, pas décidés ici -->
+            <datalist id="handoff-recipients">
+              <option v-for="address in eligible" :key="address" :value="address" />
+            </datalist>
+            <p class="hint">
+              {{ p.pendingHandoff ? t('passport.handoffReplace') : t('passport.handoffHint') }}
+            </p>
           </div>
-          <UiButton type="submit" class="self-start sm:mt-6" :loading="busy === 'initiate'" :disabled="!isAddress(recipient)">
-            {{ t('passport.actions.initiate') }}
+          <UiButton
+            type="submit"
+            class="self-start sm:mt-6"
+            :loading="busy === 'initiate'"
+            :disabled="!isAddress(recipient) || !credits.canAfford"
+          >
+            {{ t(`passport.actions.${p.pendingHandoff ? 'redirect' : 'initiate'}`) }}
           </UiButton>
         </form>
 
         <!-- Pose : l'empreinte anonyme du patient se construit ici -->
         <div v-if="showPlace" class="mt-5">
+          <div class="mb-5 max-w-xs">
+            <label class="label">{{ t('passport.toothLabel') }}</label>
+            <input
+              v-model="tooth"
+              class="input"
+              type="number"
+              min="11"
+              max="88"
+              step="1"
+              placeholder="26"
+            />
+            <p class="hint">{{ t('passport.toothHint') }}</p>
+          </div>
           <CommitmentBuilder v-model="commitment" />
-          <UiButton class="mt-4" :loading="busy === 'place'" :disabled="!commitment" @click="doPlace">
+          <UiButton
+            class="mt-4"
+            :loading="busy === 'place'"
+            :disabled="!commitment || !isValidTooth || !credits.canAfford"
+            @click="doPlace"
+          >
             {{ t('passport.actions.place') }}
           </UiButton>
         </div>
 
       </UiCard>
 
-      <UiAlert v-if="p.pendingHandoff" tone="warn" class="mt-5">
-        {{ t('passport.pendingFor') }}
+      <!-- Le QR : la fiche entière tient dans un scan, rien n'y est encodé -->
+      <UiCard class="mt-5" :title="t('qr.cardTitle')" badge="▤">
+        <PassportQr :passport-id="p.id" />
+      </UiCard>
+
+      <UiAlert v-if="p.pendingHandoff" :tone="isPending ? 'info' : 'warn'" class="mt-5">
+        {{ isPending ? t('passport.pendingForMe') : t('passport.pendingFor') }}
         <AddressChip :address="p.pendingHandoff" />
       </UiAlert>
 
@@ -133,14 +203,18 @@ import StatusBadge from '@/components/ui/StatusBadge.vue'
 import AddressChip from '@/components/ui/AddressChip.vue'
 import HashChip from '@/components/ui/HashChip.vue'
 import CommitmentBuilder from '@/components/CommitmentBuilder.vue'
+import PassportQr from '@/components/PassportQr.vue'
 import { Status, parseError } from '@/lib/contracts'
 import { ZERO_ADDRESS } from '@/lib/constants'
-import { eqAddress, formatDate, isAddress } from '@/lib/format'
+import { eqAddress, formatDate, formatQuantity, isAddress } from '@/lib/format'
 import { useCatentaStore } from '@/stores/catenta'
 import { usePassportsStore } from '@/stores/passports'
+import { useLotsStore } from '@/stores/lots'
+import { useMaterialsStore } from '@/stores/materials'
 import { useToastsStore } from '@/stores/toasts'
 import { useRolesStore } from '@/stores/roles'
 import { useWalletStore } from '@/stores/wallet'
+import { useCreditsStore } from '@/stores/credits'
 
 const { t } = useI18n()
 const route = useRoute()
@@ -149,6 +223,9 @@ const passports = usePassportsStore()
 const toasts = useToastsStore()
 const roles = useRolesStore()
 const wallet = useWalletStore()
+const credits = useCreditsStore()
+const lots = useLotsStore()
+const materials = useMaterialsStore()
 
 const id = computed(() => Number(route.params.id))
 const p = computed(() => passports.current)
@@ -158,12 +235,43 @@ const showHandoff = ref(false)
 const showPlace = ref(false)
 const recipient = ref('')
 const commitment = ref('')
+const tooth = ref('')
+
+/** L'unité vient du catalogue on-chain, via le lot d'origine du passeport. */
+const consumedUnit = computed(() =>
+  materials.unitOf(lots.list.find((l) => l.id === p.value?.lotId)?.materialId),
+)
+
+const isPlaced = computed(() => p.value?.status === Status.Placed)
+
+/** Notation FDI : quadrant 1-8, position 1-8 — le contrat vérifie la même chose. */
+const isValidTooth = computed(() => {
+  const n = Number(tooth.value)
+  if (!Number.isInteger(n)) return false
+  const quadrant = Math.floor(n / 10)
+  const position = n % 10
+  return quadrant >= 1 && quadrant <= 8 && position >= 1 && position <= 8
+})
 
 const isHolder = computed(() => eqAddress(p.value?.holder, wallet.address))
 const isPending = computed(() => eqAddress(p.value?.pendingHandoff, wallet.address))
 const hasCommitment = computed(
   () => !!p.value?.patientCommitment && p.value.patientCommitment !== ZERO_ADDRESS.padEnd(66, '0'),
 )
+
+/**
+ * Les destinataires que le contrat accepterait : titulaires de LAB ou
+ * PRACTITIONER, lus on-chain (AccessControlEnumerable). La saisie reste libre —
+ * la liste est une aide, pas une autorisation.
+ */
+const eligible = computed(() => {
+  const unique = new Map<string, string>()
+  for (const address of [...(roles.members.LAB ?? []), ...(roles.members.PRACTITIONER ?? [])]) {
+    if (eqAddress(address, wallet.address)) continue // remise à soi-même refusée
+    unique.set(address.toLowerCase(), address)
+  }
+  return [...unique.values()]
+})
 
 const steps = computed(() => {
   const s = p.value?.status ?? Status.Manufactured
@@ -174,7 +282,13 @@ const steps = computed(() => {
   ]
 })
 
-type Action = { key: string; variant?: 'primary' | 'secondary' | 'ghost'; run: () => void }
+type Action = {
+  key: string
+  variant?: 'primary' | 'secondary' | 'ghost'
+  /** Sans coût en crédit — seule l'acceptation d'une remise l'est. */
+  free?: boolean
+  run: () => void
+}
 
 /**
  * Les actions proposées croisent le rôle ET le statut, tous deux lus on-chain.
@@ -188,15 +302,23 @@ const actions = computed<Action[]>(() => {
   const out: Action[] = []
 
   if (isPending.value) {
-    out.push({ key: 'accept', run: () => run('accept', () => passports.acceptHandoff(id.value)) })
-  }
-  if (isHolder.value && !passport.pendingHandoff && passport.status !== Status.Placed) {
     out.push({
-      key: 'initiate',
+      key: 'accept',
+      free: true,
+      run: () => run('accept', () => passports.acceptHandoff(id.value)),
+    })
+  }
+  // Une remise déjà armée reste redirigeable : `armHandoff` écrase la
+  // désignation précédente. La masquer gèlerait le passeport sur une adresse
+  // saisie de travers, jusqu'à ce que ce destinataire-là veuille bien accepter.
+  if (isHolder.value && passport.status !== Status.Placed) {
+    out.push({
+      key: passport.pendingHandoff ? 'redirect' : 'initiate',
       variant: 'secondary',
       run: () => {
         showHandoff.value = !showHandoff.value
         showPlace.value = false
+        if (showHandoff.value) void roles.loadMembers()
       },
     })
   }
@@ -227,6 +349,7 @@ async function run(key: string, fn: () => Promise<string>) {
     showPlace.value = false
     recipient.value = ''
     commitment.value = ''
+    tooth.value = ''
   } catch {
     /* toast déjà affiché */
   } finally {
@@ -236,10 +359,14 @@ async function run(key: string, fn: () => Promise<string>) {
 
 const doInitiate = () =>
   run('initiate', () => passports.initiateHandoff(id.value, recipient.value.trim()))
-const doPlace = () => run('place', () => passports.markPlaced(id.value, commitment.value))
+const doPlace = () =>
+  run('place', () => passports.markPlaced(id.value, Number(tooth.value), commitment.value))
 
 function load() {
-  if (catenta.ready) void passports.loadOne(id.value)
+  if (!catenta.ready) return
+  void passports.loadOne(id.value)
+  // Lots et catalogue : de quoi nommer la matière et son unité.
+  void Promise.all([lots.load(), materials.load()])
 }
 onMounted(load)
 watch(() => [catenta.ready, route.params.id], load)
