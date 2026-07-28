@@ -30,8 +30,7 @@
           <select v-model="lotId" class="input">
             <option value="">{{ t('passports.lotPlaceholder') }}</option>
             <option v-for="lot in myLots" :key="lot.id" :value="String(lot.id)">
-              #{{ lot.id }}{{ materials.nameOf(lot.materialId) ? ` — ${materials.nameOf(lot.materialId)}` : '' }}
-              — {{ formatQuantity(lot.mine, materials.unitOf(lot.materialId)) }} {{ t('lots.remaining') }}
+              #{{ lot.id }} — {{ lot.material }} — {{ formatQuantity(lot.mine, lot.unit) }}
             </option>
           </select>
           <p v-if="!myLots.length" class="hint">{{ t('passports.noLot') }}</p>
@@ -161,7 +160,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiButton from '@/components/ui/UiButton.vue'
@@ -174,7 +173,6 @@ import { parseError } from '@/lib/contracts'
 import { useCatentaStore } from '@/stores/catenta'
 import { usePassportsStore } from '@/stores/passports'
 import { useLotsStore } from '@/stores/lots'
-import { useMaterialsStore } from '@/stores/materials'
 import { useRolesStore } from '@/stores/roles'
 import { useWalletStore } from '@/stores/wallet'
 import { useToastsStore } from '@/stores/toasts'
@@ -182,6 +180,7 @@ import { useCreditsStore } from '@/stores/credits'
 
 const { t } = useI18n()
 const route = useRoute()
+const router = useRouter()
 const catenta = useCatentaStore()
 const passports = usePassportsStore()
 const lots = useLotsStore()
@@ -189,7 +188,6 @@ const roles = useRolesStore()
 const wallet = useWalletStore()
 const toasts = useToastsStore()
 const credits = useCreditsStore()
-const materials = useMaterialsStore()
 
 /**
  * « En attente pour moi » n'est pas un confort : le destinataire d'une remise
@@ -219,7 +217,7 @@ const displayed = computed(() => {
  */
 const myLots = computed(() => lots.list.filter((l) => l.mine > 0n))
 const selectedLot = computed(() => myLots.value.find((l) => String(l.id) === lotId.value) ?? null)
-const selectedUnit = computed(() => materials.unitOf(selectedLot.value?.materialId))
+const selectedUnit = computed(() => selectedLot.value?.unit ?? '')
 
 /** Ce qu'il restera dans le lot — la conséquence, montrée avant la signature. */
 const preview = computed(() => {
@@ -228,7 +226,7 @@ const preview = computed(() => {
   if (!lot || !Number.isInteger(qty) || qty <= 0) return ''
   const left = lot.mine - BigInt(qty)
   if (left < 0n) return ''
-  const unit = materials.unitOf(lot.materialId)
+  const unit = lot.unit
   return `${formatQuantity(lot.mine, unit)} → ${formatQuantity(left, unit)} ${t('lots.remaining')}`
 })
 
@@ -269,7 +267,7 @@ async function submitMint() {
     quantity.value = ''
     conformityHash.value = ''
     showForm.value = false
-    await Promise.all([reload(), lots.load(), materials.load()])
+    await Promise.all([reload(), lots.load()])
   } catch {
     /* toast déjà affiché */
   } finally {
@@ -277,13 +275,30 @@ async function submitMint() {
   }
 }
 
+/**
+ * Un fabricant atterrit ici après connexion (c'est la route par défaut) alors
+ * que les prothèses ne le concernent pas. On le renvoie vers la matière plutôt
+ * que de lui afficher un écran sans usage.
+ *
+ * On ne bloque en revanche PAS la fiche d'une prothèse : un enregistrement
+ * public reste lisible par qui l'ouvre délibérément. Ce qu'on retire, c'est le
+ * bruit, pas un droit — la chaîne est publique de toute façon.
+ */
+watch(
+  () => [roles.loading, roles.seesPassports] as const,
+  ([loading, sees]) => {
+    if (!loading && !sees) void router.replace({ name: 'lots' })
+  },
+  { immediate: true },
+)
+
 async function boot() {
   if (!catenta.ready) return
   // « Les dispositifs de ce lot » porte sur tout le registre : arriver depuis
   // une carte de lot sur l'onglet « les miens » ne montrerait presque rien.
   if (lotFilter.value && scope.value === 'mine') scope.value = 'all'
   // La pastille « à accepter » doit être juste quel que soit l'onglet ouvert.
-  const tasks = [reload(), lots.load(), materials.load()]
+  const tasks = [reload(), lots.load()]
   if (scope.value !== 'pending') tasks.push(passports.refreshPending())
   await Promise.all(tasks)
 }

@@ -29,25 +29,20 @@
       badge="＋"
     >
       <form class="grid gap-5 sm:grid-cols-2" @submit.prevent="submitDeclare">
-        <!-- La matière vient du catalogue on-chain, pas d'une saisie libre -->
+        <!-- Le sélecteur n'est qu'une aide : la matière part on-chain avec le lot -->
         <div>
           <label class="label">{{ t('lots.materialLabel') }}</label>
-          <select v-model="materialId" class="input">
-            <option value="">{{ t('lots.materialPlaceholder') }}</option>
-            <option v-for="m in myMaterials" :key="m.id" :value="String(m.id)">
-              {{ m.name }} ({{ m.unit }})
-            </option>
-          </select>
-          <p v-if="!myMaterials.length" class="hint">{{ t('lots.noMaterial') }}</p>
-          <p v-else class="hint">{{ t('lots.materialHint') }}</p>
+          <input v-model="material" class="input" list="material-picker" placeholder="Zircone Y-TZP A2" />
+          <datalist id="material-picker">
+            <option v-for="m in picker" :key="m.name" :value="m.name">{{ m.unit }}</option>
+          </datalist>
+          <p class="hint">{{ t('lots.materialHint') }}</p>
         </div>
         <div>
           <label class="label">{{ t('lots.quantityLabel') }}</label>
           <div class="flex items-center gap-2">
             <input v-model="quantity" class="input" type="number" min="1" step="1" placeholder="1000" />
-            <span v-if="selectedUnit" class="whitespace-nowrap text-sm font-semibold text-slate-muted">
-              {{ selectedUnit }}
-            </span>
+            <input v-model="unit" class="input !w-28" placeholder="g" />
           </div>
           <p class="hint">{{ t('lots.quantityHint') }}</p>
         </div>
@@ -60,48 +55,6 @@
           </UiButton>
         </div>
       </form>
-    </UiCard>
-
-    <!-- Le catalogue : ce que le fabricant produit, décrit une fois par produit -->
-    <UiCard
-      v-if="roles.isManufacturer"
-      tone="panel"
-      class="mt-5"
-      :title="t('lots.catalogTitle')"
-      :subtitle="t('lots.catalogSubtitle')"
-      badge="◆"
-      badge-tone="navy"
-    >
-      <ul v-if="myMaterials.length" class="mb-4 space-y-2">
-        <li
-          v-for="m in myMaterials"
-          :key="m.id"
-          class="flex flex-wrap items-center justify-between gap-2 rounded-card bg-white/70 px-3 py-2 text-xs"
-        >
-          <span class="font-bold text-navy">{{ m.name }}</span>
-          <span class="text-slate-label">{{ t('lots.countedIn', { unit: m.unit }) }}</span>
-        </li>
-      </ul>
-
-      <form class="grid gap-3 sm:grid-cols-[1fr_140px_auto]" @submit.prevent="submitMaterial">
-        <div>
-          <label class="label">{{ t('lots.materialNameLabel') }}</label>
-          <input v-model="materialName" class="input" placeholder="Zircone Y-TZP A2" />
-        </div>
-        <div>
-          <label class="label">{{ t('lots.materialUnitLabel') }}</label>
-          <input v-model="materialUnit" class="input" placeholder="g" />
-        </div>
-        <UiButton
-          type="submit"
-          class="self-start sm:mt-6"
-          :loading="busy === 'material'"
-          :disabled="!materialName.trim() || !materialUnit.trim()"
-        >
-          {{ t('lots.registerMaterial') }}
-        </UiButton>
-      </form>
-      <p class="hint mt-2">{{ t('lots.unitHint') }}</p>
     </UiCard>
 
     <UiAlert v-if="!roles.isManufacturer" tone="info" class="mt-6">{{ t('lots.readOnly') }}</UiAlert>
@@ -169,15 +122,17 @@
 
     <div v-if="lots.loading" class="mt-8 text-sm text-slate-muted">{{ t('common.loading') }}</div>
 
-    <div v-else-if="!lots.list.length" class="mt-8">
+    <div v-else-if="!visibleLots.length" class="mt-8">
       <UiCard tone="panel">
-        <p class="text-sm text-navy-soft">{{ t('lots.empty') }}</p>
+        <p class="text-sm text-navy-soft">
+          {{ roles.isManufacturer ? t('lots.emptyManufacturer') : t('lots.emptyHolder') }}
+        </p>
       </UiCard>
     </div>
 
     <div v-else class="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
       <UiCard
-        v-for="lot in lots.list"
+        v-for="lot in visibleLots"
         :id="`lot-${lot.id}`"
         :key="lot.id"
         class="!p-5 scroll-mt-24 transition"
@@ -192,23 +147,30 @@
               {{ t('lots.lot') }} #{{ lot.id }} →
             </RouterLink>
             <!-- Nom et unité viennent du catalogue on-chain -->
-            <p v-if="materials.nameOf(lot.materialId)" class="truncate text-sm font-bold text-navy">
-              {{ materials.nameOf(lot.materialId) }}
+            <p v-if="lot.material" class="truncate text-sm font-bold text-navy">
+              {{ lot.material }}
             </p>
             <p
               class="mt-1 text-2xl font-extrabold"
-              :class="lot.remaining > 0n ? 'text-teal' : 'text-slate-muted'"
+              :class="headlineQuantity(lot) > 0n ? 'text-teal' : 'text-slate-muted'"
             >
-              {{ formatQuantity(lot.remaining, materials.unitOf(lot.materialId)) }}
+              {{ formatQuantity(headlineQuantity(lot), lot.unit) }}
             </p>
-            <p class="text-xs text-slate-label">{{ t('lots.remaining') }}</p>
+            <p class="text-xs text-slate-label">{{ headlineLabel(lot) }}</p>
+            <p v-if="!isOwnProduction(lot)" class="text-[0.7rem] text-slate-muted">
+              {{
+                t('lots.outOfCirculating', {
+                  total: formatQuantity(lot.remaining, lot.unit),
+                })
+              }}
+            </p>
           </div>
           <div class="flex flex-none flex-col items-end gap-1">
             <span
-              v-if="lot.mine > 0n"
+              v-if="isOwnProduction(lot) && lot.mine > 0n"
               class="rounded-full bg-teal-soft px-2 py-0.5 text-[0.65rem] font-bold uppercase text-teal-deep"
             >
-              {{ t('lots.inMyCustody', { qty: formatQuantity(lot.mine, materials.unitOf(lot.materialId)) }) }}
+              {{ t('lots.inMyCustody', { qty: formatQuantity(lot.mine, lot.unit) }) }}
             </span>
             <span
               v-if="lot.remaining === 0n"
@@ -277,8 +239,14 @@
           </UiButton>
         </form>
 
+        <p
+          v-if="lot.devices > 0 && !roles.seesPassports"
+          class="mt-4 rounded-md bg-slate-panel px-2.5 py-2 text-xs font-semibold text-navy-soft"
+        >
+          {{ t('lots.devices', lot.devices) }}
+        </p>
         <RouterLink
-          v-if="lot.devices > 0"
+          v-else-if="lot.devices > 0"
           :to="{ name: 'passports', query: { lot: lot.id } }"
           class="mt-4 flex items-center justify-between gap-2 rounded-md bg-teal-soft px-2.5 py-2
                  text-xs font-semibold text-teal-deep transition hover:bg-teal hover:text-white"
@@ -306,7 +274,6 @@ import { eqAddress, formatDate, formatQuantity, isAddress } from '@/lib/format'
 import { parseError } from '@/lib/contracts'
 import { useCatentaStore } from '@/stores/catenta'
 import { useLotsStore, type LotRow } from '@/stores/lots'
-import { useMaterialsStore } from '@/stores/materials'
 import { useRolesStore } from '@/stores/roles'
 import { useToastsStore } from '@/stores/toasts'
 import { useCreditsStore } from '@/stores/credits'
@@ -320,32 +287,70 @@ const roles = useRolesStore()
 const toasts = useToastsStore()
 const credits = useCreditsStore()
 const wallet = useWalletStore()
-const materials = useMaterialsStore()
 
 const showForm = ref(false)
-const materialId = ref('')
+const material = ref('')
+const unit = ref('')
 const certHash = ref('')
 const quantity = ref('')
 const busy = ref<string | null>(null)
 
-const materialName = ref('')
-const materialUnit = ref('')
+/**
+ * Le sélecteur de matières, hors chaîne et sans autorité : il sert à ce que
+ * deux fabricants écrivent la même chose et à rattacher l'unité à la matière.
+ * Le lot, lui, part on-chain avec les deux valeurs — perdre ce fichier ne rend
+ * aucune quantité illisible.
+ */
+const picker = ref<{ name: string; unit: string }[]>([])
 
-/** Un fabricant ne déclare des lots que de SES propres matières. */
-const myMaterials = computed(() =>
-  materials.list.filter((m) => m.active && eqAddress(m.manufacturer, wallet.address)),
-)
-const selectedUnit = computed(() => materials.unitOf(Number(materialId.value) || null))
-const unitOfLot = (lotId: number) =>
-  materials.unitOf(lots.list.find((l) => l.id === lotId)?.materialId)
+/** Choisir une matière connue remplit son unité, sans jamais l'imposer. */
+watch(material, (name) => {
+  const match = picker.value.find((m) => m.name === name)
+  if (match) unit.value = match.unit
+})
+
+const unitOfLot = (lotId: number) => lots.list.find((l) => l.id === lotId)?.unit ?? ''
 
 const shipFor = ref<number | null>(null)
 const shipTo = ref('')
 const shipQty = ref('')
 
+/**
+ * Ce que chaque acteur a besoin de voir dans « Matière ».
+ *
+ * Un fabricant suit SA production — y compris les lots qu'il a entièrement
+ * expédiés, dont il reste l'origine et donc le responsable en cas de rappel.
+ * Les autres ne voient que ce dont ils ont la garde : un distributeur n'a que
+ * faire du catalogue de lots d'un concurrent. Le régulateur, l'admin et un
+ * visiteur sans rôle voient tout — le registre est public.
+ */
+const visibleLots = computed(() => {
+  if (roles.seesEverything) return lots.list
+  return lots.list.filter(
+    (l) => l.mine > 0n || eqAddress(l.manufacturer, wallet.address),
+  )
+})
+
+/** Un lot que J'AI produit — par opposition à un lot dont j'ai seulement la garde. */
+const isOwnProduction = (lot: LotRow) => eqAddress(lot.manufacturer, wallet.address)
+
+/**
+ * Le chiffre mis en avant n'est pas le même selon qui regarde : le fabricant
+ * suit ce qu'il reste de SON lot en circulation, un détenteur suit ce qu'il a
+ * en stock. Afficher le total à un labo qui n'en détient que 200 g le
+ * tromperait sur ce qu'il peut consommer.
+ */
+function headlineQuantity(lot: LotRow): bigint {
+  return isOwnProduction(lot) ? lot.remaining : lot.mine
+}
+function headlineLabel(lot: LotRow): string {
+  return isOwnProduction(lot) ? t('lots.remaining') : t('lots.inCustody')
+}
+
 const canDeclare = computed(
   () =>
-    !!materialId.value &&
+    !!material.value.trim() &&
+    !!unit.value.trim() &&
     !!certHash.value &&
     Number(quantity.value) > 0 &&
     credits.canAfford,
@@ -409,23 +414,20 @@ function run(key: string, fn: () => Promise<string>, successKey: string) {
 async function submitDeclare() {
   await run(
     'declare',
-    () => lots.declareLot(Number(materialId.value), certHash.value, BigInt(quantity.value)),
+    () =>
+      lots.declareLot(
+        material.value.trim(),
+        unit.value.trim(),
+        certHash.value,
+        BigInt(quantity.value),
+      ),
     'lots.declared',
   )
-  materialId.value = ''
+  material.value = ''
+  unit.value = ''
   certHash.value = ''
   quantity.value = ''
   showForm.value = false
-}
-
-async function submitMaterial() {
-  await run(
-    'material',
-    () => materials.registerMaterial(materialName.value.trim(), materialUnit.value.trim()),
-    'lots.materialRegistered',
-  )
-  materialName.value = ''
-  materialUnit.value = ''
 }
 
 async function submitShip(lot: LotRow) {
@@ -442,9 +444,20 @@ async function submitShip(lot: LotRow) {
 const accept = (id: number) => run(`accept-${id}`, () => lots.acceptShipment(id), 'lots.accepted')
 const cancel = (id: number) => run(`cancel-${id}`, () => lots.cancelShipment(id), 'lots.cancelled')
 
+/** Le sélecteur est un simple fichier statique ; son absence ne bloque rien. */
+async function loadPicker() {
+  try {
+    const res = await fetch(`${import.meta.env.BASE_URL}materials.json`, { cache: 'no-cache' })
+    if (!res.ok) return
+    picker.value = (await res.json()).materials ?? []
+  } catch {
+    /* saisie libre, simplement */
+  }
+}
+
 async function load() {
   if (!catenta.ready) return
-  await Promise.all([lots.load(), lots.refreshIncoming(), materials.load()])
+  await Promise.all([lots.load(), lots.refreshIncoming(), loadPicker()])
   if (!highlighted.value) return
   await nextTick()
   document.getElementById(`lot-${highlighted.value}`)?.scrollIntoView({

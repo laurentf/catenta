@@ -85,11 +85,18 @@ const wallet = useWalletStore()
 const roles = useRolesStore()
 const credits = useCreditsStore()
 
+/**
+ * La navigation suit le rôle lu on-chain. Un fabricant gère de la matière et
+ * n'a aucune prothèse à consulter ; lui laisser l'onglet reviendrait à lui
+ * proposer un écran sans usage. Rien n'est caché par sécurité pour autant — la
+ * chaîne est publique, c'est de la lisibilité, pas du contrôle d'accès.
+ */
 const links = computed(() => {
-  const base = [{ name: 'passports' }, { name: 'lots' }]
-  return roles.isAdmin || roles.isRegistrar || roles.isCreditMinter
-    ? [...base, { name: 'admin' }]
-    : base
+  const out: { name: string }[] = []
+  if (roles.seesPassports) out.push({ name: 'passports' })
+  if (roles.seesMaterial) out.push({ name: 'lots' })
+  if (roles.isAdmin || roles.isRegistrar || roles.isCreditMinter) out.push({ name: 'admin' })
+  return out
 })
 
 function toggleLocale() {

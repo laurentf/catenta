@@ -23,25 +23,31 @@ import {RoleAware} from "../access/RoleAware.sol";
 ///      material left, for free, instead of a counter to maintain by hand.
 contract MaterialLots is ERC1155, ERC1155Supply, ERC1155Burnable, RoleAware {
     /// @notice The administrative record of a lot.
-    /// @dev Slot 0 holds manufacturer (20) + declaredAt (5) + materialId (4) =
-    ///      29 bytes; the certificate fingerprint takes the next one. The link
-    ///      to the material catalogue therefore costs nothing: it fits in a slot
-    ///      the lot already pays for.
+    /// @dev Slot 0 holds manufacturer (20) + declaredAt (5); the certificate
+    ///      fingerprint takes the next one, then the two short strings - each
+    ///      31 bytes or less, so each fits a single slot.
     ///
     ///      `manufacturer` is the ORIGIN, not the current holder. Custody moves
     ///      along the chain (manufacturer -> distributor -> laboratory) and is
     ///      read from the ERC-1155 balances; the origin never changes, which is
     ///      what a recall needs to walk back to.
     ///
-    ///      `materialId` points into MaterialCatalog - what the lot is made of,
-    ///      and in which unit its quantity is counted. Stored as an opaque
-    ///      number: validating it is the calling module's job, which keeps this
-    ///      permanent store free of any dependency on the catalogue.
+    ///      A LOT DESCRIBES ITSELF. It carries the material it is made of and
+    ///      the unit its quantity is counted in, rather than pointing at a
+    ///      catalogue. Two consequences, both wanted: a quantity is readable
+    ///      forever without any side file - "10" alone means nothing, "10
+    ///      lingotins" means something - and no catalogue can be republished in
+    ///      a way that changes what a past lot was made of.
+    ///
+    ///      The picker the manufacturer chooses from lives off-chain. It is
+    ///      convenience only: nothing here references it, and losing it costs
+    ///      typing comfort, not readability.
     struct LotInfo {
         address manufacturer;
         uint40 declaredAt;
-        uint32 materialId;
         bytes32 certHash;
+        string material;
+        string unit;
     }
 
     /// @dev Next lot id. Ids start at 1 so 0 stays a "no lot" sentinel.
@@ -53,13 +59,15 @@ contract MaterialLots is ERC1155, ERC1155Supply, ERC1155Burnable, RoleAware {
     /// @notice Emitted when a manufacturer declares a material lot.
     /// @param lotId The id assigned to the lot.
     /// @param manufacturer The manufacturer declaring it.
-    /// @param materialId The catalogue entry the lot is made of.
+    /// @param material What the lot is made of.
+    /// @param unit The unit its quantity is counted in.
     /// @param certHash Fingerprint of the off-chain material certificate.
     /// @param quantity Quantity minted at declaration.
     event LotDeclared(
         uint64 indexed lotId,
         address indexed manufacturer,
-        uint32 indexed materialId,
+        string material,
+        string unit,
         bytes32 certHash,
         uint256 quantity
     );
@@ -80,13 +88,15 @@ contract MaterialLots is ERC1155, ERC1155Supply, ERC1155Burnable, RoleAware {
     /// @notice Declares a lot and credits its quantity to the manufacturer.
     /// @dev Business checks (approved manufacturer) belong to the calling module.
     /// @param _manufacturer The manufacturer that produced the lot.
-    /// @param _materialId The catalogue entry the lot is made of.
+    /// @param _material What the lot is made of, e.g. "Zircone Y-TZP A2".
+    /// @param _unit The unit its quantity is counted in, e.g. "g".
     /// @param _certHash Fingerprint of the off-chain material certificate.
-    /// @param _quantity Quantity produced, in the material's own unit.
+    /// @param _quantity Quantity produced, in that unit.
     /// @return lotId The id of the declared lot.
     function declareLot(
         address _manufacturer,
-        uint32 _materialId,
+        string calldata _material,
+        string calldata _unit,
         bytes32 _certHash,
         uint256 _quantity
     ) external onlyRole(ROLES.LOT_MINTER_ROLE()) returns (uint64 lotId) {
@@ -95,12 +105,13 @@ contract MaterialLots is ERC1155, ERC1155Supply, ERC1155Burnable, RoleAware {
         _lots[lotId] = LotInfo({
             manufacturer: _manufacturer,
             declaredAt: uint40(block.timestamp),
-            materialId: _materialId,
-            certHash: _certHash
+            certHash: _certHash,
+            material: _material,
+            unit: _unit
         });
         _mint(_manufacturer, lotId, _quantity, "");
 
-        emit LotDeclared(lotId, _manufacturer, _materialId, _certHash, _quantity);
+        emit LotDeclared(lotId, _manufacturer, _material, _unit, _certHash, _quantity);
     }
 
     /// @notice Moves the custody of a quantity of material along the chain.

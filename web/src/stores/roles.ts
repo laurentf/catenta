@@ -53,6 +53,46 @@ export const useRolesStore = defineStore('roles', () => {
   /** Aucun rôle : spectateur, lecture seule. */
   const isSpectator = computed(() => myRoles.value.length === 0)
 
+  /**
+   * Ce que chaque rôle a besoin de voir.
+   *
+   * Additif, jamais exclusif : une adresse qui est à la fois laboratoire et
+   * praticien — le cas de l'usinage au cabinet — cumule les deux vues. C'est
+   * pourquoi ce sont des `||` et non un aiguillage sur un rôle principal.
+   *
+   * Le fabricant est le seul vraiment restreint : il produit de la matière et
+   * n'a rien à faire des prothèses. Lui montrer des passeports qu'il ne peut ni
+   * lire utilement ni modifier ne fait qu'ajouter du bruit.
+   *
+   * Sans rôle, on voit tout en lecture : le registre est public, prétendre le
+   * contraire serait mentir sur ce qu'est une chaîne publique.
+   */
+  const seesPassports = computed(
+    () =>
+      isLab.value ||
+      isPractitioner.value ||
+      isRegulator.value ||
+      isAdmin.value ||
+      isSpectator.value,
+  )
+
+  /** Le praticien y accède aussi : il peut détenir de la matière (usinage au cabinet). */
+  const seesMaterial = computed(
+    () =>
+      isManufacturer.value ||
+      isDistributor.value ||
+      isLab.value ||
+      isPractitioner.value ||
+      isRegulator.value ||
+      isAdmin.value ||
+      isSpectator.value,
+  )
+
+  /** Lecture totale du registre, sans filtrage par garde. */
+  const seesEverything = computed(
+    () => isRegulator.value || isAdmin.value || isSpectator.value,
+  )
+
   async function refresh() {
     const c = catenta.readOnly()
     const account = wallet.address
@@ -134,6 +174,9 @@ export const useRolesStore = defineStore('roles', () => {
     isRegistrar,
     isCreditMinter,
     isSpectator,
+    seesPassports,
+    seesMaterial,
+    seesEverything,
     myRoles,
     refresh,
     loadMembers,

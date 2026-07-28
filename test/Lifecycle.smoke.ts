@@ -7,8 +7,10 @@ const { ethers } = await network.create();
 const Status = { Manufactured: 0n, Certified: 1n, Placed: 2n } as const;
 
 const CERT_HASH = ethers.id("cert:zirconia-lot-A");
-// La première matière enregistrée par le fabricant dans deployStack.
-const MATERIAL_ID = 1n;
+// Le lot se décrit lui-même : matière et unité, choisies dans le sélecteur
+// hors chaîne mais inscrites sur le lot.
+const MATERIAL = "Zircone Y-TZP A2";
+const UNIT = "g";
 const CONFORMITY_HASH = ethers.id("conformity:crown-42");
 const PATIENT_COMMITMENT = ethers.id("salt42|patient-identity");
 // Notation FDI (ISO 3950) : quadrant 2, dent 6 — première molaire
@@ -38,13 +40,12 @@ async function deployStack(credits = 1000n) {
   const roles = await ethers.deployContract("CatentaRoles", [admin.address]);
   const passports = await ethers.deployContract("PassportNFT", [await roles.getAddress()]);
   const lots = await ethers.deployContract("MaterialLots", [await roles.getAddress()]);
-  const catalog = await ethers.deployContract("MaterialCatalog", [await roles.getAddress()]);
+  const actors = await ethers.deployContract("ActorRegistry", [await roles.getAddress()]);
   const credit = await ethers.deployContract("CatentaCredit", [await roles.getAddress()]);
   const lifecycle = await ethers.deployContract("LifecycleModule", [
     await roles.getAddress(),
     await passports.getAddress(),
     await lots.getAddress(),
-    await catalog.getAddress(),
     await credit.getAddress(),
   ]);
 
@@ -64,11 +65,8 @@ async function deployStack(credits = 1000n) {
     }
   }
 
-  // Le fabricant décrit sa matière : sans entrée au catalogue, aucun lot.
-  await catalog.connect(manufacturer).registerMaterial("Zircone Y-TZP A2", "g");
-
   return {
-    roles, passports, lots, catalog, credit, lifecycle,
+    roles, passports, lots, actors, credit, lifecycle,
     admin, manufacturer, distributor, lab, practitioner, outsider,
   };
 }
@@ -90,7 +88,7 @@ async function supplyLab(
   soldToLab: bigint,
 ) {
   const { lifecycle, manufacturer, distributor, lab } = stack;
-  await lifecycle.connect(manufacturer).declareLot(MATERIAL_ID, CERT_HASH, produced);
+  await lifecycle.connect(manufacturer).declareLot(MATERIAL, UNIT, CERT_HASH, produced);
   const toDistributor = await lifecycle.connect(manufacturer).declareShipment.staticCall(
     1n, produced, distributor.address,
   );
@@ -111,14 +109,14 @@ describe("Catenta v0 - smoke", () => {
 
     // 1. the MANUFACTURER declares a lot of 1000 units. A laboratory cannot:
     // it receives material, it never brings it into existence.
-    await expect(lifecycle.connect(manufacturer).declareLot(MATERIAL_ID, CERT_HASH, 1000n))
+    await expect(lifecycle.connect(manufacturer).declareLot(MATERIAL, UNIT, CERT_HASH, 1000n))
       .to.emit(lots, "LotDeclared")
-      .withArgs(1n, manufacturer.address, MATERIAL_ID, CERT_HASH, 1000n);
+      .withArgs(1n, manufacturer.address, MATERIAL, UNIT, CERT_HASH, 1000n);
     expect(await lots["totalSupply(uint256)"](1n)).to.equal(1000n);
     expect(await lots.balanceOf(manufacturer.address, 1n)).to.equal(1000n);
 
     await expect(
-      lifecycle.connect(lab).declareLot(MATERIAL_ID, CERT_HASH, 10n),
+      lifecycle.connect(lab).declareLot(MATERIAL, UNIT, CERT_HASH, 10n),
     ).to.be.revertedWithCustomError(lifecycle, "UnauthorizedRole");
 
     // 2. shipment to the distributor: declared, then ACCEPTED on arrival.
@@ -149,7 +147,7 @@ describe("Catenta v0 - smoke", () => {
     // 4. minting a passport consumes 150 units of that lot, in the same tx.
     // Two events, two layers, no overlap: the store announces the issuance and
     // its frozen traits, the module announces the material that went into it.
-    const mintTx = lifecycle.connect(lab).mintPassport(1n, 150n, CONFORMITY_HASH);
+    const mintTx = lifecycle.connect(lab).mintPassport(0n, 1n, 150n, CONFORMITY_HASH);
     await expect(mintTx)
       .to.emit(passports, "PassportIssued")
       .withArgs(1n, lab.address, 1n, CONFORMITY_HASH);
@@ -206,7 +204,7 @@ describe("Catenta v0 - smoke", () => {
     await supplyLab(stack, 1000n, 400n);
 
     // no bespoke "MaterialBurned" event: TransferSingle to address(0) is it
-    await expect(lifecycle.connect(lab).mintPassport(1n, 150n, CONFORMITY_HASH))
+    await expect(lifecycle.connect(lab).mintPassport(0n, 1n, 150n, CONFORMITY_HASH))
       .to.emit(lots, "TransferSingle")
       .withArgs(
         await lifecycle.getAddress(),
@@ -221,7 +219,7 @@ describe("Catenta v0 - smoke", () => {
     const stack = await deployStack();
     const { lifecycle, lab, practitioner } = stack;
     await supplyLab(stack, 100n, 50n);
-    await lifecycle.connect(lab).mintPassport(1n, 10n, CONFORMITY_HASH);
+    await lifecycle.connect(lab).mintPassport(0n, 1n, 10n, CONFORMITY_HASH);
     await lifecycle.connect(lab).initiateHandoff(1n, practitioner.address);
     await lifecycle.connect(practitioner).acceptHandoff(1n);
     await lifecycle.connect(practitioner).attestConformity(1n);
@@ -240,7 +238,7 @@ describe("Catenta v0 - smoke", () => {
     const stack = await deployStack();
     const { passports, lifecycle, lab, practitioner } = stack;
     await supplyLab(stack, 100n, 50n);
-    await lifecycle.connect(lab).mintPassport(1n, 10n, CONFORMITY_HASH);
+    await lifecycle.connect(lab).mintPassport(0n, 1n, 10n, CONFORMITY_HASH);
 
     await expect(
       passports.connect(lab).transferFrom(lab.address, practitioner.address, 1n),
@@ -259,19 +257,18 @@ describe("Catenta v0 - smoke", () => {
 
   it("lets a NEW module drive the SAME stores - the modularity claim", async () => {
     const stack = await deployStack();
-    const { roles, passports, lots, catalog, credit, lifecycle, admin, lab, practitioner } = stack;
+    const { roles, passports, lots, credit, lifecycle, admin, lab, practitioner } = stack;
 
     // a passport already exists, minted through the first module
     await supplyLab(stack, 500n, 200n);
-    await lifecycle.connect(lab).mintPassport(1n, 50n, CONFORMITY_HASH);
+    await lifecycle.connect(lab).mintPassport(0n, 1n, 50n, CONFORMITY_HASH);
 
     // deploy a second module and move the module roles over to it
     const nextModule = await ethers.deployContract("LifecycleModule", [
       await roles.getAddress(),
       await passports.getAddress(),
       await lots.getAddress(),
-      await catalog.getAddress(),
-      await credit.getAddress(),
+        await credit.getAddress(),
     ]);
     const nextAddress = await nextModule.getAddress();
     const oldAddress = await lifecycle.getAddress();
@@ -289,7 +286,7 @@ describe("Catenta v0 - smoke", () => {
 
     // and the new module drives them: it mints a second passport from the
     // lot declared through the old one, and moves the first one
-    await nextModule.connect(lab).mintPassport(1n, 50n, CONFORMITY_HASH);
+    await nextModule.connect(lab).mintPassport(0n, 1n, 50n, CONFORMITY_HASH);
     expect(await passports.ownerOf(2n)).to.equal(lab.address);
     expect(await lots["totalSupply(uint256)"](1n)).to.equal(400n);
 
@@ -299,7 +296,7 @@ describe("Catenta v0 - smoke", () => {
 
     // the old module is now powerless
     await expect(
-      lifecycle.connect(lab).mintPassport(1n, 10n, CONFORMITY_HASH),
+      lifecycle.connect(lab).mintPassport(0n, 1n, 10n, CONFORMITY_HASH),
     ).to.be.revertedWithCustomError(passports, "UnauthorizedRole");
   });
 });
@@ -327,7 +324,7 @@ describe("Catenta v0 - usage credit ($CATENTA)", () => {
       await credit.connect(admin).mintCredits(actor.address, 10n);
     }
 
-    await lifecycle.connect(manufacturer).declareLot(MATERIAL_ID, CERT_HASH, 100n); // -1
+    await lifecycle.connect(manufacturer).declareLot(MATERIAL, UNIT, CERT_HASH, 100n); // -1
     await lifecycle.connect(manufacturer).declareShipment(1n, 100n, distributor.address); // -1
     expect(await credit.balanceOf(manufacturer.address)).to.equal(8n);
 
@@ -340,7 +337,7 @@ describe("Catenta v0 - usage credit ($CATENTA)", () => {
     await lifecycle.connect(lab).acceptShipment(2n);
     expect(await credit.balanceOf(lab.address)).to.equal(10n);
 
-    await lifecycle.connect(lab).mintPassport(1n, 10n, CONFORMITY_HASH); // -1
+    await lifecycle.connect(lab).mintPassport(0n, 1n, 10n, CONFORMITY_HASH); // -1
     expect(await credit.balanceOf(lab.address)).to.equal(9n);
 
     await lifecycle.connect(lab).initiateHandoff(1n, practitioner.address); // -1 (lab)
@@ -360,7 +357,7 @@ describe("Catenta v0 - usage credit ($CATENTA)", () => {
   it("blocks an action when the actor is out of credits", async () => {
     const { credit, lifecycle, manufacturer } = await deployStack(0n);
     // the manufacturer has zero credits
-    await expect(lifecycle.connect(manufacturer).declareLot(MATERIAL_ID, CERT_HASH, 100n))
+    await expect(lifecycle.connect(manufacturer).declareLot(MATERIAL, UNIT, CERT_HASH, 100n))
       .to.be.revertedWithCustomError(credit, "InsufficientCredits")
       .withArgs(manufacturer.address, 0n, 1n);
   });
@@ -382,7 +379,7 @@ describe("Catenta v0 - usage credit ($CATENTA)", () => {
       .to.emit(lifecycle, "ActionCostUpdated")
       .withArgs(1n, 0n);
 
-    await lifecycle.connect(manufacturer).declareLot(MATERIAL_ID, CERT_HASH, 100n);
+    await lifecycle.connect(manufacturer).declareLot(MATERIAL, UNIT, CERT_HASH, 100n);
     expect(await credit.balanceOf(manufacturer.address)).to.equal(0n);
   });
 
@@ -394,90 +391,50 @@ describe("Catenta v0 - usage credit ($CATENTA)", () => {
   });
 });
 
-describe("Catenta v0 - material catalogue", () => {
-  it("lets a manufacturer describe its own materials, and nobody else", async () => {
-    const { catalog, roles, manufacturer, lab } = await deployStack();
+describe("Catenta v0 - un lot se décrit lui-même", () => {
+  it("porte sa matière et son unité, lisibles sans aucun fichier annexe", async () => {
+    const { lots, lifecycle, manufacturer } = await deployStack();
+    await lifecycle.connect(manufacturer).declareLot(MATERIAL, UNIT, CERT_HASH, 1000n);
 
-    await expect(catalog.connect(manufacturer).registerMaterial("Disilicate A2 LT", "lingotins"))
-      .to.emit(catalog, "MaterialRegistered")
-      .withArgs(2n, manufacturer.address, "Disilicate A2 LT", "lingotins");
-    expect(await catalog.materialCount()).to.equal(2n);
-
-    const material = await catalog.materialOf(2n);
-    expect(material.name).to.equal("Disilicate A2 LT");
-    // l'unité est ON-CHAIN : c'est elle qui rend une quantité lisible
-    expect(material.unit).to.equal("lingotins");
-    expect(material.active).to.equal(true);
-
-    await expect(catalog.connect(lab).registerMaterial("Zircone", "g"))
-      .to.be.revertedWithCustomError(catalog, "UnauthorizedRole")
-      .withArgs(await roles.MANUFACTURER_ROLE(), lab.address);
-  });
-
-  it("requires both a name and a unit", async () => {
-    const { catalog, manufacturer } = await deployStack();
-    await expect(
-      catalog.connect(manufacturer).registerMaterial("", "g"),
-    ).to.be.revertedWithCustomError(catalog, "EmptyField");
-    await expect(
-      catalog.connect(manufacturer).registerMaterial("Zircone", ""),
-    ).to.be.revertedWithCustomError(catalog, "EmptyField");
-  });
-
-  it("binds a lot to its material, and refuses someone else's", async () => {
-    const { catalog, lots, lifecycle, roles, admin, manufacturer, distributor } =
-      await deployStack();
-
-    // a second manufacturer with its own catalogue entry
-    await roles.connect(admin).grantRole(await roles.MANUFACTURER_ROLE(), distributor.address);
-    await catalog.connect(distributor).registerMaterial("Cobalt-chrome", "g");
-
-    await lifecycle.connect(manufacturer).declareLot(MATERIAL_ID, CERT_HASH, 100n);
-    expect((await lots.lotOf(1n)).materialId).to.equal(MATERIAL_ID);
-
-    // declaring a lot of a material one does not own is refused
-    await expect(lifecycle.connect(manufacturer).declareLot(2n, CERT_HASH, 100n))
-      .to.be.revertedWithCustomError(lifecycle, "NotMaterialOwner")
-      .withArgs(2n, manufacturer.address);
-  });
-
-  it("stops new lots of a discontinued material without rewriting the old ones", async () => {
-    const { catalog, lots, lifecycle, manufacturer, lab } = await deployStack();
-    await lifecycle.connect(manufacturer).declareLot(MATERIAL_ID, CERT_HASH, 100n);
-
-    await expect(catalog.connect(manufacturer).setMaterialActive(1n, false))
-      .to.emit(catalog, "MaterialActiveUpdated")
-      .withArgs(1n, false);
-
-    await expect(lifecycle.connect(manufacturer).declareLot(MATERIAL_ID, CERT_HASH, 50n))
-      .to.be.revertedWithCustomError(lifecycle, "MaterialDiscontinued")
-      .withArgs(1n);
-
-    // the lot declared before stays perfectly readable, material included
     const lot = await lots.lotOf(1n);
-    expect(lot.materialId).to.equal(1n);
-    expect((await catalog.materialOf(lot.materialId)).name).to.equal("Zircone Y-TZP A2");
-
-    // and only its owner may flip it back
-    await expect(
-      catalog.connect(lab).setMaterialActive(1n, true),
-    ).to.be.revertedWithCustomError(catalog, "NotMaterialOwner");
-    await catalog.connect(manufacturer).setMaterialActive(1n, true);
-    await lifecycle.connect(manufacturer).declareLot(MATERIAL_ID, CERT_HASH, 50n);
+    expect(lot.material).to.equal(MATERIAL);
+    // « 1000 » seul ne veut rien dire ; « 1000 g » veut dire quelque chose
+    expect(lot.unit).to.equal(UNIT);
+    expect(await lots["totalSupply(uint256)"](1n)).to.equal(1000n);
   });
 
-  it("refuses a lot from a material that does not exist", async () => {
-    const { catalog, lifecycle, manufacturer } = await deployStack();
-    await expect(lifecycle.connect(manufacturer).declareLot(99n, CERT_HASH, 10n))
-      .to.be.revertedWithCustomError(catalog, "UnknownMaterial")
-      .withArgs(99n);
+  it("accepte deux unités différentes pour deux matières différentes", async () => {
+    const { lots, lifecycle, manufacturer } = await deployStack();
+    await lifecycle.connect(manufacturer).declareLot(MATERIAL, UNIT, CERT_HASH, 1000n);
+    await lifecycle
+      .connect(manufacturer)
+      .declareLot("Disilicate A2 LT", "lingotins", CERT_HASH, 10n);
+
+    expect((await lots.lotOf(2n)).unit).to.equal("lingotins");
+    // rien ne relie les deux lots : chacun porte sa propre vérité
+    expect((await lots.lotOf(1n)).unit).to.equal("g");
+  });
+
+  it("exige une matière et une unité, et les garde courtes", async () => {
+    const { lifecycle, manufacturer } = await deployStack();
+
+    await expect(
+      lifecycle.connect(manufacturer).declareLot("", UNIT, CERT_HASH, 10n),
+    ).to.be.revertedWithCustomError(lifecycle, "InvalidText");
+    await expect(
+      lifecycle.connect(manufacturer).declareLot(MATERIAL, "", CERT_HASH, 10n),
+    ).to.be.revertedWithCustomError(lifecycle, "InvalidText");
+    // au-delà de 31 octets une chaîne quitte son slot : on borne
+    await expect(
+      lifecycle.connect(manufacturer).declareLot("x".repeat(32), UNIT, CERT_HASH, 10n),
+    ).to.be.revertedWithCustomError(lifecycle, "InvalidText");
   });
 });
 
 describe("Catenta v0 - material custody chain", () => {
   it("refuses a direct transfer: material moves only through an accepted shipment", async () => {
     const { lots, lifecycle, manufacturer, distributor } = await deployStack();
-    await lifecycle.connect(manufacturer).declareLot(MATERIAL_ID, CERT_HASH, 100n);
+    await lifecycle.connect(manufacturer).declareLot(MATERIAL, UNIT, CERT_HASH, 100n);
 
     await expect(
       lots
@@ -488,7 +445,7 @@ describe("Catenta v0 - material custody chain", () => {
 
   it("refuses to move custody without the custodian role", async () => {
     const { lots, lifecycle, roles, manufacturer, distributor, outsider } = await deployStack();
-    await lifecycle.connect(manufacturer).declareLot(MATERIAL_ID, CERT_HASH, 100n);
+    await lifecycle.connect(manufacturer).declareLot(MATERIAL, UNIT, CERT_HASH, 100n);
 
     await expect(
       lots
@@ -501,7 +458,7 @@ describe("Catenta v0 - material custody chain", () => {
 
   it("refuses a shipment to an actor who is not approved to hold material", async () => {
     const { lifecycle, manufacturer, outsider } = await deployStack();
-    await lifecycle.connect(manufacturer).declareLot(MATERIAL_ID, CERT_HASH, 100n);
+    await lifecycle.connect(manufacturer).declareLot(MATERIAL, UNIT, CERT_HASH, 100n);
 
     await expect(lifecycle.connect(manufacturer).declareShipment(1n, 10n, outsider.address))
       .to.be.revertedWithCustomError(lifecycle, "RecipientNotEligible")
@@ -510,7 +467,7 @@ describe("Catenta v0 - material custody chain", () => {
 
   it("refuses to ship more material than the sender holds", async () => {
     const { lifecycle, manufacturer, distributor } = await deployStack();
-    await lifecycle.connect(manufacturer).declareLot(MATERIAL_ID, CERT_HASH, 100n);
+    await lifecycle.connect(manufacturer).declareLot(MATERIAL, UNIT, CERT_HASH, 100n);
 
     await expect(lifecycle.connect(manufacturer).declareShipment(1n, 101n, distributor.address))
       .to.be.revertedWithCustomError(lifecycle, "InsufficientMaterial")
@@ -519,7 +476,7 @@ describe("Catenta v0 - material custody chain", () => {
 
   it("lets the sender cancel a shipment nobody accepted, and only once", async () => {
     const { lots, lifecycle, manufacturer, distributor } = await deployStack();
-    await lifecycle.connect(manufacturer).declareLot(MATERIAL_ID, CERT_HASH, 100n);
+    await lifecycle.connect(manufacturer).declareLot(MATERIAL, UNIT, CERT_HASH, 100n);
     await lifecycle.connect(manufacturer).declareShipment(1n, 40n, distributor.address);
 
     await expect(lifecycle.connect(distributor).cancelShipment(1n))
@@ -538,7 +495,7 @@ describe("Catenta v0 - material custody chain", () => {
 
   it("keeps the custody history readable from storage alone", async () => {
     const { lifecycle, manufacturer, distributor, lab } = await deployStack();
-    await lifecycle.connect(manufacturer).declareLot(MATERIAL_ID, CERT_HASH, 100n);
+    await lifecycle.connect(manufacturer).declareLot(MATERIAL, UNIT, CERT_HASH, 100n);
     await lifecycle.connect(manufacturer).declareShipment(1n, 100n, distributor.address);
     await lifecycle.connect(distributor).acceptShipment(1n);
     await lifecycle.connect(distributor).declareShipment(1n, 30n, lab.address);
@@ -564,7 +521,7 @@ describe("Catenta v0 - material custody chain", () => {
 
   it("cannot be accepted twice", async () => {
     const { lifecycle, manufacturer, distributor } = await deployStack();
-    await lifecycle.connect(manufacturer).declareLot(MATERIAL_ID, CERT_HASH, 100n);
+    await lifecycle.connect(manufacturer).declareLot(MATERIAL, UNIT, CERT_HASH, 100n);
     await lifecycle.connect(manufacturer).declareShipment(1n, 40n, distributor.address);
     await lifecycle.connect(distributor).acceptShipment(1n);
 
@@ -575,7 +532,7 @@ describe("Catenta v0 - material custody chain", () => {
 
   it("lets a distributor sell straight to a practitioner (chairside milling, 2b)", async () => {
     const { lots, lifecycle, manufacturer, distributor, practitioner } = await deployStack();
-    await lifecycle.connect(manufacturer).declareLot(MATERIAL_ID, CERT_HASH, 100n);
+    await lifecycle.connect(manufacturer).declareLot(MATERIAL, UNIT, CERT_HASH, 100n);
     await lifecycle.connect(manufacturer).declareShipment(1n, 100n, distributor.address);
     await lifecycle.connect(distributor).acceptShipment(1n);
 
@@ -589,12 +546,228 @@ describe("Catenta v0 - material custody chain", () => {
     const { lots, passports, lifecycle, manufacturer, lab } = stack;
     await supplyLab(stack, 500n, 200n);
 
-    await lifecycle.connect(lab).mintPassport(1n, 60n, CONFORMITY_HASH);
+    await lifecycle.connect(lab).mintPassport(0n, 1n, 60n, CONFORMITY_HASH);
     expect(await passports.ownerOf(1n)).to.equal(lab.address);
     expect(await lots.balanceOf(lab.address, 1n)).to.equal(140n);
     // the passport points back at the lot, and the lot at its manufacturer
     expect((await passports.traitsOf(1n)).lotId).to.equal(1n);
     expect((await lots.lotOf(1n)).manufacturer).to.equal(manufacturer.address);
+  });
+});
+
+describe("Catenta v0 - actor registry", () => {
+  it("lets a registrar name an actor, and only a registrar", async () => {
+    const { actors, roles, admin, lab, outsider } = await deployStack();
+
+    await expect(actors.connect(admin).setLabel(lab.address, "Laboratoire Dupont", "812456903"))
+      .to.emit(actors, "ActorLabelled")
+      .withArgs(lab.address, "Laboratoire Dupont", "812456903");
+
+    const actor = await actors.actorOf(lab.address);
+    expect(actor.label).to.equal("Laboratoire Dupont");
+    expect(actor.siren).to.equal("812456903");
+
+    await expect(actors.connect(outsider).setLabel(lab.address, "Pirate", ""))
+      .to.be.revertedWithCustomError(actors, "UnauthorizedRole")
+      .withArgs(await roles.REGISTRAR_ROLE(), outsider.address);
+  });
+
+  it("refuses to name a manufacturer — la règle est dans le contrat, pas dans l'UI", async () => {
+    const { actors, admin, manufacturer } = await deployStack();
+
+    await expect(actors.connect(admin).setLabel(manufacturer.address, "Ivoclar", "500000000"))
+      .to.be.revertedWithCustomError(actors, "ManufacturerNotLabelled")
+      .withArgs(manufacturer.address);
+  });
+
+  it("exige un libellé, et un SIREN de neuf caractères s'il est fourni", async () => {
+    const { actors, admin, lab } = await deployStack();
+
+    await expect(
+      actors.connect(admin).setLabel(lab.address, "", "812456903"),
+    ).to.be.revertedWithCustomError(actors, "InvalidLabel");
+    await expect(
+      actors.connect(admin).setLabel(lab.address, "Labo", "1234"),
+    ).to.be.revertedWithCustomError(actors, "InvalidSiren");
+    // le SIREN reste facultatif — un acteur étranger n'en a pas
+    await actors.connect(admin).setLabel(lab.address, "Labo", "");
+    expect((await actors.actorOf(lab.address)).siren).to.equal("");
+  });
+
+  it("efface un libellé posé par erreur", async () => {
+    const { actors, admin, lab } = await deployStack();
+    await actors.connect(admin).setLabel(lab.address, "Erreur de saisie", "");
+
+    await expect(actors.connect(admin).clearLabel(lab.address))
+      .to.emit(actors, "ActorLabelCleared")
+      .withArgs(lab.address);
+    expect((await actors.actorOf(lab.address)).label).to.equal("");
+  });
+});
+
+describe("Catenta v0 - material orders", () => {
+  const Order = { Pending: 0n, Fulfilled: 1n, Refused: 2n, Cancelled: 3n };
+
+  it("va de la commande à la livraison, sans jamais imposer la garde", async () => {
+    const stack = await deployStack();
+    const { lots, lifecycle, manufacturer, distributor, lab } = stack;
+    // le distributeur a du stock
+    await lifecycle.connect(manufacturer).declareLot(MATERIAL, UNIT, CERT_HASH, 1000n);
+    await lifecycle.connect(manufacturer).declareShipment(1n, 1000n, distributor.address);
+    await lifecycle.connect(distributor).acceptShipment(1n);
+
+    await expect(lifecycle.connect(lab).placeMaterialOrder(distributor.address, MATERIAL, 250n))
+      .to.emit(lifecycle, "MaterialOrdered")
+      .withArgs(1n, lab.address, distributor.address, MATERIAL, 250n, 0n);
+
+    const shipmentId = await lifecycle
+      .connect(distributor)
+      .fulfilMaterialOrder.staticCall(1n, 1n);
+    await lifecycle.connect(distributor).fulfilMaterialOrder(1n, 1n);
+
+    const order = await lifecycle.materialOrderOf(1n);
+    expect(order.status).to.equal(Order.Fulfilled);
+    expect(order.shipmentId).to.equal(shipmentId);
+
+    // honorer ne livre pas : le laboratoire doit toujours réceptionner
+    expect(await lots.balanceOf(lab.address, 1n)).to.equal(0n);
+    await lifecycle.connect(lab).acceptShipment(shipmentId);
+    expect(await lots.balanceOf(lab.address, 1n)).to.equal(250n);
+  });
+
+  it("trace la cascade vers le fabricant sans la décider", async () => {
+    const { lifecycle, manufacturer, distributor, lab } = await deployStack();
+    await lifecycle.connect(manufacturer).declareLot(MATERIAL, UNIT, CERT_HASH, 1000n);
+
+    // le laboratoire commande à son distributeur, qui n'a rien en stock
+    await lifecycle.connect(lab).placeMaterialOrder(distributor.address, MATERIAL, 250n);
+    // le distributeur commande en amont, en gardant le lien vers la demande initiale
+    await expect(lifecycle.connect(distributor).escalateMaterialOrder(1n, manufacturer.address, 500n))
+      .to.emit(lifecycle, "MaterialOrdered")
+      .withArgs(2n, distributor.address, manufacturer.address, MATERIAL, 500n, 1n);
+
+    // la commande d'origine reste ouverte : rien n'est promis tant que rien n'arrive
+    expect((await lifecycle.materialOrderOf(1n)).status).to.equal(Order.Pending);
+    expect((await lifecycle.materialOrderOf(2n)).parentOrderId).to.equal(1n);
+  });
+
+  it("refuse et annule avec un motif lisible", async () => {
+    const { lifecycle, manufacturer, distributor, lab } = await deployStack();
+    await lifecycle.connect(manufacturer).declareLot(MATERIAL, UNIT, CERT_HASH, 100n);
+
+    await lifecycle.connect(lab).placeMaterialOrder(distributor.address, MATERIAL, 250n);
+    await expect(lifecycle.connect(distributor).refuseMaterialOrder(1n, "Rupture de stock"))
+      .to.emit(lifecycle, "MaterialOrderSettled")
+      .withArgs(1n, Order.Refused, "Rupture de stock");
+    expect((await lifecycle.materialOrderOf(1n)).reason).to.equal("Rupture de stock");
+
+    await lifecycle.connect(lab).placeMaterialOrder(distributor.address, MATERIAL, 10n);
+    await expect(
+      lifecycle.connect(lab).cancelMaterialOrder(2n, ""),
+    ).to.be.revertedWithCustomError(lifecycle, "InvalidText");
+    await lifecycle.connect(lab).cancelMaterialOrder(2n, "Approvisionné ailleurs");
+    expect((await lifecycle.materialOrderOf(2n)).status).to.equal(Order.Cancelled);
+
+    // une commande réglée ne se règle pas deux fois
+    await expect(
+      lifecycle.connect(distributor).refuseMaterialOrder(2n, "trop tard"),
+    ).to.be.revertedWithCustomError(lifecycle, "OrderSettled");
+  });
+
+  it("refuse de livrer une matière autre que celle commandée", async () => {
+    const { lifecycle, manufacturer, distributor, lab } = await deployStack();
+    // le distributeur ne détient que du titane
+    await lifecycle.connect(manufacturer).declareLot("Titane grade 5", "pièces", CERT_HASH, 100n);
+    await lifecycle.connect(manufacturer).declareShipment(1n, 100n, distributor.address);
+    await lifecycle.connect(distributor).acceptShipment(1n);
+
+    // le laboratoire a commandé de la zircone
+    await lifecycle.connect(lab).placeMaterialOrder(distributor.address, MATERIAL, 10n);
+    await expect(lifecycle.connect(distributor).fulfilMaterialOrder(1n, 1n))
+      .to.be.revertedWithCustomError(lifecycle, "MaterialMismatch")
+      .withArgs(1n, MATERIAL, "Titane grade 5");
+  });
+});
+
+describe("Catenta v0 - prosthesis requests (étape 0)", () => {
+  const Request = { Pending: 0n, Accepted: 1n, Fulfilled: 2n, Refused: 3n, Cancelled: 4n };
+
+  it("va de la prescription au passeport", async () => {
+    const stack = await deployStack();
+    const { lifecycle, passports, lab, practitioner } = stack;
+    await supplyLab(stack, 500n, 200n);
+
+    await expect(
+      lifecycle
+        .connect(practitioner)
+        .requestProsthesis(lab.address, MATERIAL, TOOTH, "A2", "Couronne céramo-céramique"),
+    )
+      .to.emit(lifecycle, "ProsthesisRequested")
+      .withArgs(1n, practitioner.address, lab.address, MATERIAL, TOOTH);
+
+    const pending = await lifecycle.prosthesisRequestOf(1n);
+    expect(pending.shade).to.equal("A2");
+    expect(pending.description).to.equal("Couronne céramo-céramique");
+    expect(pending.tooth).to.equal(TOOTH);
+
+    await lifecycle.connect(lab).acceptProsthesisRequest(1n);
+    expect((await lifecycle.prosthesisRequestOf(1n)).status).to.equal(Request.Accepted);
+
+    // la fabrication honore la demande et l'y relie
+    await lifecycle.connect(lab).mintPassport(1n, 1n, 60n, CONFORMITY_HASH);
+    const done = await lifecycle.prosthesisRequestOf(1n);
+    expect(done.status).to.equal(Request.Fulfilled);
+    expect(done.tokenId).to.equal(1n);
+    expect(await passports.ownerOf(1n)).to.equal(lab.address);
+  });
+
+  it("ne fabrique pas contre une demande non acceptée", async () => {
+    const stack = await deployStack();
+    const { lifecycle, lab, practitioner } = stack;
+    await supplyLab(stack, 500n, 200n);
+    await lifecycle
+      .connect(practitioner)
+      .requestProsthesis(lab.address, MATERIAL, TOOTH, "A2", "Couronne");
+
+    await expect(lifecycle.connect(lab).mintPassport(1n, 1n, 60n, CONFORMITY_HASH))
+      .to.be.revertedWithCustomError(lifecycle, "WrongRequestStatus")
+      .withArgs(1n, Request.Accepted, Request.Pending);
+  });
+
+  it("laisse refuser et annuler, motif à l'appui", async () => {
+    const stack = await deployStack();
+    const { lifecycle, lab, practitioner } = stack;
+
+    await lifecycle
+      .connect(practitioner)
+      .requestProsthesis(lab.address, MATERIAL, TOOTH, "A2", "Couronne");
+    await expect(lifecycle.connect(lab).refuseProsthesisRequest(1n, "Teinte indisponible"))
+      .to.emit(lifecycle, "ProsthesisRequestUpdated")
+      .withArgs(1n, Request.Refused, "Teinte indisponible");
+
+    // annulable même après acceptation : un patient annule son rendez-vous
+    await lifecycle
+      .connect(practitioner)
+      .requestProsthesis(lab.address, MATERIAL, 36n, "A3", "Bridge 3 éléments");
+    await lifecycle.connect(lab).acceptProsthesisRequest(2n);
+    await lifecycle.connect(practitioner).cancelProsthesisRequest(2n, "Patient désiste");
+    expect((await lifecycle.prosthesisRequestOf(2n)).status).to.equal(Request.Cancelled);
+  });
+
+  it("borne les textes libres et valide la dent", async () => {
+    const { lifecycle, lab, practitioner } = await deployStack();
+
+    await expect(
+      lifecycle.connect(practitioner).requestProsthesis(lab.address, MATERIAL, 99n, "A2", "x"),
+    ).to.be.revertedWithCustomError(lifecycle, "InvalidTooth");
+    await expect(
+      lifecycle.connect(practitioner).requestProsthesis(lab.address, MATERIAL, TOOTH, "", "x"),
+    ).to.be.revertedWithCustomError(lifecycle, "InvalidText");
+    await expect(
+      lifecycle
+        .connect(practitioner)
+        .requestProsthesis(lab.address, MATERIAL, TOOTH, "A2", "x".repeat(201)),
+    ).to.be.revertedWithCustomError(lifecycle, "InvalidText");
   });
 });
 

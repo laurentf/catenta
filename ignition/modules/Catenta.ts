@@ -7,7 +7,7 @@ import { id } from "ethers";
  * Ordre imposé par l'architecture (docs/SPEC.md §4) :
  *   1. l'autorité — CatentaRoles ;
  *   2. les stockages permanents — ils ne connaissent que l'autorité ;
- *   3. le module — il connaît l'autorité et les deux stockages ;
+ *   3. le module — il connaît l'autorité et les trois stockages qu'il pilote ;
  *   4. les rôles modules, accordés au module pour qu'il puisse écrire.
  *
  * L'étape 4 n'est pas un détail de configuration : sans elle les stockages
@@ -17,10 +17,14 @@ import { id } from "ethers";
  * Déploiement :
  *   npx hardhat keystore set SEPOLIA_RPC_URL
  *   npx hardhat keystore set SEPOLIA_PRIVATE_KEY
- *   npx hardhat ignition deploy ignition/modules/Catenta.ts --network sepolia
+ *   npx hardhat ignition deploy ignition/modules/Catenta.ts --network sepolia \
+ *     --deployment-id catenta-v1
  *
- * Le front n'a besoin QUE de l'adresse de LifecycleModule : il lit ROLES,
- * PASSPORTS et LOTS dessus au démarrage.
+ * Le front dérive presque tout de la seule adresse du LifecycleModule, qui
+ * expose ROLES, PASSPORTS, LOTS et CREDIT. ActorRegistry fait exception : le
+ * module ne l'appelle jamais, donc il ne le référence pas — lui donner un
+ * pointeur immuable vers un contrat qu'il n'utilise pas serait du bruit. Son
+ * adresse se configure à part, et son absence ne dégrade que l'affichage.
  */
 export default buildModule("CatentaModule", (m) => {
   // Par défaut le déployeur est l'administrateur. Le surcharger via
@@ -31,15 +35,9 @@ export default buildModule("CatentaModule", (m) => {
   const roles = m.contract("CatentaRoles", [admin]);
   const passports = m.contract("PassportNFT", [roles]);
   const lots = m.contract("MaterialLots", [roles]);
-  const catalog = m.contract("MaterialCatalog", [roles]);
+  const actors = m.contract("ActorRegistry", [roles]);
   const credit = m.contract("CatentaCredit", [roles]);
-  const lifecycle = m.contract("LifecycleModule", [
-    roles,
-    passports,
-    lots,
-    catalog,
-    credit,
-  ]);
+  const lifecycle = m.contract("LifecycleModule", [roles, passports, lots, credit]);
 
   // Rôles modules — accordés à un CONTRAT, jamais à une personne.
   const moduleRoles = {
@@ -64,5 +62,5 @@ export default buildModule("CatentaModule", (m) => {
     id: "grant_CREDIT_MINTER_ROLE_admin",
   });
 
-  return { roles, passports, lots, catalog, credit, lifecycle };
+  return { roles, passports, lots, actors, credit, lifecycle };
 });

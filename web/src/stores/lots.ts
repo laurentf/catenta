@@ -10,8 +10,9 @@ export interface LotRow {
   id: number
   /** L'ORIGINE du lot — le fabricant qui l'a produit. Ne bouge jamais. */
   manufacturer: string
-  /** L'entrée du catalogue dont ce lot est fait. */
-  materialId: number
+  /** Ce dont le lot est fait, et l'unité de sa quantité — inscrits sur le lot. */
+  material: string
+  unit: string
   declaredAt: bigint
   certHash: string
   /** Quantité restante en circulation = totalSupply(lotId) (ERC1155Supply). */
@@ -26,7 +27,8 @@ export interface LotRow {
 export interface LotJourney {
   id: number
   manufacturer: string
-  materialId: number
+  material: string
+  unit: string
   declaredAt: bigint
   certHash: string
   remaining: bigint
@@ -107,7 +109,8 @@ export const useLotsStore = defineStore('lots', () => {
             return {
               id,
               manufacturer: info.manufacturer as string,
-              materialId: Number(info.materialId),
+              material: info.material as string,
+              unit: info.unit as string,
               declaredAt: info.declaredAt as bigint,
               certHash: info.certHash as string,
               remaining: remaining as bigint,
@@ -128,10 +131,15 @@ export const useLotsStore = defineStore('lots', () => {
     }
   }
 
-  async function declareLot(materialId: number, certHash: string, quantity: bigint) {
+  async function declareLot(
+    material: string,
+    unit: string,
+    certHash: string,
+    quantity: bigint,
+  ) {
     const w = catenta.writable()
     if (!w) throw new Error('no signer')
-    const tx = await w.lifecycle.declareLot(materialId, certHash, quantity)
+    const tx = await w.lifecycle.declareLot(material, unit, certHash, quantity)
     await tx.wait()
     // `declareLot` est `costsCredit` : le solde du badge doit suivre.
     await Promise.all([load(), credits.refresh()])
@@ -210,7 +218,8 @@ export const useLotsStore = defineStore('lots', () => {
       return {
         id: lotId,
         manufacturer: info.manufacturer as string,
-        materialId: Number(info.materialId),
+        material: info.material as string,
+        unit: info.unit as string,
         declaredAt: info.declaredAt as bigint,
         certHash: info.certHash as string,
         remaining: remaining as bigint,

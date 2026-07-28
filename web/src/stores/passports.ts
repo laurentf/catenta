@@ -183,10 +183,16 @@ export const usePassportsStore = defineStore('passports', () => {
   // reste sur la valeur d'avant la transaction. Seul `acceptHandoff` est
   // gratuit — c'est l'initiateur du transfert qui a déjà payé.
 
-  async function mintPassport(lotId: number, quantity: bigint, conformityHash: string) {
+  /** `requestId` 0 : fabrication sans demande enregistrée (le labo produit pour son stock). */
+  async function mintPassport(
+    lotId: number,
+    quantity: bigint,
+    conformityHash: string,
+    requestId = 0,
+  ) {
     const w = catenta.writable()
     if (!w) throw new Error('no signer')
-    const tx = await w.lifecycle.mintPassport(lotId, quantity, conformityHash)
+    const tx = await w.lifecycle.mintPassport(requestId, lotId, quantity, conformityHash)
     await tx.wait()
     await credits.refresh()
     return tx.hash as string

@@ -16,7 +16,7 @@
           <p class="eyebrow">{{ t('lot.eyebrow') }}</p>
           <h1 class="mt-2">{{ t('lots.lot') }} #{{ journey.id }}</h1>
           <p class="subtitle">
-            {{ materials.nameOf(journey.materialId) ?? t('lot.unknownMaterial') }}
+            {{ journey.material }}
           </p>
         </div>
         <div class="text-right">
@@ -117,11 +117,15 @@
           {{ t('lots.noDevice') }}
         </p>
         <div v-else class="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          <RouterLink
+          <!-- Le fabricant voit ce que sa matière est devenue, sans lien vers
+               des fiches prothèse qui ne le concernent pas. -->
+          <component
+            :is="roles.seesPassports ? RouterLink : 'div'"
             v-for="d in journey.devices"
             :key="d.id"
-            :to="{ name: 'passport', params: { id: d.id } }"
-            class="rounded-card bg-white/70 px-3 py-2.5 transition hover:bg-teal-soft"
+            :to="roles.seesPassports ? { name: 'passport', params: { id: d.id } } : undefined"
+            class="rounded-card bg-white/70 px-3 py-2.5 transition"
+            :class="roles.seesPassports ? 'hover:bg-teal-soft' : ''"
           >
             <div class="flex items-center justify-between gap-2">
               <span class="text-sm font-extrabold text-teal">
@@ -131,7 +135,7 @@
             </div>
             <p class="mt-1 text-[0.7rem] text-slate-label">{{ formatDate(d.mintedAt) }}</p>
             <div class="mt-1.5"><AddressChip :address="d.holder" /></div>
-          </RouterLink>
+          </component>
         </div>
       </UiCard>
     </template>
@@ -140,7 +144,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { RouterLink, useRoute } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiAlert from '@/components/ui/UiAlert.vue'
@@ -150,18 +154,18 @@ import { formatDate, formatQuantity } from '@/lib/format'
 import { ShipmentStatus } from '@/lib/contracts'
 import { useCatentaStore } from '@/stores/catenta'
 import { useLotsStore, type LotJourney } from '@/stores/lots'
-import { useMaterialsStore } from '@/stores/materials'
+import { useRolesStore } from '@/stores/roles'
 
 const { t } = useI18n()
 const route = useRoute()
 const catenta = useCatentaStore()
 const lots = useLotsStore()
-const materials = useMaterialsStore()
+const roles = useRolesStore()
 
 const id = computed(() => Number(route.params.id))
 const journey = ref<LotJourney | null>(null)
 
-const unit = computed(() => materials.unitOf(journey.value?.materialId))
+const unit = computed(() => journey.value?.unit ?? '')
 
 /** Ce qui a été consommé en fabrication — la somme des traits figés. */
 const consumed = computed(() =>
@@ -240,7 +244,7 @@ const steps = computed<Step[]>(() => {
 
 async function load() {
   if (!catenta.ready) return
-  const [j] = await Promise.all([lots.loadJourney(id.value), materials.load()])
+  const [j] = await Promise.all([lots.loadJourney(id.value)])
   journey.value = j
 }
 onMounted(load)

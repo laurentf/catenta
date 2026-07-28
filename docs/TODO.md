@@ -2,13 +2,16 @@
 
 Liste actionnable de ce qui reste. Le découpage v0/v1/v2 raisonné et chiffré est dans [ROADMAP.md](ROADMAP.md) ; ce fichier est la checklist courte.
 
-**État au dernier commit** — la chaîne du [parcours fonctionnel](Catenta%20Parcours%20Prothese%20Tracabilite.pdf) est implémentée de bout en bout : **7 contrats, 28 tests**, front aligné.
+**État au dernier commit** — la chaîne du [parcours fonctionnel](Catenta%20Parcours%20Prothese%20Tracabilite.pdf) est implémentée de bout en bout : **7 contrats, 39 tests**.
 
 - **Fabricant** (`MANUFACTURER_ROLE`) — seul à pouvoir faire naître un lot ; un laboratoire reçoit la matière, il ne la déclare plus.
-- **Catalogue matière on-chain** (`MaterialCatalog`) — nom commercial et **unité**, déclarés par le fabricant. Le lot n'en porte qu'un `uint32`, logé dans un slot qu'il payait déjà.
+- **Un lot se décrit lui-même** — matière et **unité** inscrites dessus, en chaînes courtes (un slot chacune). Pas de catalogue on-chain : une entrée par produit aurait coûté une transaction par produit, et un catalogue republiable aurait pu changer ce qu'un lot passé contenait. Le sélecteur (`web/public/materials.json`) est une aide à la saisie, sans autorité.
 - **Chaîne de garde** — expédition en deux temps, acceptée par le destinataire ; transfert direct refusé par le store. Le distributeur est un maillon complet, y compris la vente directe au cabinet (cas 2b du doc).
 - **Acte clinique en storage** — dent (FDI / ISO 3950), date, praticien : lisibles en un appel, plus aucun scan de logs (`VITE_DEPLOY_BLOCK` a disparu).
-- **QR code par prothèse**, **vocabulaire** aligné sur le doc, **crédits** simplifiés (un seul chemin d'émission).
+- **Registre d'acteurs** (`ActorRegistry`) — raison sociale et SIREN, écrits par l'agent d'agrément. Le contrat refuse de nommer un fabricant : la neutralité concurrentielle est une règle de code.
+- **Commande de matière** — d'un distributeur, avec cascade **tracée** vers le fabricant (`parentOrderId`), refus et annulation avec motif en clair.
+- **Demande de prothèse** (étape 0) — matière, dent, teinte, description courte ; acceptée, refusée ou annulée avec motif ; la fabrication est reliée à la prescription qu'elle honore.
+- **QR code par prothèse**, **vocabulaire** aligné sur le doc, **crédits** simplifiés (un seul chemin d'émission), **affichage par rôle** (le fabricant ne voit pas les prothèses, chacun ne voit que la matière dont il a la garde).
 
 > ⚠️ **Le déploiement Sepolia est périmé** — l'ABI a changé partout. Redéployer, reporter `VITE_LIFECYCLE_ADDRESS`, et ré-agréer les acteurs dont **au moins un fabricant**.
 
@@ -32,10 +35,10 @@ Réf : [SPEC §6.3–6.4](SPEC.md), scénario 1 du doc fonctionnel.
 
 ## 🟠 Le reste du parcours fonctionnel
 
-### Étape 0 — la commande du praticien
-Le doc part du dentiste qui scanne la dent et transmet l'empreinte au laboratoire. Aujourd'hui le labo crée une prothèse sans commande ni empreinte.
+### Étape 0 — l'empreinte numérique
+La prescription est en place (matière, dent, teinte, description). Reste le scan 3D lui-même, que le doc fait transiter par Catenta.
 
-- [ ] À cadrer : une **commande** adressée à un laboratoire, portant l'empreinte du scan 3D (`bytes32`), que le mint consomme ?
+- [ ] Ajouter une **empreinte du scan** (`bytes32`) à la demande de prothèse, et le document derrière (IPFS).
 - [ ] **Jamais le scan lui-même on-chain** — c'est de la donnée biométrique (SPEC §9.2). Empreinte uniquement.
 
 ### Scénario 2 — le lot en bouche peut changer
@@ -44,8 +47,12 @@ La prothèse casse ou est refaite. Le doc veut que l'historique conserve les deu
 - [ ] Statut **`Removed`** + **lien successeur** entre l'ancienne prothèse et la nouvelle.
 - [ ] « Ce qui est en bouche aujourd'hui » **composé à la lecture** à partir du commitment patient — jamais stocké en double, même doctrine que le statut rappelé.
 
-### Nommage des acteurs
-- [ ] **À concevoir.** Le registre affiche des adresses nues. Un annuaire hors chaîne (SPEC §9.4 niveau 1) a été prototypé puis retiré : il n'était relié à rien, et l'agrément on-chain ne le peuplait pas. Reprendre le sujet proprement — l'écueil est de lier l'acte d'agrément et l'entrée d'annuaire sans backend.
+### Front des nouveautés contrat
+- [ ] Écrans de **commande de matière** (passer, honorer, refuser, annuler, escalader) et de **demande de prothèse**.
+- [ ] Affichage du **label et du SIREN** partout où une adresse apparaît, via `ActorRegistry`.
+- [ ] Saisie du label à l'agrément, dans la vue Administration — c'est ce qui relie enfin les deux moitiés de l'agrément.
+- [ ] **QR par lot**, et acceptation d'un code scanné à la douchette dans la recherche.
+- [ ] **Recherche ARS** par adresse : tous les flux d'un acteur.
 
 ---
 

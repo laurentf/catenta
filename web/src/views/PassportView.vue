@@ -210,7 +210,6 @@ import { eqAddress, formatDate, formatQuantity, isAddress } from '@/lib/format'
 import { useCatentaStore } from '@/stores/catenta'
 import { usePassportsStore } from '@/stores/passports'
 import { useLotsStore } from '@/stores/lots'
-import { useMaterialsStore } from '@/stores/materials'
 import { useToastsStore } from '@/stores/toasts'
 import { useRolesStore } from '@/stores/roles'
 import { useWalletStore } from '@/stores/wallet'
@@ -225,7 +224,6 @@ const roles = useRolesStore()
 const wallet = useWalletStore()
 const credits = useCreditsStore()
 const lots = useLotsStore()
-const materials = useMaterialsStore()
 
 const id = computed(() => Number(route.params.id))
 const p = computed(() => passports.current)
@@ -238,8 +236,8 @@ const commitment = ref('')
 const tooth = ref('')
 
 /** L'unité vient du catalogue on-chain, via le lot d'origine du passeport. */
-const consumedUnit = computed(() =>
-  materials.unitOf(lots.list.find((l) => l.id === p.value?.lotId)?.materialId),
+const consumedUnit = computed(
+  () => lots.list.find((l) => l.id === p.value?.lotId)?.unit ?? '',
 )
 
 const isPlaced = computed(() => p.value?.status === Status.Placed)
@@ -366,7 +364,7 @@ function load() {
   if (!catenta.ready) return
   void passports.loadOne(id.value)
   // Lots et catalogue : de quoi nommer la matière et son unité.
-  void Promise.all([lots.load(), materials.load()])
+  void Promise.all([lots.load()])
 }
 onMounted(load)
 watch(() => [catenta.ready, route.params.id], load)

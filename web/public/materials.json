@@ -1,0 +1,29 @@
+{
+  "_doc": [
+    "SÉLECTEUR DE MATIÈRES — aide à la saisie, rien de plus.",
+    "",
+    "Aucun contrat ne référence ce fichier. Le lot déclaré porte lui-même sa",
+    "matière et son unité, inscrites on-chain : une quantité reste donc lisible",
+    "pour toujours même si ce fichier disparaît. Le perdre coûte du confort de",
+    "frappe, pas de la traçabilité.",
+    "",
+    "Son intérêt : que deux fabricants écrivent « Zircone Y-TZP A2 » de la même",
+    "façon, et que l'unité aille avec la matière plutôt que d'être choisie au",
+    "hasard. La chaîne ne l'impose pas — elle compare des chaînes de caractères,",
+    "donc « Zircone A2 » et « zircone a2 » seraient deux matières distinctes.",
+    "",
+    "Le champ reste libre : une matière absente d'ici se saisit à la main.",
+    "31 caractères maximum, matière comme unité — au-delà, une chaîne Solidity",
+    "quitte son slot et coûte le double."
+  ],
+  "materials": [
+    { "name": "Zircone Y-TZP A2", "unit": "g" },
+    { "name": "Zircone Y-TZP A3", "unit": "g" },
+    { "name": "Disilicate lithium A2 LT", "unit": "lingotins" },
+    { "name": "Disilicate lithium A3 HT", "unit": "lingotins" },
+    { "name": "Cobalt-chrome poudre SLM", "unit": "g" },
+    { "name": "Titane grade 5", "unit": "pièces" },
+    { "name": "PMMA A2 provisoire", "unit": "g" },
+    { "name": "Résine calcinable", "unit": "g" }
+  ]
+}

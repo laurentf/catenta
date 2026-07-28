@@ -202,7 +202,6 @@ const stack = computed(() => [
   { label: 'CatentaRoles', address: catenta.rolesAddress ?? '' },
   { label: 'PassportNFT', address: catenta.passportsAddress ?? '' },
   { label: 'MaterialLots', address: catenta.lotsAddress ?? '' },
-  { label: 'MaterialCatalog', address: catenta.catalogAddress ?? '' },
   { label: 'CatentaCredit', address: catenta.creditAddress ?? '' },
 ])
 

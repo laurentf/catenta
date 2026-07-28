@@ -58,31 +58,14 @@ export const PASSPORT_ABI = [
   'error ERC721NonexistentToken(uint256 tokenId)',
 ] as const
 
-export const CATALOG_ABI = [
-  'function materialOf(uint32 materialId) view returns (tuple(address manufacturer, bool active, string name, string unit))',
-  'function materialExists(uint32 materialId) view returns (bool)',
-  'function materialCount() view returns (uint32)',
-  // écritures — fabricant
-  'function registerMaterial(string _name, string _unit) returns (uint32)',
-  'function setMaterialActive(uint32 _materialId, bool _active)',
-  // events
-  'event MaterialRegistered(uint32 indexed materialId, address indexed manufacturer, string name, string unit)',
-  'event MaterialActiveUpdated(uint32 indexed materialId, bool active)',
-  // erreurs
-  'error EmptyField()',
-  'error UnknownMaterial(uint32 materialId)',
-  'error NotMaterialOwner(uint32 materialId, address caller)',
-  'error UnauthorizedRole(bytes32 role, address account)',
-] as const
-
 export const LOTS_ABI = [
-  'function lotOf(uint64 lotId) view returns (tuple(address manufacturer, uint40 declaredAt, uint32 materialId, bytes32 certHash))',
+  'function lotOf(uint64 lotId) view returns (tuple(address manufacturer, uint40 declaredAt, bytes32 certHash, string material, string unit))',
   'function lotExists(uint64 lotId) view returns (bool)',
   'function lotCount() view returns (uint64)',
   'function totalSupply(uint256 lotId) view returns (uint256)',
   'function balanceOf(address account, uint256 id) view returns (uint256)',
   // events
-  'event LotDeclared(uint64 indexed lotId, address indexed manufacturer, uint32 indexed materialId, bytes32 certHash, uint256 quantity)',
+  'event LotDeclared(uint64 indexed lotId, address indexed manufacturer, string material, string unit, bytes32 certHash, uint256 quantity)',
   'event TransferSingle(address indexed operator, address indexed from, address indexed to, uint256 id, uint256 value)',
   // erreurs
   'error LotNotTransferable()',
@@ -113,7 +96,6 @@ export const LIFECYCLE_ABI = [
   'function ROLES() view returns (address)',
   'function PASSPORTS() view returns (address)',
   'function LOTS() view returns (address)',
-  'function CATALOG() view returns (address)',
   'function CREDIT() view returns (address)',
   'function actionCost() view returns (uint256)',
   // lectures
@@ -123,13 +105,13 @@ export const LIFECYCLE_ABI = [
   'function shipmentCount() view returns (uint256)',
   'function shipmentOf(uint256 shipmentId) view returns (tuple(address from, uint8 status, address to, uint64 lotId, uint256 quantity))',
   // écritures — fabricant
-  'function declareLot(uint32 _materialId, bytes32 _certHash, uint256 _quantity) returns (uint64)',
+  'function declareLot(string _material, string _unit, bytes32 _certHash, uint256 _quantity) returns (uint64)',
   // écritures — circulation de la matière (2 temps)
   'function declareShipment(uint64 _lotId, uint256 _quantity, address _to) returns (uint256)',
   'function acceptShipment(uint256 _shipmentId)',
   'function cancelShipment(uint256 _shipmentId)',
   // écritures — laboratoire
-  'function mintPassport(uint64 _lotId, uint256 _quantity, bytes32 _conformityHash) returns (uint256)',
+  'function mintPassport(uint256 _requestId, uint64 _lotId, uint256 _quantity, bytes32 _conformityHash) returns (uint256)',
   // écritures — praticien
   'function attestConformity(uint256 _tokenId)',
   'function markPlaced(uint256 _tokenId, uint8 _tooth, bytes32 _patientCommitment)',
@@ -148,9 +130,6 @@ export const LIFECYCLE_ABI = [
   // erreurs
   'error WrongStatus(uint256 tokenId, uint8 expected, uint8 current)',
   'error UnknownLot(uint64 lotId)',
-  'error UnknownMaterial(uint32 materialId)',
-  'error NotMaterialOwner(uint32 materialId, address caller)',
-  'error MaterialDiscontinued(uint32 materialId)',
   'error InsufficientMaterial(address holder, uint64 lotId, uint256 needed)',
   'error SelfShipment()',
   'error NotShipmentRecipient(uint256 shipmentId, address caller)',
@@ -246,9 +225,6 @@ export function passports(address: string, runner: ContractRunner): Contract {
 export function lots(address: string, runner: ContractRunner): Contract {
   return new Contract(address, LOTS_ABI, runner)
 }
-export function catalog(address: string, runner: ContractRunner): Contract {
-  return new Contract(address, CATALOG_ABI, runner)
-}
 export function lifecycle(address: string, runner: ContractRunner): Contract {
   return new Contract(address, LIFECYCLE_ABI, runner)
 }
@@ -260,10 +236,6 @@ export function credit(address: string, runner: ContractRunner): Contract {
 const ERROR_KEYS: Record<string, string> = {
   WrongStatus: 'errors.wrongStatus',
   UnknownLot: 'errors.unknownLot',
-  UnknownMaterial: 'errors.unknownMaterial',
-  NotMaterialOwner: 'errors.notMaterialOwner',
-  MaterialDiscontinued: 'errors.materialDiscontinued',
-  EmptyField: 'errors.emptyField',
   InsufficientMaterial: 'errors.insufficientMaterial',
   SelfShipment: 'errors.selfShipment',
   NotShipmentRecipient: 'errors.notShipmentRecipient',
