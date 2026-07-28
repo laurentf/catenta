@@ -7,6 +7,15 @@
  */
 export const LIFECYCLE_ADDRESS = import.meta.env.VITE_LIFECYCLE_ADDRESS ?? ''
 
+/**
+ * Le registre d'acteurs, configuré à part.
+ *
+ * Le LifecycleModule ne le référence pas : il ne l'appelle jamais, et lui
+ * donner un pointeur immuable vers un contrat inutilisé aurait été du bruit.
+ * Facultatif — sans lui, l'application affiche des adresses, rien de plus.
+ */
+export const ACTOR_REGISTRY_ADDRESS = import.meta.env.VITE_ACTOR_REGISTRY_ADDRESS ?? ''
+
 export const CHAIN_ID = Number(import.meta.env.VITE_CHAIN_ID || '11155111')
 export const CHAIN_NAME = import.meta.env.VITE_CHAIN_NAME || 'Sepolia'
 export const CURRENCY_SYMBOL = import.meta.env.VITE_CURRENCY_SYMBOL || 'ETH'

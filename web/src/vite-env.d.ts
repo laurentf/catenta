@@ -2,6 +2,7 @@
 
 interface ImportMetaEnv {
   readonly VITE_LIFECYCLE_ADDRESS: string
+  readonly VITE_ACTOR_REGISTRY_ADDRESS: string
   readonly VITE_CHAIN_ID: string
   readonly VITE_CHAIN_NAME: string
   readonly VITE_CURRENCY_SYMBOL: string

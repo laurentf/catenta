@@ -262,7 +262,7 @@
 
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiButton from '@/components/ui/UiButton.vue'
@@ -281,6 +281,7 @@ import { useWalletStore } from '@/stores/wallet'
 
 const { t } = useI18n()
 const route = useRoute()
+const router = useRouter()
 const catenta = useCatentaStore()
 const lots = useLotsStore()
 const roles = useRolesStore()
@@ -454,6 +455,15 @@ async function loadPicker() {
     /* saisie libre, simplement */
   }
 }
+
+/** Symétrique de la vue Prothèses : personne ne reste sur un écran sans usage. */
+watch(
+  () => [roles.loading, roles.seesMaterial] as const,
+  ([loading, sees]) => {
+    if (!loading && !sees) void router.replace({ name: roles.homeRoute })
+  },
+  { immediate: true },
+)
 
 async function load() {
   if (!catenta.ready) return

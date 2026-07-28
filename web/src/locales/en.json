@@ -243,7 +243,7 @@
     "mintCredits": "Issue",
     "creditsMinted": "Credits issued.",
     "notAllowed": "This view is reserved for the administrator and registrars.",
-    "grantSubtitle": "Approve a laboratory, a practitioner or a distributor.",
+    "grantSubtitle": "Approve an actor, and register its identity in the same act.",
     "rootTitle": "Operators & regulator",
     "rootSubtitle": "Root only: appoint a registrar or the regulator (Ordre / ARS).",
     "rootHint": "A registrar can onboard actors without being an administrator. Only the root appoints them — the 'govern vs operate' split.",
@@ -256,7 +256,15 @@
       "system": "Contracts & roles"
     },
     "tabLocked": "You lack the role required for this tab.",
-    "creditHint": "Crediting an actor is a plain mint: as many credits as you want, as often as needed. There is no separate welcome allocation."
+    "creditHint": "Crediting an actor is a plain mint: as many credits as you want, as often as needed. There is no separate welcome allocation.",
+    "actorLabel": "Trade name",
+    "actorLabelPlaceholder": "Laboratoire Dupont",
+    "actorLabelHint": "The organisation's trade name — never a person's name: a registry cannot be erased.",
+    "sirenLabel": "SIREN",
+    "sirenHint": "Nine digits, or empty for a foreign actor.",
+    "actorNamed": "Actor registered.",
+    "manufacturerNotNamed": "A manufacturer is never named: the contract refuses the write, so its customer base is not handed to its competitors. Its address stays visible — this is pseudonymity, not anonymity.",
+    "registryMissing": "Actor registry not configured: set VITE_ACTOR_REGISTRY_ADDRESS to name actors. The role will be granted anyway."
   },
   "errors": {
     "rejected": "Signature rejected in the wallet.",
@@ -284,7 +292,10 @@
     "notShipmentSender": "You are not the sender of this shipment.",
     "shipmentSettled": "This shipment has already been received or cancelled.",
     "invalidTooth": "Invalid tooth number: FDI notation expects a quadrant from 1 to 8 and a position from 1 to 8.",
-    "quantityTooLarge": "Quantity too large to fit the passport's frozen traits."
+    "quantityTooLarge": "Quantity too large to fit the passport's frozen traits.",
+    "invalidLabel": "A trade name is required, 64 characters maximum.",
+    "invalidSiren": "A SIREN is exactly nine digits.",
+    "manufacturerNotLabelled": "A manufacturer cannot be named — competitive neutrality."
   },
   "credits": {
     "unit": "credits",

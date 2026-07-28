@@ -276,9 +276,10 @@ async function submitMint() {
 }
 
 /**
- * Un fabricant atterrit ici après connexion (c'est la route par défaut) alors
- * que les prothèses ne le concernent pas. On le renvoie vers la matière plutôt
- * que de lui afficher un écran sans usage.
+ * Un fabricant — ou un pur administrateur — atterrit ici après connexion,
+ * c'est la route par défaut, alors que les prothèses ne le concernent pas. On
+ * le renvoie vers le premier écran qui le concerne plutôt que de lui afficher
+ * une page sans usage.
  *
  * On ne bloque en revanche PAS la fiche d'une prothèse : un enregistrement
  * public reste lisible par qui l'ouvre délibérément. Ce qu'on retire, c'est le
@@ -287,7 +288,7 @@ async function submitMint() {
 watch(
   () => [roles.loading, roles.seesPassports] as const,
   ([loading, sees]) => {
-    if (!loading && !sees) void router.replace({ name: 'lots' })
+    if (!loading && !sees) void router.replace({ name: roles.homeRoute })
   },
   { immediate: true },
 )

@@ -60,20 +60,21 @@ export const useRolesStore = defineStore('roles', () => {
    * praticien — le cas de l'usinage au cabinet — cumule les deux vues. C'est
    * pourquoi ce sont des `||` et non un aiguillage sur un rôle principal.
    *
-   * Le fabricant est le seul vraiment restreint : il produit de la matière et
-   * n'a rien à faire des prothèses. Lui montrer des passeports qu'il ne peut ni
-   * lire utilement ni modifier ne fait qu'ajouter du bruit.
+   * Le fabricant est le seul acteur métier vraiment restreint : il produit de
+   * la matière et n'a rien à faire des prothèses. Lui montrer des passeports
+   * qu'il ne peut ni lire utilement ni modifier ne fait qu'ajouter du bruit.
    *
-   * Sans rôle, on voit tout en lecture : le registre est public, prétendre le
-   * contraire serait mentir sur ce qu'est une chaîne publique.
+   * ADMINISTRER N'EST PAS UN DROIT DE LECTURE. L'administrateur, l'agent
+   * d'agrément et l'émetteur de crédits gouvernent le registre ; ils n'y
+   * exercent aucun métier. Leurs écrans se limitent donc à Administration —
+   * sauf s'ils portent aussi un rôle acteur, auquel cas les vues s'ajoutent,
+   * ces rôles se cumulant comme les autres.
+   *
+   * Sans aucun rôle, on voit tout en lecture : le registre est public, et
+   * prétendre le contraire serait mentir sur ce qu'est une chaîne publique.
    */
   const seesPassports = computed(
-    () =>
-      isLab.value ||
-      isPractitioner.value ||
-      isRegulator.value ||
-      isAdmin.value ||
-      isSpectator.value,
+    () => isLab.value || isPractitioner.value || isRegulator.value || isSpectator.value,
   )
 
   /** Le praticien y accède aussi : il peut détenir de la matière (usinage au cabinet). */
@@ -84,14 +85,18 @@ export const useRolesStore = defineStore('roles', () => {
       isLab.value ||
       isPractitioner.value ||
       isRegulator.value ||
-      isAdmin.value ||
       isSpectator.value,
   )
 
   /** Lecture totale du registre, sans filtrage par garde. */
-  const seesEverything = computed(
-    () => isRegulator.value || isAdmin.value || isSpectator.value,
-  )
+  const seesEverything = computed(() => isRegulator.value || isSpectator.value)
+
+  /** Où atterrir après connexion : le premier écran qui concerne ce compte. */
+  const homeRoute = computed(() => {
+    if (seesPassports.value) return 'passports'
+    if (seesMaterial.value) return 'lots'
+    return 'admin'
+  })
 
   async function refresh() {
     const c = catenta.readOnly()
@@ -177,6 +182,7 @@ export const useRolesStore = defineStore('roles', () => {
     seesPassports,
     seesMaterial,
     seesEverything,
+    homeRoute,
     myRoles,
     refresh,
     loadMembers,

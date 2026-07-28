@@ -58,6 +58,21 @@ export const PASSPORT_ABI = [
   'error ERC721NonexistentToken(uint256 tokenId)',
 ] as const
 
+export const ACTOR_REGISTRY_ABI = [
+  'function actorOf(address account) view returns (tuple(string label, string siren))',
+  // écritures — agent d'agrément
+  'function setLabel(address _account, string _label, string _siren)',
+  'function clearLabel(address _account)',
+  // events
+  'event ActorLabelled(address indexed account, string label, string siren)',
+  'event ActorLabelCleared(address indexed account)',
+  // erreurs
+  'error InvalidLabel()',
+  'error InvalidSiren()',
+  'error ManufacturerNotLabelled(address account)',
+  'error UnauthorizedRole(bytes32 role, address account)',
+] as const
+
 export const LOTS_ABI = [
   'function lotOf(uint64 lotId) view returns (tuple(address manufacturer, uint40 declaredAt, bytes32 certHash, string material, string unit))',
   'function lotExists(uint64 lotId) view returns (bool)',
@@ -222,6 +237,9 @@ export function roles(address: string, runner: ContractRunner): Contract {
 export function passports(address: string, runner: ContractRunner): Contract {
   return new Contract(address, PASSPORT_ABI, runner)
 }
+export function actorRegistry(address: string, runner: ContractRunner): Contract {
+  return new Contract(address, ACTOR_REGISTRY_ABI, runner)
+}
 export function lots(address: string, runner: ContractRunner): Contract {
   return new Contract(address, LOTS_ABI, runner)
 }
@@ -241,6 +259,9 @@ const ERROR_KEYS: Record<string, string> = {
   NotShipmentRecipient: 'errors.notShipmentRecipient',
   NotShipmentSender: 'errors.notShipmentSender',
   ShipmentSettled: 'errors.shipmentSettled',
+  InvalidLabel: 'errors.invalidLabel',
+  InvalidSiren: 'errors.invalidSiren',
+  ManufacturerNotLabelled: 'errors.manufacturerNotLabelled',
   ZeroQuantity: 'errors.zeroQuantity',
   EmptyHash: 'errors.emptyHash',
   InvalidTooth: 'errors.invalidTooth',

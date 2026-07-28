@@ -10,12 +10,14 @@ import { useWalletStore } from '@/stores/wallet'
 import { useCatentaStore } from '@/stores/catenta'
 import { useRolesStore } from '@/stores/roles'
 import { useCreditsStore } from '@/stores/credits'
+import { useActorsStore } from '@/stores/actors'
 import ToastHost from '@/components/ui/ToastHost.vue'
 
 const wallet = useWalletStore()
 const catenta = useCatentaStore()
 const roles = useRolesStore()
 const credits = useCreditsStore()
+const actors = useActorsStore()
 const router = useRouter()
 
 /**
@@ -27,6 +29,8 @@ watch(
   async ([connected, correctChain]) => {
     if (!connected || !correctChain) {
       roles.reset()
+      // Les libellés sont lus sur une chaîne donnée : changer de réseau les périme.
+      actors.reset()
       await router.push({ name: 'connect' })
       return
     }

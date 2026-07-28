@@ -243,7 +243,7 @@
     "mintCredits": "Émettre",
     "creditsMinted": "Crédits émis.",
     "notAllowed": "Cette vue est réservée à l'administrateur et aux agents d'agrément.",
-    "grantSubtitle": "Agréer un laboratoire, un praticien ou un distributeur.",
+    "grantSubtitle": "Agréer un acteur, et l'inscrire au registre du même geste.",
     "rootTitle": "Opérateurs & régulateur",
     "rootSubtitle": "Réservé à la racine : nommer un agent d'agrément ou l'Ordre / ARS.",
     "rootHint": "L'agent d'agrément peut agréer des acteurs sans être administrateur. Seule la racine le nomme — c'est la séparation « gouverner / opérer ».",
@@ -256,7 +256,15 @@
       "system": "Contrats & rôles"
     },
     "tabLocked": "Rôle requis manquant pour cet onglet.",
-    "creditHint": "Créditer un acteur, c'est un simple mint : autant de crédits que voulu, autant de fois que nécessaire. Il n'y a pas d'allocation de bienvenue à part."
+    "creditHint": "Créditer un acteur, c'est un simple mint : autant de crédits que voulu, autant de fois que nécessaire. Il n'y a pas d'allocation de bienvenue à part.",
+    "actorLabel": "Raison sociale",
+    "actorLabelPlaceholder": "Laboratoire Dupont",
+    "actorLabelHint": "La raison sociale de la structure — jamais le nom d'une personne : un registre ne s'efface pas.",
+    "sirenLabel": "SIREN",
+    "sirenHint": "Neuf chiffres, ou vide pour un acteur étranger.",
+    "actorNamed": "Acteur inscrit au registre.",
+    "manufacturerNotNamed": "Un fabricant n'est jamais nommé : le contrat refuse l'écriture, pour ne pas livrer sa clientèle à ses concurrents. Son adresse reste visible — c'est de la pseudonymité, pas de l'anonymat.",
+    "registryMissing": "Registre d'acteurs non configuré : renseignez VITE_ACTOR_REGISTRY_ADDRESS pour pouvoir nommer les acteurs. Le rôle sera accordé quand même."
   },
   "errors": {
     "rejected": "Signature refusée dans le wallet.",
@@ -284,7 +292,10 @@
     "notShipmentSender": "Vous n'êtes pas l'expéditeur de cette expédition.",
     "shipmentSettled": "Cette expédition a déjà été réceptionnée ou annulée.",
     "invalidTooth": "Numéro de dent invalide : la notation FDI attend un quadrant de 1 à 8 et une position de 1 à 8.",
-    "quantityTooLarge": "Quantité trop grande pour être inscrite dans les traits du passeport."
+    "quantityTooLarge": "Quantité trop grande pour être inscrite dans les traits du passeport.",
+    "invalidLabel": "La raison sociale est requise et limitée à 64 caractères.",
+    "invalidSiren": "Un SIREN compte exactement neuf chiffres.",
+    "manufacturerNotLabelled": "Un fabricant ne peut pas être nommé — neutralité concurrentielle."
   },
   "credits": {
     "unit": "crédits",

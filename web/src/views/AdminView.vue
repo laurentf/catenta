@@ -12,20 +12,42 @@
       <!-- Agréer un acteur : admin ET agent d'agrément -->
       <template v-if="tab === 'onboard'">
         <UiCard tone="mint" :title="t('admin.grantTitle')" :subtitle="t('admin.grantSubtitle')" badge="＋">
-          <form class="grid gap-4 sm:grid-cols-[200px_1fr_auto]" @submit.prevent="grantActor">
-            <div>
-              <label class="label">{{ t('admin.roleLabel') }}</label>
-              <select v-model="role" class="input">
-                <option v-for="r in ONBOARDABLE_ROLES" :key="r" :value="r">{{ t(`roles.${r}`) }}</option>
-              </select>
+          <form class="grid gap-4" @submit.prevent="grantActor">
+            <div class="grid gap-4 sm:grid-cols-[200px_1fr]">
+              <div>
+                <label class="label">{{ t('admin.roleLabel') }}</label>
+                <select v-model="role" class="input">
+                  <option v-for="r in ONBOARDABLE_ROLES" :key="r" :value="r">{{ t(`roles.${r}`) }}</option>
+                </select>
+              </div>
+              <div>
+                <label class="label">{{ t('admin.addressLabel') }}</label>
+                <input v-model="account" class="input mono" placeholder="0x…" />
+              </div>
             </div>
-            <div>
-              <label class="label">{{ t('admin.addressLabel') }}</label>
-              <input v-model="account" class="input mono" placeholder="0x…" />
+
+            <!-- Nommer et agréer sont le même acte : le registre est écrit par
+                 l'agent d'agrément, dans la foulée du rôle. -->
+            <div v-if="canBeNamed" class="grid gap-4 sm:grid-cols-[1fr_200px]">
+              <div>
+                <label class="label">{{ t('admin.actorLabel') }}</label>
+                <input v-model="actorLabel" class="input" :placeholder="t('admin.actorLabelPlaceholder')" />
+                <p class="hint">{{ t('admin.actorLabelHint') }}</p>
+              </div>
+              <div>
+                <label class="label">{{ t('admin.sirenLabel') }}</label>
+                <input v-model="siren" class="input mono" placeholder="812456903" maxlength="9" />
+                <p class="hint">{{ t('admin.sirenHint') }}</p>
+              </div>
             </div>
-            <UiButton type="submit" class="self-start sm:mt-6" :loading="busy" :disabled="!isAddress(account)">
-              {{ t('admin.grant') }}
-            </UiButton>
+            <UiAlert v-else tone="info">{{ t('admin.manufacturerNotNamed') }}</UiAlert>
+
+            <div>
+              <UiButton type="submit" :loading="busy" :disabled="!canGrant">
+                {{ t('admin.grant') }}
+              </UiButton>
+              <p v-if="!actors.configured()" class="hint">{{ t('admin.registryMissing') }}</p>
+            </div>
           </form>
         </UiCard>
 
@@ -156,12 +178,14 @@ import { eqAddress, isAddress } from '@/lib/format'
 import { useCatentaStore } from '@/stores/catenta'
 import { useRolesStore } from '@/stores/roles'
 import { useCreditsStore } from '@/stores/credits'
+import { useActorsStore } from '@/stores/actors'
 import { useToastsStore } from '@/stores/toasts'
 
 const { t } = useI18n()
 const catenta = useCatentaStore()
 const roles = useRolesStore()
 const credits = useCreditsStore()
+const actors = useActorsStore()
 const toasts = useToastsStore()
 
 const tab = ref('onboard')
@@ -187,6 +211,8 @@ watchEffect(() => {
 
 const role = ref<RoleKey>('LAB')
 const account = ref('')
+const actorLabel = ref('')
+const siren = ref('')
 const busy = ref(false)
 
 const rootRole = ref<RoleKey>('REGISTRAR')
@@ -218,11 +244,34 @@ function tx(fn: () => Promise<string>, successKey: string) {
   })
 }
 
+/**
+ * Un fabricant n'est jamais nommé : le contrat refuse l'écriture, pour ne pas
+ * livrer sa clientèle à ses concurrents. On masque donc les champs plutôt que
+ * de laisser saisir quelque chose qui sera rejeté.
+ */
+const canBeNamed = computed(() => role.value !== 'MANUFACTURER')
+const canGrant = computed(
+  () =>
+    isAddress(account.value) &&
+    (!canBeNamed.value || !actorLabel.value.trim() || siren.value.length === 0 || siren.value.length === 9),
+)
+
 async function grantActor() {
   busy.value = true
   try {
-    await tx(() => roles.grant(role.value, account.value.trim()), 'admin.granted')
+    const target = account.value.trim()
+    await tx(() => roles.grant(role.value, target), 'admin.granted')
+    // Deuxième transaction, et c'est assumé : le rôle vit dans l'autorité, le
+    // nom dans le registre. Les fusionner coupleraient deux stores permanents.
+    if (canBeNamed.value && actorLabel.value.trim() && actors.configured()) {
+      await tx(
+        () => actors.setLabel(target, actorLabel.value.trim(), siren.value.trim()),
+        'admin.actorNamed',
+      )
+    }
     account.value = ''
+    actorLabel.value = ''
+    siren.value = ''
   } catch {
     /* toast déjà affiché */
   } finally {
