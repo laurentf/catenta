@@ -107,7 +107,8 @@
     "inCustody": "in your custody",
     "outOfCirculating": "out of {total} still circulating",
     "emptyManufacturer": "You have declared no lot. Register a material in the catalogue, then declare one.",
-    "emptyHolder": "No material in your custody. It reaches you through a shipment, which you have to confirm."
+    "emptyHolder": "No material in your custody. It reaches you through a shipment, which you have to confirm.",
+    "shipToPlaceholder": "Pick a recipient…"
   },
   "passports": {
     "eyebrow": "Custom-made dental prostheses",
@@ -141,7 +142,8 @@
     "holder": "Holder",
     "mintedAt": "Issued on",
     "handoffForMe": "Handoff to accept — it is meant for you",
-    "handoffPendingFor": "Handoff pending, reserved for {who}"
+    "handoffPendingFor": "Handoff pending, reserved for {who}",
+    "fulfilling": "This manufacturing fulfils prescription #{id}."
   },
   "passport": {
     "eyebrow": "Prosthesis record",
@@ -295,7 +297,17 @@
     "quantityTooLarge": "Quantity too large to fit the passport's frozen traits.",
     "invalidLabel": "A trade name is required, 64 characters maximum.",
     "invalidSiren": "A SIREN is exactly nine digits.",
-    "manufacturerNotLabelled": "A manufacturer cannot be named — competitive neutrality."
+    "manufacturerNotLabelled": "A manufacturer cannot be named — competitive neutrality.",
+    "supplierNotEligible": "The supplier must be an approved distributor or manufacturer.",
+    "notOrderSupplier": "You are not the supplier of this order.",
+    "notOrderBuyer": "You are not the buyer of this order.",
+    "orderSettled": "This order has already been settled.",
+    "materialMismatch": "The lot offered is not made of the material that was ordered.",
+    "notRequestLab": "This prescription is not addressed to you.",
+    "notRequestPractitioner": "You did not write this prescription.",
+    "wrongRequestStatus": "The prescription is not at the stage this action expects.",
+    "invalidText": "This field is required, and its length is bounded.",
+    "actionCostTooHigh": "Per-action cost above the allowed cap."
   },
   "credits": {
     "unit": "credits",
@@ -360,5 +372,68 @@
     "stepPending": "{qty} — shipment pending",
     "stepPendingNote": "not received yet",
     "stepManufactured": "{qty} consumed — prosthesis #{id}"
+  },
+  "actors": {
+    "choose": "Pick an actor…"
+  },
+  "orders": {
+    "placeTitle": "Order material",
+    "placeSubtitle": "From a distributor, or straight from the manufacturer. They ship, you confirm reception.",
+    "supplier": "Supplier",
+    "supplierPlaceholder": "Pick a supplier…",
+    "place": "Order",
+    "placed": "Order placed.",
+    "incomingTitle": "Orders to fulfil",
+    "incomingSubtitle": "What is asked of you. Fulfilling creates a shipment the buyer still has to accept.",
+    "mineTitle": "My orders",
+    "from": "from",
+    "to": "to",
+    "fulfil": "Fulfil",
+    "fulfilled": "Order fulfilled, shipment created.",
+    "refuse": "Decline",
+    "refused": "Order declined.",
+    "cancel": "Cancel",
+    "cancelled": "Order cancelled.",
+    "pickLot": "Pick the lot to draw from…",
+    "noMatchingLot": "No lot of that material in your custody. Order some, or decline with a reason.",
+    "reasonPlaceholder": "Reason — out of stock, wrong quantity…",
+    "escalateHint": "Out of stock? You can order upstream yourself: the new order keeps the link to this one.",
+    "escalatedFrom": "to fulfil order #{id}",
+    "status": {
+      "0": "pending",
+      "1": "fulfilled",
+      "2": "declined",
+      "3": "cancelled"
+    }
+  },
+  "requests": {
+    "newTitle": "Request a prosthesis",
+    "newSubtitle": "The prescription starts with the practitioner. The laboratory accepts or declines with a reason.",
+    "lab": "Laboratory",
+    "labPlaceholder": "Pick a laboratory…",
+    "labHint": "You may address yourself if you are also a laboratory.",
+    "shade": "Shade",
+    "description": "Description",
+    "descriptionPlaceholder": "All-ceramic crown, posterior…",
+    "send": "Send request",
+    "sent": "Request sent to the laboratory.",
+    "incomingTitle": "Prescriptions received",
+    "incomingSubtitle": "Accepting commits the laboratory; manufacturing consumes material and creates the passport.",
+    "mineTitle": "My requests",
+    "from": "from",
+    "to": "to",
+    "accept": "Accept",
+    "accepted": "Prescription accepted.",
+    "refuse": "Decline",
+    "refused": "Prescription declined.",
+    "cancelled": "Request cancelled.",
+    "manufacture": "Manufacture",
+    "status": {
+      "0": "pending",
+      "1": "accepted",
+      "2": "manufactured",
+      "3": "declined",
+      "4": "cancelled"
+    }
   }
 }

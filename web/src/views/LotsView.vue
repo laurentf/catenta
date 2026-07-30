@@ -59,6 +59,150 @@
 
     <UiAlert v-if="!roles.isManufacturer" tone="info" class="mt-6">{{ t('lots.readOnly') }}</UiAlert>
 
+    <!-- Commander de la matière : c'est par là que le laboratoire s'approvisionne -->
+    <UiCard
+      v-if="roles.seesMaterial && !roles.isManufacturer"
+      tone="mint"
+      class="mt-6"
+      :title="t('orders.placeTitle')"
+      :subtitle="t('orders.placeSubtitle')"
+      badge="⇄"
+    >
+      <form class="grid gap-4 sm:grid-cols-[1fr_1fr_140px_auto]" @submit.prevent="submitOrder">
+        <ActorSelect
+          v-model="orderSupplier"
+          :roles="SUPPLIERS"
+          :label="t('orders.supplier')"
+          :placeholder="t('orders.supplierPlaceholder')"
+        />
+        <div>
+          <label class="label">{{ t('lots.materialLabel') }}</label>
+          <input v-model="orderMaterial" class="input" list="material-picker" placeholder="Zircone Y-TZP A2" />
+        </div>
+        <div>
+          <label class="label">{{ t('lots.quantityLabel') }}</label>
+          <input v-model="orderQuantity" class="input" type="number" min="1" step="1" placeholder="250" />
+        </div>
+        <UiButton
+          type="submit"
+          class="self-start sm:mt-6"
+          :loading="busy === 'order'"
+          :disabled="!canOrder"
+        >
+          {{ t('orders.place') }}
+        </UiButton>
+      </form>
+    </UiCard>
+
+    <!-- Commandes qu'on m'a passées -->
+    <UiCard
+      v-if="orders.incomingOrders.length"
+      tone="panel"
+      class="mt-5"
+      :title="t('orders.incomingTitle')"
+      :subtitle="t('orders.incomingSubtitle')"
+      badge="◧"
+      badge-tone="navy"
+    >
+      <ul class="space-y-3">
+        <li v-for="o in orders.incomingOrders" :key="o.id" class="rounded-card bg-white/70 px-3 py-2.5">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div class="text-xs">
+              <p class="font-bold text-navy">
+                {{ formatQuantity(o.quantity) }} — {{ o.material }}
+                <span :class="orderTone(o.status)">{{ t(`orders.status.${o.status}`) }}</span>
+              </p>
+              <p class="mt-0.5 flex items-center gap-1.5 text-slate-label">
+                {{ t('orders.from') }} <AddressChip :address="o.buyer" />
+                <span v-if="o.parentOrderId">· {{ t('orders.escalatedFrom', { id: o.parentOrderId }) }}</span>
+              </p>
+              <p v-if="o.reason" class="mt-0.5 text-slate-muted">« {{ o.reason }} »</p>
+            </div>
+            <div v-if="o.status === OrderStatus.Pending" class="flex flex-wrap gap-2">
+              <UiButton size="sm" :loading="busy === `fulfil-${o.id}`" @click="openFulfil(o.id)">
+                {{ t('orders.fulfil') }}
+              </UiButton>
+              <UiButton size="sm" variant="ghost" @click="openRefuse(o.id)">
+                {{ t('orders.refuse') }}
+              </UiButton>
+            </div>
+          </div>
+
+          <!-- Honorer : on choisit le lot dans lequel on puise -->
+          <form v-if="fulfilFor === o.id" class="mt-3 grid gap-2 sm:grid-cols-[1fr_auto]" @submit.prevent="submitFulfil(o)">
+            <select v-model="fulfilLot" class="input text-xs">
+              <option value="">{{ t('orders.pickLot') }}</option>
+              <option v-for="l in lotsMatching(o.material)" :key="l.id" :value="String(l.id)">
+                {{ t('lots.lot') }} #{{ l.id }} — {{ formatQuantity(l.mine, l.unit) }}
+              </option>
+            </select>
+            <UiButton type="submit" size="sm" :loading="busy === `fulfil-${o.id}`" :disabled="!fulfilLot">
+              {{ t('orders.fulfil') }}
+            </UiButton>
+            <p v-if="!lotsMatching(o.material).length" class="hint sm:col-span-2">
+              {{ t('orders.noMatchingLot') }}
+            </p>
+          </form>
+
+          <!-- Refuser : le motif est obligatoire, et lisible par l'acheteur -->
+          <form v-if="refuseFor === o.id" class="mt-3 grid gap-2 sm:grid-cols-[1fr_auto]" @submit.prevent="submitRefuse(o.id)">
+            <input v-model="reason" class="input text-xs" :placeholder="t('orders.reasonPlaceholder')" />
+            <UiButton type="submit" size="sm" variant="ghost" :loading="busy === `refuse-${o.id}`" :disabled="!reason.trim()">
+              {{ t('orders.refuse') }}
+            </UiButton>
+            <p class="hint sm:col-span-2">{{ t('orders.escalateHint') }}</p>
+          </form>
+        </li>
+      </ul>
+    </UiCard>
+
+    <!-- Mes commandes -->
+    <UiCard
+      v-if="orders.myOrders.length"
+      tone="panel"
+      class="mt-5"
+      :title="t('orders.mineTitle')"
+      badge="◨"
+      badge-tone="navy"
+    >
+      <ul class="space-y-2">
+        <li
+          v-for="o in orders.myOrders"
+          :key="o.id"
+          class="flex flex-wrap items-center justify-between gap-3 rounded-card bg-white/70 px-3 py-2 text-xs"
+        >
+          <div>
+            <p class="font-bold text-navy">
+              {{ formatQuantity(o.quantity) }} — {{ o.material }}
+              <span :class="orderTone(o.status)">{{ t(`orders.status.${o.status}`) }}</span>
+            </p>
+            <p class="mt-0.5 flex items-center gap-1.5 text-slate-label">
+              {{ t('orders.to') }} <AddressChip :address="o.supplier" />
+            </p>
+            <p v-if="o.reason" class="mt-0.5 text-slate-muted">« {{ o.reason }} »</p>
+          </div>
+          <UiButton
+            v-if="o.status === OrderStatus.Pending"
+            size="sm"
+            variant="ghost"
+            @click="openCancel(o.id)"
+          >
+            {{ t('orders.cancel') }}
+          </UiButton>
+          <form
+            v-if="cancelFor === o.id"
+            class="flex w-full gap-2"
+            @submit.prevent="submitCancel(o.id)"
+          >
+            <input v-model="reason" class="input text-xs" :placeholder="t('orders.reasonPlaceholder')" />
+            <UiButton type="submit" size="sm" variant="ghost" :loading="busy === `cancel-order-${o.id}`" :disabled="!reason.trim()">
+              {{ t('orders.cancel') }}
+            </UiButton>
+          </form>
+        </li>
+      </ul>
+    </UiCard>
+
     <!-- Réceptions en attente : sans ça, la matière n'arrive jamais -->
     <UiCard
       v-if="lots.incoming.length"
@@ -209,15 +353,11 @@
         </UiButton>
 
         <form v-if="shipFor === lot.id" class="mt-3 space-y-2" @submit.prevent="submitShip(lot)">
-          <input
+          <ActorSelect
             v-model="shipTo"
-            class="input mono text-xs"
-            list="material-recipients"
-            placeholder="0x…"
+            :roles="MATERIAL_HOLDERS"
+            :placeholder="t('lots.shipToPlaceholder')"
           />
-          <datalist id="material-recipients">
-            <option v-for="a in eligible" :key="a" :value="a" />
-          </datalist>
           <input
             v-model="shipQty"
             class="input text-xs"
@@ -270,13 +410,20 @@ import UiAlert from '@/components/ui/UiAlert.vue'
 import AddressChip from '@/components/ui/AddressChip.vue'
 import HashChip from '@/components/ui/HashChip.vue'
 import HashInput from '@/components/HashInput.vue'
+import ActorSelect from '@/components/ActorSelect.vue'
 import { eqAddress, formatDate, formatQuantity, isAddress } from '@/lib/format'
-import { parseError } from '@/lib/contracts'
+import { OrderStatus, parseError, type RoleKey } from '@/lib/contracts'
+
+/** Les acteurs autorisés à détenir de la matière — le régulateur n'en est pas. */
+const MATERIAL_HOLDERS: RoleKey[] = ['MANUFACTURER', 'DISTRIBUTOR', 'LAB', 'PRACTITIONER']
+/** À qui l'on commande : un distributeur, ou le fabricant directement. */
+const SUPPLIERS: RoleKey[] = ['DISTRIBUTOR', 'MANUFACTURER']
 import { useCatentaStore } from '@/stores/catenta'
 import { useLotsStore, type LotRow } from '@/stores/lots'
 import { useRolesStore } from '@/stores/roles'
 import { useToastsStore } from '@/stores/toasts'
 import { useCreditsStore } from '@/stores/credits'
+import { useOrdersStore } from '@/stores/orders'
 import { useWalletStore } from '@/stores/wallet'
 
 const { t } = useI18n()
@@ -287,6 +434,7 @@ const lots = useLotsStore()
 const roles = useRolesStore()
 const toasts = useToastsStore()
 const credits = useCreditsStore()
+const orders = useOrdersStore()
 const wallet = useWalletStore()
 
 const showForm = ref(false)
@@ -311,6 +459,57 @@ watch(material, (name) => {
 })
 
 const unitOfLot = (lotId: number) => lots.list.find((l) => l.id === lotId)?.unit ?? ''
+
+const orderSupplier = ref('')
+const orderMaterial = ref('')
+const orderQuantity = ref('')
+const fulfilFor = ref<number | null>(null)
+const fulfilLot = ref('')
+const refuseFor = ref<number | null>(null)
+const cancelFor = ref<number | null>(null)
+const reason = ref('')
+
+const canOrder = computed(
+  () =>
+    !!orderSupplier.value &&
+    !!orderMaterial.value.trim() &&
+    Number(orderQuantity.value) > 0 &&
+    credits.canAfford,
+)
+
+/** Les lots dont j'ai la garde et qui portent la matière commandée. */
+const lotsMatching = (material: string) =>
+  lots.list.filter((l) => l.mine > 0n && l.material === material)
+
+function orderTone(status: OrderStatus) {
+  const base = 'ml-2 rounded-full px-2 py-0.5 text-[0.65rem] font-bold uppercase '
+  if (status === OrderStatus.Fulfilled) return base + 'bg-teal-soft text-teal-deep'
+  if (status === OrderStatus.Pending) return base + 'bg-peach text-amber-deep'
+  return base + 'bg-slate-panel text-slate-muted'
+}
+
+function closeOrderForms() {
+  fulfilFor.value = null
+  refuseFor.value = null
+  cancelFor.value = null
+  reason.value = ''
+  fulfilLot.value = ''
+}
+const openFulfil = (id: number) => {
+  const open = fulfilFor.value === id
+  closeOrderForms()
+  fulfilFor.value = open ? null : id
+}
+const openRefuse = (id: number) => {
+  const open = refuseFor.value === id
+  closeOrderForms()
+  refuseFor.value = open ? null : id
+}
+const openCancel = (id: number) => {
+  const open = cancelFor.value === id
+  closeOrderForms()
+  cancelFor.value = open ? null : id
+}
 
 const shipFor = ref<number | null>(null)
 const shipTo = ref('')
@@ -360,24 +559,6 @@ const canDeclare = computed(
 /** Arrivée depuis une fiche passeport : on met le lot en évidence. */
 const highlighted = computed(() => Number(route.query.lot) || 0)
 
-/**
- * Les acteurs autorisés à détenir de la matière, lus on-chain. Le régulateur
- * n'en fait pas partie : il lit et rappelle, il ne prend jamais la garde.
- */
-const eligible = computed(() => {
-  const unique = new Map<string, string>()
-  for (const address of [
-    ...(roles.members.MANUFACTURER ?? []),
-    ...(roles.members.DISTRIBUTOR ?? []),
-    ...(roles.members.LAB ?? []),
-    ...(roles.members.PRACTITIONER ?? []),
-  ]) {
-    if (eqAddress(address, wallet.address)) continue
-    unique.set(address.toLowerCase(), address)
-  }
-  return [...unique.values()]
-})
-
 function canShip(lot: LotRow): boolean {
   const qty = Number(shipQty.value)
   return (
@@ -393,7 +574,6 @@ function openShip(lotId: number) {
   shipFor.value = shipFor.value === lotId ? null : lotId
   shipTo.value = ''
   shipQty.value = ''
-  if (shipFor.value !== null) void roles.loadMembers()
 }
 
 function run(key: string, fn: () => Promise<string>, successKey: string) {
@@ -442,6 +622,31 @@ async function submitShip(lot: LotRow) {
   shipQty.value = ''
 }
 
+async function submitOrder() {
+  await run(
+    'order',
+    () => orders.placeOrder(orderSupplier.value, orderMaterial.value.trim(), BigInt(orderQuantity.value)),
+    'orders.placed',
+  )
+  orderSupplier.value = ''
+  orderMaterial.value = ''
+  orderQuantity.value = ''
+}
+
+async function submitFulfil(order: { id: number }) {
+  await run(`fulfil-${order.id}`, () => orders.fulfilOrder(order.id, Number(fulfilLot.value)), 'orders.fulfilled')
+  closeOrderForms()
+  await lots.refreshIncoming()
+}
+async function submitRefuse(id: number) {
+  await run(`refuse-${id}`, () => orders.refuseOrder(id, reason.value.trim()), 'orders.refused')
+  closeOrderForms()
+}
+async function submitCancel(id: number) {
+  await run(`cancel-order-${id}`, () => orders.cancelOrder(id, reason.value.trim()), 'orders.cancelled')
+  closeOrderForms()
+}
+
 const accept = (id: number) => run(`accept-${id}`, () => lots.acceptShipment(id), 'lots.accepted')
 const cancel = (id: number) => run(`cancel-${id}`, () => lots.cancelShipment(id), 'lots.cancelled')
 
@@ -467,7 +672,7 @@ watch(
 
 async function load() {
   if (!catenta.ready) return
-  await Promise.all([lots.load(), lots.refreshIncoming(), loadPicker()])
+  await Promise.all([lots.load(), lots.refreshIncoming(), orders.refresh(), loadPicker()])
   if (!highlighted.value) return
   await nextTick()
   document.getElementById(`lot-${highlighted.value}`)?.scrollIntoView({

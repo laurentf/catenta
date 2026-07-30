@@ -123,16 +123,8 @@
         <form v-if="showHandoff" class="mt-5 grid gap-3 sm:grid-cols-[1fr_auto]" @submit.prevent="doInitiate">
           <div>
             <label class="label">{{ t('passport.handoffLabel') }}</label>
-            <input
-              v-model="recipient"
-              class="input mono"
-              list="handoff-recipients"
-              placeholder="0x…"
-            />
-            <!-- Les acteurs éligibles sont lus on-chain, pas décidés ici -->
-            <datalist id="handoff-recipients">
-              <option v-for="address in eligible" :key="address" :value="address" />
-            </datalist>
+            <!-- Les destinataires éligibles sont lus on-chain, nommés par le registre -->
+            <ActorSelect v-model="recipient" :roles="HANDOFF_RECIPIENTS" />
             <p class="hint">
               {{ p.pendingHandoff ? t('passport.handoffReplace') : t('passport.handoffHint') }}
             </p>
@@ -203,8 +195,12 @@ import StatusBadge from '@/components/ui/StatusBadge.vue'
 import AddressChip from '@/components/ui/AddressChip.vue'
 import HashChip from '@/components/ui/HashChip.vue'
 import CommitmentBuilder from '@/components/CommitmentBuilder.vue'
+import ActorSelect from '@/components/ActorSelect.vue'
 import PassportQr from '@/components/PassportQr.vue'
-import { Status, parseError } from '@/lib/contracts'
+import { Status, parseError, type RoleKey } from '@/lib/contracts'
+
+/** Seuls un laboratoire ou un praticien agréé peuvent recevoir une prothèse. */
+const HANDOFF_RECIPIENTS: RoleKey[] = ['LAB', 'PRACTITIONER']
 import { ZERO_ADDRESS } from '@/lib/constants'
 import { eqAddress, formatDate, formatQuantity, isAddress } from '@/lib/format'
 import { useCatentaStore } from '@/stores/catenta'
@@ -257,20 +253,6 @@ const hasCommitment = computed(
   () => !!p.value?.patientCommitment && p.value.patientCommitment !== ZERO_ADDRESS.padEnd(66, '0'),
 )
 
-/**
- * Les destinataires que le contrat accepterait : titulaires de LAB ou
- * PRACTITIONER, lus on-chain (AccessControlEnumerable). La saisie reste libre —
- * la liste est une aide, pas une autorisation.
- */
-const eligible = computed(() => {
-  const unique = new Map<string, string>()
-  for (const address of [...(roles.members.LAB ?? []), ...(roles.members.PRACTITIONER ?? [])]) {
-    if (eqAddress(address, wallet.address)) continue // remise à soi-même refusée
-    unique.set(address.toLowerCase(), address)
-  }
-  return [...unique.values()]
-})
-
 const steps = computed(() => {
   const s = p.value?.status ?? Status.Manufactured
   return [
@@ -316,7 +298,6 @@ const actions = computed<Action[]>(() => {
       run: () => {
         showHandoff.value = !showHandoff.value
         showPlace.value = false
-        if (showHandoff.value) void roles.loadMembers()
       },
     })
   }

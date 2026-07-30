@@ -107,7 +107,8 @@
     "inCustody": "en votre garde",
     "outOfCirculating": "sur {total} encore en circulation",
     "emptyManufacturer": "Vous n'avez déclaré aucun lot. Enregistrez une matière au catalogue, puis déclarez-en un.",
-    "emptyHolder": "Aucune matière en votre garde. Elle vous parviendra par une expédition, que vous devrez réceptionner."
+    "emptyHolder": "Aucune matière en votre garde. Elle vous parviendra par une expédition, que vous devrez réceptionner.",
+    "shipToPlaceholder": "Choisir un destinataire…"
   },
   "passports": {
     "eyebrow": "Prothèses dentaires sur mesure",
@@ -141,7 +142,8 @@
     "holder": "Détenteur",
     "mintedAt": "Émis le",
     "handoffForMe": "Remise à accepter — elle vous est destinée",
-    "handoffPendingFor": "Remise en attente, réservée à {who}"
+    "handoffPendingFor": "Remise en attente, réservée à {who}",
+    "fulfilling": "Cette fabrication honore la prescription n°{id}."
   },
   "passport": {
     "eyebrow": "Fiche prothèse",
@@ -295,7 +297,17 @@
     "quantityTooLarge": "Quantité trop grande pour être inscrite dans les traits du passeport.",
     "invalidLabel": "La raison sociale est requise et limitée à 64 caractères.",
     "invalidSiren": "Un SIREN compte exactement neuf chiffres.",
-    "manufacturerNotLabelled": "Un fabricant ne peut pas être nommé — neutralité concurrentielle."
+    "manufacturerNotLabelled": "Un fabricant ne peut pas être nommé — neutralité concurrentielle.",
+    "supplierNotEligible": "Le fournisseur doit être un distributeur ou un fabricant agréé.",
+    "notOrderSupplier": "Vous n'êtes pas le fournisseur de cette commande.",
+    "notOrderBuyer": "Vous n'êtes pas l'acheteur de cette commande.",
+    "orderSettled": "Cette commande a déjà été traitée.",
+    "materialMismatch": "Le lot proposé n'est pas de la matière commandée.",
+    "notRequestLab": "Cette prescription ne vous est pas adressée.",
+    "notRequestPractitioner": "Vous n'êtes pas l'auteur de cette prescription.",
+    "wrongRequestStatus": "La prescription n'est pas à l'étape attendue pour cette action.",
+    "invalidText": "Ce champ est requis, et sa longueur est limitée.",
+    "actionCostTooHigh": "Coût par action au-delà du plafond autorisé."
   },
   "credits": {
     "unit": "crédits",
@@ -360,5 +372,68 @@
     "stepPending": "{qty} — expédition en attente",
     "stepPendingNote": "pas encore réceptionnée",
     "stepManufactured": "{qty} consommés — prothèse #{id}"
+  },
+  "actors": {
+    "choose": "Choisir un acteur…"
+  },
+  "orders": {
+    "placeTitle": "Commander de la matière",
+    "placeSubtitle": "À un distributeur, ou directement au fabricant. Il vous l'expédiera, et vous devrez réceptionner.",
+    "supplier": "Fournisseur",
+    "supplierPlaceholder": "Choisir un fournisseur…",
+    "place": "Commander",
+    "placed": "Commande passée.",
+    "incomingTitle": "Commandes à honorer",
+    "incomingSubtitle": "Ce qu'on vous demande. Honorer crée une expédition que l'acheteur devra réceptionner.",
+    "mineTitle": "Mes commandes",
+    "from": "de",
+    "to": "à",
+    "fulfil": "Honorer",
+    "fulfilled": "Commande honorée, expédition créée.",
+    "refuse": "Refuser",
+    "refused": "Commande refusée.",
+    "cancel": "Annuler",
+    "cancelled": "Commande annulée.",
+    "pickLot": "Choisir le lot dans lequel puiser…",
+    "noMatchingLot": "Aucun lot de cette matière en votre garde. Commandez-en, ou refusez en expliquant.",
+    "reasonPlaceholder": "Motif — rupture de stock, erreur de quantité…",
+    "escalateHint": "En rupture ? Vous pouvez aussi commander vous-même en amont : la commande gardera le lien vers celle-ci.",
+    "escalatedFrom": "pour honorer la commande n°{id}",
+    "status": {
+      "0": "en attente",
+      "1": "honorée",
+      "2": "refusée",
+      "3": "annulée"
+    }
+  },
+  "requests": {
+    "newTitle": "Demander une prothèse",
+    "newSubtitle": "La prescription part du praticien. Le laboratoire l'accepte ou la refuse en motivant.",
+    "lab": "Laboratoire",
+    "labPlaceholder": "Choisir un laboratoire…",
+    "labHint": "Vous pouvez vous adresser à vous-même si vous êtes aussi laboratoire.",
+    "shade": "Teinte",
+    "description": "Description",
+    "descriptionPlaceholder": "Couronne céramo-céramique, secteur postérieur…",
+    "send": "Envoyer la demande",
+    "sent": "Demande envoyée au laboratoire.",
+    "incomingTitle": "Prescriptions reçues",
+    "incomingSubtitle": "Accepter engage le laboratoire ; fabriquer consomme la matière et crée le passeport.",
+    "mineTitle": "Mes demandes",
+    "from": "de",
+    "to": "à",
+    "accept": "Accepter",
+    "accepted": "Prescription acceptée.",
+    "refuse": "Refuser",
+    "refused": "Prescription refusée.",
+    "cancelled": "Demande annulée.",
+    "manufacture": "Fabriquer",
+    "status": {
+      "0": "en attente",
+      "1": "acceptée",
+      "2": "fabriquée",
+      "3": "refusée",
+      "4": "annulée"
+    }
   }
 }

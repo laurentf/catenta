@@ -118,6 +118,10 @@ export const LIFECYCLE_ABI = [
   'function patientCommitmentOf(uint256 tokenId) view returns (bytes32)',
   'function placementOf(uint256 tokenId) view returns (tuple(address practitioner, uint40 placedAt, uint8 tooth))',
   'function shipmentCount() view returns (uint256)',
+  'function materialOrderCount() view returns (uint256)',
+  'function materialOrderOf(uint256 orderId) view returns (tuple(address buyer, uint8 status, address supplier, uint256 quantity, string material, uint256 parentOrderId, uint256 shipmentId, string reason))',
+  'function prosthesisRequestCount() view returns (uint256)',
+  'function prosthesisRequestOf(uint256 requestId) view returns (tuple(address practitioner, uint8 status, address lab, uint8 tooth, uint256 tokenId, string material, string shade, string description, string reason))',
   'function shipmentOf(uint256 shipmentId) view returns (tuple(address from, uint8 status, address to, uint64 lotId, uint256 quantity))',
   // écritures — fabricant
   'function declareLot(string _material, string _unit, bytes32 _certHash, uint256 _quantity) returns (uint64)',
@@ -125,6 +129,17 @@ export const LIFECYCLE_ABI = [
   'function declareShipment(uint64 _lotId, uint256 _quantity, address _to) returns (uint256)',
   'function acceptShipment(uint256 _shipmentId)',
   'function cancelShipment(uint256 _shipmentId)',
+  // écritures — commandes de matière
+  'function placeMaterialOrder(address _supplier, string _material, uint256 _quantity) returns (uint256)',
+  'function escalateMaterialOrder(uint256 _parentOrderId, address _supplier, uint256 _quantity) returns (uint256)',
+  'function fulfilMaterialOrder(uint256 _orderId, uint64 _lotId) returns (uint256)',
+  'function refuseMaterialOrder(uint256 _orderId, string _reason)',
+  'function cancelMaterialOrder(uint256 _orderId, string _reason)',
+  // écritures — prescription de prothèse
+  'function requestProsthesis(address _lab, string _material, uint8 _tooth, string _shade, string _description) returns (uint256)',
+  'function acceptProsthesisRequest(uint256 _requestId)',
+  'function refuseProsthesisRequest(uint256 _requestId, string _reason)',
+  'function cancelProsthesisRequest(uint256 _requestId, string _reason)',
   // écritures — laboratoire
   'function mintPassport(uint256 _requestId, uint64 _lotId, uint256 _quantity, bytes32 _conformityHash) returns (uint256)',
   // écritures — praticien
@@ -150,6 +165,16 @@ export const LIFECYCLE_ABI = [
   'error NotShipmentRecipient(uint256 shipmentId, address caller)',
   'error NotShipmentSender(uint256 shipmentId, address caller)',
   'error ShipmentSettled(uint256 shipmentId)',
+  'error SupplierNotEligible(address supplier)',
+  'error NotOrderSupplier(uint256 orderId, address caller)',
+  'error NotOrderBuyer(uint256 orderId, address caller)',
+  'error OrderSettled(uint256 orderId)',
+  'error MaterialMismatch(uint256 orderId, string ordered, string offered)',
+  'error NotRequestLab(uint256 requestId, address caller)',
+  'error NotRequestPractitioner(uint256 requestId, address caller)',
+  'error WrongRequestStatus(uint256 requestId, uint8 expected, uint8 current)',
+  'error InvalidText()',
+  'error ActionCostTooHigh(uint256 requested, uint256 maximum)',
   'error ZeroQuantity()',
   'error EmptyHash()',
   'error InvalidTooth(uint8 tooth)',
@@ -164,6 +189,23 @@ export const LIFECYCLE_ABI = [
 ] as const
 
 /** Miroir de LifecycleModule.ShipmentStatus. */
+/** Miroir de LifecycleModule.OrderStatus. */
+export enum OrderStatus {
+  Pending = 0,
+  Fulfilled = 1,
+  Refused = 2,
+  Cancelled = 3,
+}
+
+/** Miroir de LifecycleModule.RequestStatus. */
+export enum RequestStatus {
+  Pending = 0,
+  Accepted = 1,
+  Fulfilled = 2,
+  Refused = 3,
+  Cancelled = 4,
+}
+
 export enum ShipmentStatus {
   Pending = 0,
   Accepted = 1,
@@ -262,6 +304,16 @@ const ERROR_KEYS: Record<string, string> = {
   InvalidLabel: 'errors.invalidLabel',
   InvalidSiren: 'errors.invalidSiren',
   ManufacturerNotLabelled: 'errors.manufacturerNotLabelled',
+  SupplierNotEligible: 'errors.supplierNotEligible',
+  NotOrderSupplier: 'errors.notOrderSupplier',
+  NotOrderBuyer: 'errors.notOrderBuyer',
+  OrderSettled: 'errors.orderSettled',
+  MaterialMismatch: 'errors.materialMismatch',
+  NotRequestLab: 'errors.notRequestLab',
+  NotRequestPractitioner: 'errors.notRequestPractitioner',
+  WrongRequestStatus: 'errors.wrongRequestStatus',
+  InvalidText: 'errors.invalidText',
+  ActionCostTooHigh: 'errors.actionCostTooHigh',
   ZeroQuantity: 'errors.zeroQuantity',
   EmptyHash: 'errors.emptyHash',
   InvalidTooth: 'errors.invalidTooth',
