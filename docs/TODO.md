@@ -6,7 +6,7 @@ Liste actionnable de ce qui reste. Le découpage v0/v1/v2 raisonné et chiffré 
 
 - **Fabricant** (`MANUFACTURER_ROLE`) — seul à pouvoir faire naître un lot ; un laboratoire reçoit la matière, il ne la déclare plus.
 - **Un lot se décrit lui-même** — matière et **unité** inscrites dessus, en chaînes courtes (un slot chacune). Pas de catalogue on-chain : une entrée par produit aurait coûté une transaction par produit, et un catalogue republiable aurait pu changer ce qu'un lot passé contenait. Le sélecteur (`web/public/materials.json`) est une aide à la saisie, sans autorité.
-- **Chaîne de garde** — expédition en deux temps, acceptée par le destinataire ; transfert direct refusé par le store. Le distributeur est un maillon complet, y compris la vente directe au cabinet (cas 2b du doc).
+- **Chaîne de responsabilité** — expédition en deux temps, acceptée par le destinataire ; transfert direct refusé par le store. Le distributeur est un maillon complet, y compris la vente directe au cabinet (cas 2b du doc).
 - **Acte clinique en storage** — dent (FDI / ISO 3950), date, praticien : lisibles en un appel, plus aucun scan de logs (`VITE_DEPLOY_BLOCK` a disparu).
 - **Registre d'acteurs** (`ActorRegistry`) — raison sociale et SIREN, écrits par l'agent d'agrément. Le contrat refuse de nommer un fabricant : la neutralité concurrentielle est une règle de code.
 - **Commande de matière** — d'un distributeur, avec cascade **tracée** vers le fabricant (`parentOrderId`), refus et annulation avec motif en clair.
@@ -22,7 +22,7 @@ Liste actionnable de ce qui reste. Le découpage v0/v1/v2 raisonné et chiffré 
 **C'est le point d'architecture le plus distinctif du projet, et il manque.** Il ne touche aucun contrat existant : on déploie, on lui accorde un rôle. Le scénario 1 du doc fonctionnel repose entièrement dessus.
 
 - [ ] **`RecallModule`** — `declareRecall(lotId, evidenceHash)` : **une seule écriture** sur le lot, coût O(1) quel que soit le nombre de prothèses (aucune boucle → aucun DoS gas).
-- [ ] **Statut « rappelé » dérivé** — jamais stocké sur le passeport ; calculé à la lecture (`isRecalled(lotId)`). La chaîne de garde le rend maintenant traçable jusqu'au détenteur courant de la matière non consommée.
+- [ ] **Statut « rappelé » dérivé** — jamais stocké sur le passeport ; calculé à la lecture (`isRecalled(lotId)`). La chaîne de responsabilité le rend maintenant traçable jusqu'au détenteur courant de la matière non consommée.
 - [ ] **`liftRecall(lotId, evidenceHash)`** — un faux positif ne condamne pas un lot à vie (décision D3).
 - [ ] **Accusés de réception** — `acknowledgeRecall(lotId)` pour `PRACTITIONER_ROLE` / `DISTRIBUTOR_ROLE` / `LAB_ROLE`, via `EnumerableSet.AddressSet` : le tableau « X/Y acteurs prévenus », la **preuve d'exécution** qui manque au processus papier.
 - [ ] **`CatentaLens`** — vue pure qui compose Lifecycle + Recall (`statusOf` recall-aware) sans coupler les modules.
@@ -67,7 +67,7 @@ La prothèse casse ou est refaite. Le doc veut que l'historique conserve les deu
 
 ### Qualité & livrables C4/C6
 - [ ] **CI GitHub Actions** — `lint → compile → test → coverage (seuil bloquant) → slither → build front`. *Seul livrable C5, à monter maintenant sur 7 contrats plutôt que plus tard sur 9.*
-- [ ] **Tests de propriétés Solidity** (`forge-std`, fuzzing) — verrou soulbound, invariants de quantité le long de la chaîne de garde, comptabilité crédit.
+- [ ] **Tests de propriétés Solidity** (`forge-std`, fuzzing) — verrou soulbound, invariants de quantité le long de la chaîne de responsabilité, comptabilité crédit.
 - [ ] **Couverture réelle > 90 %** — trois axes par fonction (nominal / rôle / état).
 - [ ] **Rapport de gas** (`hardhat-gas-reporter`) — chiffrer le packing (dont `materialId` et `Placement`, logés sans slot supplémentaire), les custom errors, le rappel O(1).
 - [ ] **Vérification Etherscan** (`hardhat verify`) automatisée.
@@ -96,7 +96,7 @@ La prothèse casse ou est refaite. Le doc veut que l'historique conserve les deu
 ## 💡 Évolutions notées (à cadrer)
 
 ### Retours de matière et de prothèses (flux inverse)
-La chaîne de garde rend le flux inverse presque gratuit — `declareShipment` fonctionne déjà dans les deux sens, le destinataire acceptant toujours.
+La chaîne de responsabilité rend le flux inverse presque gratuit — `declareShipment` fonctionne déjà dans les deux sens, le destinataire acceptant toujours.
 
 - [ ] À cadrer : un **motif** sur l'expédition (retour SAV, lot rappelé renvoyé au fabricant, quarantaine) ?
 - [ ] **Distinct du rappel** : rappel = sécurité, piloté par le régulateur ; retour = qualité / logistique, piloté par les acteurs.
