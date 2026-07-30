@@ -107,10 +107,16 @@ contract ActorRegistry is RoleAware {
     }
 
     /// @notice The public identity of an actor.
+    /// @dev The manufacturer rule is enforced HERE as well as on write, and
+    ///      that is not redundant: an address labelled as a laboratory could
+    ///      later be granted MANUFACTURER_ROLE, and its name would otherwise
+    ///      survive the change. Checking at read time makes the guarantee hold
+    ///      whatever the order of the two acts.
     /// @param _account The address to read.
     /// @return The stored identity; an empty label means the address is not
-    ///         registered — which is always the case for a manufacturer.
+    ///         registered — always the case for a manufacturer.
     function actorOf(address _account) external view returns (Actor memory) {
+        if (ROLES.hasRole(ROLES.MANUFACTURER_ROLE(), _account)) return Actor("", "");
         return _actors[_account];
     }
 }

@@ -32,7 +32,12 @@ export default buildModule("CatentaModule", (m) => {
   // (recommandé : c'est la parade à l'attaque n°13, docs/SPEC.md §10).
   const admin = m.getParameter("admin", m.getAccount(0));
 
-  const roles = m.contract("CatentaRoles", [admin]);
+  // Délai imposé entre l'annonce d'un transfert d'administration et son
+  // acceptation. Trois jours : assez pour qu'un consortium voie venir une
+  // prise de contrôle et réagisse, assez court pour rester opérable.
+  const adminTransferDelay = m.getParameter("adminTransferDelay", 3 * 24 * 60 * 60);
+
+  const roles = m.contract("CatentaRoles", [admin, adminTransferDelay]);
   const passports = m.contract("PassportNFT", [roles]);
   const lots = m.contract("MaterialLots", [roles]);
   const actors = m.contract("ActorRegistry", [roles]);

@@ -3,6 +3,10 @@ pragma solidity 0.8.34;
 
 import {AccessControlEnumerable} from
     "@openzeppelin/contracts/access/extensions/AccessControlEnumerable.sol";
+import {AccessControlDefaultAdminRules} from
+    "@openzeppelin/contracts/access/extensions/AccessControlDefaultAdminRules.sol";
+import {AccessControl} from "@openzeppelin/contracts/access/AccessControl.sol";
+import {IAccessControl} from "@openzeppelin/contracts/access/IAccessControl.sol";
 
 /// @title CatentaRoles - the single access authority of the Catenta registry
 /// @author Catenta
@@ -21,13 +25,20 @@ import {AccessControlEnumerable} from
 ///        bypass the business logic entirely, so it is an admin-level mistake
 ///        the deployment checklist must guard against.
 ///
+///      DEFAULT_ADMIN_ROLE obeys AccessControlDefaultAdminRules: a single
+///      holder, a two-step transfer separated by an enforced delay, and no
+///      direct grant or revoke. On a registry where the module roles allow
+///      moving anyone's material and burning anyone's credits, the security of
+///      the whole system reduces to "who can grant a role". Making a takeover
+///      VISIBLE on-chain before it takes effect is therefore not a comfort.
+///
 ///      Alternative studied and set aside: OpenZeppelin AccessManager. It
 ///      offers per-function targeting and built-in delays, which fits a modular
 ///      system well, but it moves the access rules out of the contracts and
 ///      into numeric role ids - the code stops documenting its own rules. The
 ///      semantic roles below are kept for auditability; AccessManager stays the
 ///      escape hatch if timelocked permissions become a requirement.
-contract CatentaRoles is AccessControlEnumerable {
+contract CatentaRoles is AccessControlEnumerable, AccessControlDefaultAdminRules {
     // ---------- operational role ----------
 
     /// @notice Onboards day-to-day actors (labs, practitioners, distributors).
@@ -94,13 +105,86 @@ contract CatentaRoles is AccessControlEnumerable {
     ///      Actor onboarding is delegated to REGISTRAR_ROLE via _setRoleAdmin;
     ///      everything else keeps its default admin (DEFAULT_ADMIN_ROLE).
     /// @param _admin The consortium administrator, holder of DEFAULT_ADMIN_ROLE.
-    constructor(address _admin) {
-        _grantRole(DEFAULT_ADMIN_ROLE, _admin);
+    /// @param _adminTransferDelay Délai imposé entre l'annonce d'un transfert
+    ///        d'administration et son acceptation.
+    constructor(address _admin, uint48 _adminTransferDelay)
+        AccessControlDefaultAdminRules(_adminTransferDelay, _admin)
+    {
         _grantRole(REGISTRAR_ROLE, _admin);
 
         _setRoleAdmin(MANUFACTURER_ROLE, REGISTRAR_ROLE);
         _setRoleAdmin(LAB_ROLE, REGISTRAR_ROLE);
         _setRoleAdmin(PRACTITIONER_ROLE, REGISTRAR_ROLE);
         _setRoleAdmin(DISTRIBUTOR_ROLE, REGISTRAR_ROLE);
+    }
+
+    // ==================================================
+    //        Résolution des deux extensions OZ
+    // ==================================================
+    //
+    // `AccessControlEnumerable` et `AccessControlDefaultAdminRules` surchargent
+    // toutes deux ces trois fonctions. Les combiner impose de les réécrire ici
+    // pour fixer l'ordre de linéarisation — `super` traverse alors les deux :
+    // les règles d'administration s'appliquent d'abord, puis l'index des
+    // titulaires est tenu à jour.
+
+    /// @inheritdoc AccessControlDefaultAdminRules
+    function grantRole(bytes32 role, address account)
+        public
+        override(AccessControl, AccessControlDefaultAdminRules, IAccessControl)
+    {
+        super.grantRole(role, account);
+    }
+
+    /// @inheritdoc AccessControlDefaultAdminRules
+    function revokeRole(bytes32 role, address account)
+        public
+        override(AccessControl, AccessControlDefaultAdminRules, IAccessControl)
+    {
+        super.revokeRole(role, account);
+    }
+
+    /// @inheritdoc AccessControlDefaultAdminRules
+    function renounceRole(bytes32 role, address account)
+        public
+        override(AccessControl, AccessControlDefaultAdminRules, IAccessControl)
+    {
+        super.renounceRole(role, account);
+    }
+
+    /// @inheritdoc AccessControlDefaultAdminRules
+    function _setRoleAdmin(bytes32 role, bytes32 adminRole)
+        internal
+        override(AccessControl, AccessControlDefaultAdminRules)
+    {
+        super._setRoleAdmin(role, adminRole);
+    }
+
+    /// @inheritdoc AccessControlDefaultAdminRules
+    function _grantRole(bytes32 role, address account)
+        internal
+        override(AccessControlEnumerable, AccessControlDefaultAdminRules)
+        returns (bool)
+    {
+        return super._grantRole(role, account);
+    }
+
+    /// @inheritdoc AccessControlDefaultAdminRules
+    function _revokeRole(bytes32 role, address account)
+        internal
+        override(AccessControlEnumerable, AccessControlDefaultAdminRules)
+        returns (bool)
+    {
+        return super._revokeRole(role, account);
+    }
+
+    /// @inheritdoc AccessControlDefaultAdminRules
+    function supportsInterface(bytes4 interfaceId)
+        public
+        view
+        override(AccessControlEnumerable, AccessControlDefaultAdminRules)
+        returns (bool)
+    {
+        return super.supportsInterface(interfaceId);
     }
 }

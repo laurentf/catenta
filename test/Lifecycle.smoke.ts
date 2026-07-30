@@ -16,6 +16,8 @@ const PATIENT_COMMITMENT = ethers.id("salt42|patient-identity");
 // Notation FDI (ISO 3950) : quadrant 2, dent 6 — première molaire
 // supérieure gauche.
 const TOOTH = 26n;
+// Délai de transfert d'administration, court en test.
+const ADMIN_DELAY = 3600n;
 
 /** Rôles modules — la liste que l'Ignition accorde, et qu'un remplacement déplace. */
 const MODULE_ROLES = [
@@ -37,7 +39,7 @@ async function deployStack(credits = 1000n) {
   const [admin, lab, practitioner, outsider, , , , manufacturer, distributor] =
     await ethers.getSigners();
 
-  const roles = await ethers.deployContract("CatentaRoles", [admin.address]);
+  const roles = await ethers.deployContract("CatentaRoles", [admin.address, ADMIN_DELAY]);
   const passports = await ethers.deployContract("PassportNFT", [await roles.getAddress()]);
   const lots = await ethers.deployContract("MaterialLots", [await roles.getAddress()]);
   const actors = await ethers.deployContract("ActorRegistry", [await roles.getAddress()]);
@@ -594,6 +596,19 @@ describe("Catenta v0 - actor registry", () => {
     expect((await actors.actorOf(lab.address)).siren).to.equal("");
   });
 
+  it("cesse de nommer un acteur qui devient fabricant", async () => {
+    const { actors, roles, admin, lab } = await deployStack();
+    await actors.connect(admin).setLabel(lab.address, "Laboratoire Dupont", "812456903");
+    expect((await actors.actorOf(lab.address)).label).to.equal("Laboratoire Dupont");
+
+    // La règle est vérifiée à l'ÉCRITURE et à la LECTURE : sans le second
+    // contrôle, un laboratoire déjà nommé garderait son nom en devenant
+    // fabricant, et la neutralité concurrentielle sauterait selon l'ordre
+    // des deux actes.
+    await roles.connect(admin).grantRole(await roles.MANUFACTURER_ROLE(), lab.address);
+    expect((await actors.actorOf(lab.address)).label).to.equal("");
+  });
+
   it("efface un libellé posé par erreur", async () => {
     const { actors, admin, lab } = await deployStack();
     await actors.connect(admin).setLabel(lab.address, "Erreur de saisie", "");
@@ -672,6 +687,32 @@ describe("Catenta v0 - material orders", () => {
     await expect(
       lifecycle.connect(distributor).refuseMaterialOrder(2n, "trop tard"),
     ).to.be.revertedWithCustomError(lifecycle, "OrderSettled");
+  });
+
+  it("rouvre la commande si le fournisseur annule son expédition", async () => {
+    const { lots, lifecycle, manufacturer, distributor, lab } = await deployStack();
+    await lifecycle.connect(manufacturer).declareLot(MATERIAL, UNIT, CERT_HASH, 1000n);
+    await lifecycle.connect(manufacturer).declareShipment(1n, 1000n, distributor.address);
+    await lifecycle.connect(distributor).acceptShipment(1n);
+
+    await lifecycle.connect(lab).placeMaterialOrder(distributor.address, MATERIAL, 250n);
+    await lifecycle.connect(distributor).fulfilMaterialOrder(1n, 1n);
+    expect((await lifecycle.materialOrderOf(1n)).status).to.equal(Order.Fulfilled);
+
+    // Le fournisseur se ravise et annule l'expédition qu'il venait de créer.
+    // Sans le lien retour, la commande resterait « honorée » alors que rien
+    // n'a été livré : le registre affirmerait une livraison inexistante.
+    await lifecycle.connect(distributor).cancelShipment(2n);
+
+    const order = await lifecycle.materialOrderOf(1n);
+    expect(order.status).to.equal(Order.Pending);
+    expect(order.shipmentId).to.equal(0n);
+    expect(await lots.balanceOf(lab.address, 1n)).to.equal(0n);
+
+    // et elle reste honorable ensuite
+    await lifecycle.connect(distributor).fulfilMaterialOrder(1n, 1n);
+    await lifecycle.connect(lab).acceptShipment(3n);
+    expect(await lots.balanceOf(lab.address, 1n)).to.equal(250n);
   });
 
   it("refuse de livrer une matière autre que celle commandée", async () => {
@@ -768,6 +809,45 @@ describe("Catenta v0 - prosthesis requests (étape 0)", () => {
         .connect(practitioner)
         .requestProsthesis(lab.address, MATERIAL, TOOTH, "A2", "x".repeat(201)),
     ).to.be.revertedWithCustomError(lifecycle, "InvalidText");
+  });
+});
+
+describe("Catenta v0 - réentrance sur l'émission", () => {
+  it("refuse deux prothèses pour une seule prescription, même via onERC721Received", async () => {
+    const stack = await deployStack();
+    const { roles, passports, lifecycle, credit, admin, manufacturer, distributor, practitioner } =
+      stack;
+
+    // Un laboratoire qui est un CONTRAT, et qui rappelle le module depuis le
+    // callback ERC-721 déclenché par _safeMint.
+    const attacker = await ethers.deployContract("ReentrantLab", [await lifecycle.getAddress()]);
+    const attackerAddress = await attacker.getAddress();
+    await roles.connect(admin).grantRole(await roles.LAB_ROLE(), attackerAddress);
+    await credit.connect(admin).mintCredits(attackerAddress, 100n);
+
+    // On lui livre de la matière (transferCustody passe par _update, donc
+    // aucun callback ERC-1155 n'est requis côté attaquant).
+    await lifecycle.connect(manufacturer).declareLot(MATERIAL, UNIT, CERT_HASH, 1000n);
+    await lifecycle.connect(manufacturer).declareShipment(1n, 1000n, distributor.address);
+    await lifecycle.connect(distributor).acceptShipment(1n);
+    await lifecycle.connect(distributor).declareShipment(1n, 500n, attackerAddress);
+    await attacker.acceptShipment(2n);
+
+    // Une prescription, une seule.
+    await lifecycle
+      .connect(practitioner)
+      .requestProsthesis(attackerAddress, MATERIAL, TOOTH, "A2", "Couronne");
+    await attacker.acceptRequest(1n);
+
+    await attacker.attack(1n, 1n, 50n, CONFORMITY_HASH);
+
+    // La tentative de réentrance a échoué, et une seule prothèse existe.
+    expect(await attacker.reenteredOk()).to.equal(0n);
+    expect(await passports.mintedCount()).to.equal(1n);
+
+    const request = await lifecycle.prosthesisRequestOf(1n);
+    expect(request.status).to.equal(2n); // Fulfilled
+    expect(request.tokenId).to.equal(1n);
   });
 });
 

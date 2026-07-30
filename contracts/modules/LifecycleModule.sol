@@ -51,6 +51,14 @@ contract LifecycleModule is RoleAware {
     ///      later refinement and does not change the stores.
     uint256 public actionCost = 1;
 
+    /// @notice Plafond du coût par action.
+    /// @dev Sans lui, l'administrateur pouvait porter `actionCost` à
+    ///      `type(uint256).max` et **geler le registre entier** : plus aucun
+    ///      acteur n'aurait eu de quoi payer la moindre action. Ce n'était pas
+    ///      une faille de code mais un pouvoir non plafonné — et sur un registre
+    ///      partagé entre concurrents, un pouvoir non plafonné est une prise.
+    uint256 public constant MAX_ACTION_COST = 100;
+
     /// @notice What became of a shipment.
     /// @dev An enum rather than a "settled" boolean: accepted and cancelled are
     ///      two very different facts, and a boolean conflates them. Storing the
@@ -78,6 +86,11 @@ contract LifecycleModule is RoleAware {
 
     /// @dev shipmentId => the shipment record. Ids start at 1.
     mapping(uint256 shipmentId => Shipment) private _shipments;
+
+    /// @dev shipmentId => the order it fulfils, 0 for a free-standing shipment.
+    ///      Un mapping à part plutôt qu'un champ de la structure : seules les
+    ///      expéditions nées d'une commande paient ce slot.
+    mapping(uint256 shipmentId => uint256 orderId) private _shipmentOrder;
 
     /// @notice What became of an order.
     /// @dev A refusal and a cancellation are kept apart: one is the supplier
@@ -321,6 +334,8 @@ contract LifecycleModule is RoleAware {
     error EmptyHash();
     /// @notice The tooth number is not valid FDI notation (ISO 3950).
     error InvalidTooth(uint8 tooth);
+    /// @notice The admin cannot price an action out of everyone's reach.
+    error ActionCostTooHigh(uint256 requested, uint256 maximum);
     /// @notice The caller does not hold the passport.
     error NotPassportHolder(uint256 tokenId, address caller);
     /// @notice The recipient of a handoff must be an approved actor.
@@ -385,6 +400,8 @@ contract LifecycleModule is RoleAware {
     ///      actions in this version.
     /// @param _cost The new per-action cost.
     function setActionCost(uint256 _cost) external onlyRole(ROLES.DEFAULT_ADMIN_ROLE()) {
+        require(_cost <= MAX_ACTION_COST, ActionCostTooHigh(_cost, MAX_ACTION_COST));
+
         emit ActionCostUpdated(actionCost, _cost);
         actionCost = _cost;
     }
@@ -492,6 +509,11 @@ contract LifecycleModule is RoleAware {
     /// @notice Cancels a shipment that was never accepted.
     /// @dev Open to the sender only. Without it a mistyped recipient would pin
     ///      a quantity to a shipment nobody will ever accept.
+    ///
+    ///      Si l'expédition honorait une commande, celle-ci **redevient en
+    ///      attente**. Sans ça, le fournisseur pouvait honorer puis annuler, en
+    ///      laissant une commande marquée « honorée » que rien ne livrait : le
+    ///      registre aurait affirmé une livraison qui n'a jamais eu lieu.
     /// @param _shipmentId The shipment being cancelled.
     function cancelShipment(uint256 _shipmentId) external {
         Shipment storage shipment = _shipments[_shipmentId];
@@ -499,6 +521,16 @@ contract LifecycleModule is RoleAware {
         require(shipment.status == ShipmentStatus.Pending, ShipmentSettled(_shipmentId));
 
         shipment.status = ShipmentStatus.Cancelled;
+
+        uint256 orderId = _shipmentOrder[_shipmentId];
+        if (orderId != 0) {
+            MaterialOrder storage order = _materialOrders[orderId];
+            order.status = OrderStatus.Pending;
+            order.shipmentId = 0;
+            delete _shipmentOrder[_shipmentId];
+
+            emit MaterialOrderSettled(orderId, OrderStatus.Pending, "");
+        }
 
         emit ShipmentCancelled(_shipmentId, shipment.lotId, msg.sender);
     }
@@ -602,6 +634,7 @@ contract LifecycleModule is RoleAware {
         shipmentId = _declareShipment(_lotId, order.quantity, order.buyer);
         order.status = OrderStatus.Fulfilled;
         order.shipmentId = shipmentId;
+        _shipmentOrder[shipmentId] = _orderId;
 
         emit MaterialOrderSettled(_orderId, OrderStatus.Fulfilled, "");
     }
@@ -806,6 +839,12 @@ contract LifecycleModule is RoleAware {
         uint256 _quantity,
         bytes32 _conformityHash
     ) external onlyRole(ROLES.LAB_ROLE()) costsCredit returns (uint256 tokenId) {
+        // Checks-effects-interactions, et ce n'est pas de la précaution
+        // rituelle : PassportNFT.mint passe par _safeMint, qui rappelle le
+        // laboratoire via onERC721Received. Un laboratoire-contrat pourrait y
+        // rentrer à nouveau, voir la demande encore « acceptée », et émettre
+        // plusieurs prothèses pour UNE prescription. La demande est donc
+        // consommée AVANT le mint ; seul le tokenId s'écrit après.
         if (_requestId != 0) {
             ProsthesisRequest storage request = _requests[_requestId];
             require(request.lab == msg.sender, NotRequestLab(_requestId, msg.sender));
@@ -813,6 +852,7 @@ contract LifecycleModule is RoleAware {
                 request.status == RequestStatus.Accepted,
                 WrongRequestStatus(_requestId, RequestStatus.Accepted, request.status)
             );
+            request.status = RequestStatus.Fulfilled;
         }
         require(LOTS.lotExists(_lotId), UnknownLot(_lotId));
         require(_quantity > 0, ZeroQuantity());
@@ -825,9 +865,7 @@ contract LifecycleModule is RoleAware {
         emit MaterialConsumed(tokenId, _lotId, _quantity);
 
         if (_requestId != 0) {
-            ProsthesisRequest storage request = _requests[_requestId];
-            request.status = RequestStatus.Fulfilled;
-            request.tokenId = tokenId;
+            _requests[_requestId].tokenId = tokenId;
 
             emit ProsthesisRequestUpdated(_requestId, RequestStatus.Fulfilled, "");
         }
