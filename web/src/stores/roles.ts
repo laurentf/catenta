@@ -77,13 +77,17 @@ export const useRolesStore = defineStore('roles', () => {
     () => isLab.value || isPractitioner.value || isRegulator.value || isSpectator.value,
   )
 
-  /** Le praticien y accède aussi : il peut détenir de la matière (usinage au cabinet). */
+  /**
+   * Le praticien seul n'y a rien à faire : `mintPassport` est `onlyRole(LAB)`,
+   * donc il pourrait commander de la matière, la recevoir, la détenir — et n'en
+   * rien faire. L'usinage au fauteuil (cas 2b) suppose un cabinet qui est aussi
+   * laboratoire ; ce cumul passe par `isLab`, déjà dans la liste.
+   */
   const seesMaterial = computed(
     () =>
       isManufacturer.value ||
       isDistributor.value ||
       isLab.value ||
-      isPractitioner.value ||
       isRegulator.value ||
       isSpectator.value,
   )

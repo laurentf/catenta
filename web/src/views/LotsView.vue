@@ -422,8 +422,14 @@ import ActorSelect from '@/components/ActorSelect.vue'
 import { eqAddress, formatDate, formatQuantity, isAddress } from '@/lib/format'
 import { OrderStatus, parseError, type RoleKey } from '@/lib/contracts'
 
-/** Les acteurs autorisés à détenir de la matière — le régulateur n'en est pas. */
-const MATERIAL_HOLDERS: RoleKey[] = ['MANUFACTURER', 'DISTRIBUTOR', 'LAB', 'PRACTITIONER']
+/**
+ * À qui proposer une expédition. Le contrat accepte aussi le praticien
+ * (`_holdsMaterialRole`), mais l'interface ne le propose plus : sans le rôle
+ * laboratoire il ne peut rien fabriquer de la matière reçue, et l'écran Matière
+ * ne lui est plus ouvert — il n'aurait donc aucun moyen de réceptionner. Un
+ * cabinet qui usine au fauteuil détient `LAB` et reste dans la liste.
+ */
+const MATERIAL_HOLDERS: RoleKey[] = ['MANUFACTURER', 'DISTRIBUTOR', 'LAB']
 /** À qui l'on commande : un distributeur, ou le fabricant directement. */
 const SUPPLIERS: RoleKey[] = ['DISTRIBUTOR', 'MANUFACTURER']
 import { useCatentaStore } from '@/stores/catenta'
