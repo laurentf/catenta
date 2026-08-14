@@ -183,6 +183,7 @@
     "handoffReplace": "Une remise est déjà armée : désigner quelqu'un d'autre remplace la précédente, qui devient caduque.",
     "pendingFor": "Remise en attente, réservée à",
     "pendingForMe": "Cette remise vous est destinée :",
+    "awaitingHandoff": "Le laboratoire détient encore la prothèse : il doit vous la remettre depuis sa fiche avant que vous puissiez attester la conformité.",
     "nothingToDo": "Aucune action ne vous est ouverte sur cette prothèse à ce stade.",
     "tooth": "Dent",
     "toothValue": "n° {tooth} (FDI)",

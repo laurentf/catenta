@@ -183,6 +183,7 @@
     "handoffReplace": "A handoff is already armed: designating someone else replaces the previous one, which becomes void.",
     "pendingFor": "Handoff pending, reserved for",
     "pendingForMe": "This handoff is meant for you:",
+    "awaitingHandoff": "The laboratory still holds the prosthesis: it must hand it over from its own view before you can attest conformity.",
     "nothingToDo": "No action is open to you on this prosthesis at this stage.",
     "tooth": "Tooth",
     "toothValue": "no. {tooth} (FDI)",

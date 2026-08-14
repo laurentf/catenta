@@ -177,8 +177,12 @@
         <AddressChip :address="p.pendingHandoff" />
       </UiAlert>
 
+      <!-- Dire ce qu'on attend, pas seulement qu'il n'y a rien à faire : toutes
+           les actions du praticien sont `onlyHolder`, donc tant que le
+           laboratoire n'a pas armé la remise, la fiche reste muette et rien
+           n'indique de quel côté vient le prochain geste. -->
       <UiAlert v-if="!actions.length && !p.pendingHandoff" tone="info" class="mt-5">
-        {{ t('passport.nothingToDo') }}
+        {{ awaitingHandoff ? t('passport.awaitingHandoff') : t('passport.nothingToDo') }}
       </UiAlert>
     </template>
   </div>
@@ -249,6 +253,14 @@ const isValidTooth = computed(() => {
 
 const isHolder = computed(() => eqAddress(p.value?.holder, wallet.address))
 const isPending = computed(() => eqAddress(p.value?.pendingHandoff, wallet.address))
+/**
+ * Le praticien regarde une prothèse encore détenue par son laboratoire, qui
+ * n'a désigné personne. Le prochain geste n'est pas le sien : la remise est
+ * en deux temps, comme pour la matière.
+ */
+const awaitingHandoff = computed(
+  () => roles.isPractitioner && !isHolder.value && p.value?.status === Status.Manufactured,
+)
 const hasCommitment = computed(
   () => !!p.value?.patientCommitment && p.value.patientCommitment !== ZERO_ADDRESS.padEnd(66, '0'),
 )
