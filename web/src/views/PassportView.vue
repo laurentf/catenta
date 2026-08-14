@@ -135,7 +135,7 @@
             :loading="busy === 'initiate'"
             :disabled="!isAddress(recipient) || !credits.canAfford"
           >
-            {{ t(`passport.actions.${p.pendingHandoff ? 'redirect' : 'initiate'}`) }}
+            {{ t(`passport.actions.${p.pendingHandoff ? 'redirect' : handoffKey}`) }}
           </UiButton>
         </form>
 
@@ -261,6 +261,17 @@ const isPending = computed(() => eqAddress(p.value?.pendingHandoff, wallet.addre
 const awaitingHandoff = computed(
   () => roles.isPractitioner && !isHolder.value && p.value?.status === Status.Manufactured,
 )
+
+/**
+ * « Remettre au praticien » ne vaut que pour le laboratoire, dont c'est le
+ * geste nominal. Un praticien détenteur peut remettre lui aussi — à un confrère
+ * quand le patient change de cabinet, ou au laboratoire pour une reprise — et
+ * le destinataire n'est alors pas un praticien. Le libellé se neutralise ;
+ * l'éligibilité, elle, reste celle du contrat.
+ */
+const handoffKey = computed(() =>
+  roles.isLab && !roles.isPractitioner ? 'initiate' : 'handOver',
+)
 const hasCommitment = computed(
   () => !!p.value?.patientCommitment && p.value.patientCommitment !== ZERO_ADDRESS.padEnd(66, '0'),
 )
@@ -305,7 +316,7 @@ const actions = computed<Action[]>(() => {
   // saisie de travers, jusqu'à ce que ce destinataire-là veuille bien accepter.
   if (isHolder.value && passport.status !== Status.Placed) {
     out.push({
-      key: passport.pendingHandoff ? 'redirect' : 'initiate',
+      key: passport.pendingHandoff ? 'redirect' : handoffKey.value,
       variant: 'secondary',
       run: () => {
         showHandoff.value = !showHandoff.value

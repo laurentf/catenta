@@ -173,6 +173,7 @@
     "actions": {
       "accept": "Accepter la remise",
       "initiate": "Remettre au praticien",
+      "handOver": "Remettre le dossier",
       "redirect": "Rediriger la remise",
       "attest": "Attester la conformité",
       "openPlace": "Enregistrer la pose",
