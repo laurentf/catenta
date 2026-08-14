@@ -690,5 +690,8 @@ async function load() {
 }
 
 onMounted(load)
-watch(() => [catenta.ready, route.query.lot], load)
+// L'adresse fait partie des dépendances : changer de compte dans le wallet ne
+// démonte pas la vue, et les lots, commandes et expéditions sont tous lus pour
+// le compte connecté — sans elle, on continue de lire ceux du compte précédent.
+watch(() => [catenta.ready, wallet.address, route.query.lot], load)
 </script>

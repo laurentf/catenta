@@ -598,5 +598,7 @@ async function boot() {
   await Promise.all(tasks)
 }
 onMounted(boot)
-watch(() => [catenta.ready, route.query.lot], boot)
+// Idem : passeports détenus, prescriptions reçues et émises sont tous relatifs
+// au compte connecté.
+watch(() => [catenta.ready, wallet.address, route.query.lot], boot)
 </script>

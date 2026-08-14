@@ -348,5 +348,7 @@ function load() {
   void Promise.all([lots.load()])
 }
 onMounted(load)
-watch(() => [catenta.ready, route.params.id], load)
+// `lots.load()` lit la garde du compte connecté : la fiche doit la relire quand
+// on change de compte, sinon les actions s'appuient sur une garde périmée.
+watch(() => [catenta.ready, wallet.address, route.params.id], load)
 </script>
