@@ -50,7 +50,8 @@
 
 <script setup lang="ts">
 import { watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
+import { safeRedirect } from '@/router'
 import { useI18n } from 'vue-i18n'
 import UiButton from '@/components/ui/UiButton.vue'
 import UiAlert from '@/components/ui/UiAlert.vue'
@@ -59,16 +60,18 @@ import { useWalletStore } from '@/stores/wallet'
 
 const { t } = useI18n()
 const router = useRouter()
+const route = useRoute()
 const wallet = useWalletStore()
 const configured = isConfigured()
 
 // Le guard du router ne redirige connect -> passports que lors d'une
 // navigation. Après une connexion il n'y en a pas : on pousse nous-mêmes dès
-// que le wallet passe connecté ET sur le bon réseau.
+// que le wallet passe connecté ET sur le bon réseau — vers la destination
+// mémorisée si l'on a été dérouté ici, sinon vers la liste.
 watch(
   () => [wallet.isConnected, wallet.isCorrectChain] as const,
   ([connected, ok]) => {
-    if (connected && ok) router.push({ name: 'passports' })
+    if (connected && ok) router.push(safeRedirect(route.query.redirect) ?? { name: 'passports' })
   },
   { immediate: true },
 )

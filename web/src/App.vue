@@ -31,7 +31,14 @@ watch(
       roles.reset()
       // Les libellés sont lus sur une chaîne donnée : changer de réseau les périme.
       actors.reset()
-      await router.push({ name: 'connect' })
+      // Ne dérouter que depuis une vue qui exige le wallet, et en mémorisant
+      // d'où l'on vient : pousser inconditionnellement vers `connect` effaçait
+      // la destination que le guard venait d'y déposer, et le rechargement d'un
+      // lien profond retombait sur la liste.
+      const current = router.currentRoute.value
+      if (current.meta.requiresWallet) {
+        await router.push({ name: 'connect', query: { redirect: current.fullPath } })
+      }
       return
     }
     if (!catenta.ready) await catenta.discover()

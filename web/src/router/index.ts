@@ -36,13 +36,29 @@ const router = createRouter({
   ],
 })
 
+/**
+ * Une destination interne, et rien d'autre. Pour le navigateur `//exemple.com`
+ * est une URL absolue : sans ce filtre, `?redirect=` serait une redirection
+ * ouverte, et le QR d'une prothèse — dont l'URL est justement une route
+ * profonde — deviendrait un vecteur d'hameçonnage.
+ */
+export function safeRedirect(raw: unknown): string | null {
+  if (typeof raw !== 'string') return null
+  if (!raw.startsWith('/') || raw.startsWith('//')) return null
+  return raw
+}
+
 router.beforeEach((to) => {
   const wallet = useWalletStore()
   if (to.meta.requiresWallet && (!wallet.isConnected || !wallet.isCorrectChain)) {
-    return { name: 'connect' }
+    // AppKit restaure la session de façon asynchrone : au rechargement d'un
+    // lien profond, le wallet est encore « déconnecté » ici. Sans mémoriser la
+    // destination, on renverrait sur la liste celui qui vient de scanner le QR
+    // d'une prothèse précise.
+    return { name: 'connect', query: { redirect: to.fullPath } }
   }
   if (to.name === 'connect' && wallet.isConnected && wallet.isCorrectChain) {
-    return { name: 'passports' }
+    return safeRedirect(to.query.redirect) ?? { name: 'passports' }
   }
   return true
 })
