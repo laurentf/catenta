@@ -357,7 +357,7 @@
           :disabled="!credits.canAfford"
           @click="openShip(lot.id)"
         >
-          {{ shipFor === lot.id ? t('common.close') : t('lots.ship') }}
+          {{ shipFor === lot.id ? t('common.close') : shipLabel }}
         </UiButton>
 
         <form v-if="shipFor === lot.id" class="mt-3 space-y-2" @submit.prevent="submitShip(lot)">
@@ -383,7 +383,7 @@
             :loading="busy === `ship-${lot.id}`"
             :disabled="!canShip(lot)"
           >
-            {{ t('lots.ship') }}
+            {{ shipLabel }}
           </UiButton>
         </form>
 
@@ -444,6 +444,17 @@ const toasts = useToastsStore()
 const credits = useCreditsStore()
 const orders = useOrdersStore()
 const wallet = useWalletStore()
+
+/**
+ * Le libellé suit la position dans la chaîne, jamais un droit — le contrat, lui,
+ * ne contraint aucun sens. En bout de chaîne (labo, praticien) la seule
+ * expédition sans commande qui ait un sens est un retour ; en amont, fabricant
+ * et distributeur poussent aussi du stock que personne n'a encore commandé, et
+ * « retour » y serait faux.
+ */
+const shipLabel = computed(() =>
+  roles.isManufacturer || roles.isDistributor ? t('lots.ship') : t('lots.shipBack'),
+)
 
 const showForm = ref(false)
 const material = ref('')

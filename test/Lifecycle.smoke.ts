@@ -543,6 +543,23 @@ describe("Catenta v0 - material custody chain", () => {
     expect(await lots.balanceOf(practitioner.address, 1n)).to.equal(25n);
   });
 
+  it("lets material go back up the chain, without any order behind it", async () => {
+    const stack = await deployStack();
+    const { lots, lifecycle, distributor, lab } = stack;
+    await supplyLab(stack, 500n, 200n);
+
+    // Le retour n'est pas un cas particulier : le sens n'est jamais contraint,
+    // seule la garde l'est. Le labo rend 80 au distributeur, qui accepte comme
+    // n'importe quel destinataire — c'est ce qui rendra le renvoi d'un lot
+    // rappelé possible sans une ligne de contrat de plus.
+    const back = await lifecycle.connect(lab).declareShipment.staticCall(1n, 80n, distributor.address);
+    await lifecycle.connect(lab).declareShipment(1n, 80n, distributor.address);
+    await lifecycle.connect(distributor).acceptShipment(back);
+
+    expect(await lots.balanceOf(lab.address, 1n)).to.equal(120n);
+    expect(await lots.balanceOf(distributor.address, 1n)).to.equal(380n);
+  });
+
   it("lets a laboratory consume material it received but never produced", async () => {
     const stack = await deployStack();
     const { lots, passports, lifecycle, manufacturer, lab } = stack;
