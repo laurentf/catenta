@@ -189,6 +189,7 @@
     "tooth": "Tooth",
     "toothValue": "no. {tooth} (FDI)",
     "toothLabel": "Tooth number (FDI)",
+    "fromRequest": "Prefilled from prescription #{id} (tooth {tooth}, shade {shade}). Correct it if the placement differed.",
     "toothHint": "FDI / ISO 3950 notation: first digit the quadrant (1 to 8), second the position (1 to 8). Example: 26 = upper left first molar.",
     "placedAt": "Placed on",
     "placedBy": "Placed by"

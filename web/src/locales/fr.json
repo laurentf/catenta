@@ -189,6 +189,7 @@
     "tooth": "Dent",
     "toothValue": "n° {tooth} (FDI)",
     "toothLabel": "Numéro de dent (FDI)",
+    "fromRequest": "Pré-rempli d'après la prescription n°{id} (dent {tooth}, teinte {shade}). Corrigez si la pose a différé.",
     "toothHint": "Notation FDI / ISO 3950 : premier chiffre le quadrant (1 à 8), second la position (1 à 8). Exemple : 26 = première molaire supérieure gauche.",
     "placedAt": "Posée le",
     "placedBy": "Posée par"

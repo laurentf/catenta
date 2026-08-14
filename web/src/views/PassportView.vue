@@ -152,6 +152,15 @@
               step="1"
               placeholder="26"
             />
+            <p v-if="sourceRequest" class="hint font-semibold text-teal-deep">
+              {{
+                t('passport.fromRequest', {
+                  id: sourceRequest.id,
+                  tooth: sourceRequest.tooth,
+                  shade: sourceRequest.shade || '—',
+                })
+              }}
+            </p>
             <p class="hint">{{ t('passport.toothHint') }}</p>
           </div>
           <CommitmentBuilder v-model="commitment" />
@@ -210,6 +219,7 @@ import { eqAddress, formatDate, formatQuantity, isAddress } from '@/lib/format'
 import { useCatentaStore } from '@/stores/catenta'
 import { usePassportsStore } from '@/stores/passports'
 import { useLotsStore } from '@/stores/lots'
+import { useOrdersStore, type ProsthesisRequestRow } from '@/stores/orders'
 import { useToastsStore } from '@/stores/toasts'
 import { useRolesStore } from '@/stores/roles'
 import { useWalletStore } from '@/stores/wallet'
@@ -224,6 +234,7 @@ const roles = useRolesStore()
 const wallet = useWalletStore()
 const credits = useCreditsStore()
 const lots = useLotsStore()
+const orders = useOrdersStore()
 
 const id = computed(() => Number(route.params.id))
 const p = computed(() => passports.current)
@@ -234,6 +245,13 @@ const showPlace = ref(false)
 const recipient = ref('')
 const commitment = ref('')
 const tooth = ref('')
+/**
+ * La prescription que cette prothèse honore, si elle en a une. Elle sert à
+ * pré-remplir la dent, jamais à la figer : `markPlaced` enregistre ce qui a
+ * été fait, la prescription ce qui avait été demandé. Un écart entre les deux
+ * est une information clinique, pas une faute de saisie à écraser.
+ */
+const sourceRequest = ref<ProsthesisRequestRow | null>(null)
 
 /** L'unité vient du catalogue on-chain, via le lot d'origine du passeport. */
 const consumedUnit = computed(
@@ -369,6 +387,12 @@ function load() {
   void passports.loadOne(id.value)
   // Lots et catalogue : de quoi nommer la matière et son unité.
   void Promise.all([lots.load()])
+  // La prescription à l'origine de cette prothèse, si elle en a une : elle a
+  // déjà dit la dent et la teinte, autant ne pas les redemander.
+  void orders.requestForToken(id.value).then((r) => {
+    sourceRequest.value = r
+    if (r && !tooth.value) tooth.value = String(r.tooth)
+  })
 }
 onMounted(load)
 // `lots.load()` lit la garde du compte connecté : la fiche doit la relire quand

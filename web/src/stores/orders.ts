@@ -162,6 +162,45 @@ export const useOrdersStore = defineStore('orders', () => {
   const acceptRequest = (requestId: number) =>
     run(writable().lifecycle.acceptProsthesisRequest(requestId))
 
+  /**
+   * La prescription qu'une prothèse honore. Le contrat ne garde le lien que
+   * dans un sens (`_requests[id].tokenId`), sans index inverse — on balaie donc
+   * les prescriptions, comme on balaie déjà les passeports pour les remises
+   * armées. Renvoie `null` pour une prothèse fabriquée sans prescription :
+   * `mintPassport` accepte `_requestId == 0`.
+   */
+  async function requestForToken(tokenId: number): Promise<ProsthesisRequestRow | null> {
+    const c = catenta.readOnly()
+    if (!c || !tokenId) return null
+    try {
+      const total = Number(await c.lifecycle.prosthesisRequestCount())
+      const found = await Promise.all(
+        Array.from({ length: total }, async (_, i) => {
+          const id = i + 1
+          const r = await c.lifecycle.prosthesisRequestOf(id)
+          return Number(r.tokenId) === tokenId
+            ? ({
+                id,
+                practitioner: r.practitioner as string,
+                lab: r.lab as string,
+                material: r.material as string,
+                tooth: Number(r.tooth),
+                shade: r.shade as string,
+                description: r.description as string,
+                status: Number(r.status) as RequestStatus,
+                tokenId: Number(r.tokenId),
+                reason: r.reason as string,
+              } satisfies ProsthesisRequestRow)
+            : null
+        }),
+      )
+      return found.find((r): r is ProsthesisRequestRow => r !== null) ?? null
+    } catch (err) {
+      console.error('[catenta] request lookup failed', err)
+      return null
+    }
+  }
+
   const refuseRequest = (requestId: number, reason: string) =>
     run(writable().lifecycle.refuseProsthesisRequest(requestId, reason))
 
@@ -180,6 +219,7 @@ export const useOrdersStore = defineStore('orders', () => {
     fulfilOrder,
     refuseOrder,
     cancelOrder,
+    requestForToken,
     requestProsthesis,
     acceptRequest,
     refuseRequest,
