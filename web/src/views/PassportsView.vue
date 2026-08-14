@@ -153,6 +153,16 @@
               {{ t('requests.to') }} <AddressChip :address="r.lab" />
             </p>
             <p v-if="r.reason" class="mt-0.5 text-slate-muted">« {{ r.reason }} »</p>
+            <!-- Le contrat relie la fabrication à la prescription qu'elle honore
+                 (`_requests[id].tokenId`) : sans ce lien, le praticien lit
+                 « fabriquée » sans aucun chemin vers la prothèse. -->
+            <RouterLink
+              v-if="r.tokenId"
+              :to="{ name: 'passport', params: { id: r.tokenId } }"
+              class="mt-1 inline-block font-semibold text-teal hover:text-teal-deep"
+            >
+              {{ t('requests.seePassport', { id: r.tokenId }) }}
+            </RouterLink>
           </div>
           <UiButton
             v-if="r.status === RequestStatus.Pending || r.status === RequestStatus.Accepted"
@@ -320,7 +330,7 @@
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { RouterLink, useRoute, useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import UiCard from '@/components/ui/UiCard.vue'
 import UiButton from '@/components/ui/UiButton.vue'
