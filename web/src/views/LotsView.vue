@@ -1,5 +1,16 @@
 <template>
   <div>
+    <!--
+      Sélecteur de matières, hors de toute carte : la déclaration (fabricant) et
+      la commande (distributeur, laboratoire) ne s'affichent jamais pour le même
+      rôle. Rattaché à l'une des deux, il manquait toujours à l'autre — et comme
+      le contrat compare les matières caractère par caractère, une commande
+      saisie à la main devient inhonorable au premier écart de casse.
+    -->
+    <datalist id="material-picker">
+      <option v-for="m in picker" :key="m.name" :value="m.name">{{ m.unit }}</option>
+    </datalist>
+
     <div class="flex flex-wrap items-end justify-between gap-4">
       <div>
         <p class="eyebrow">{{ t('lots.eyebrow') }}</p>
@@ -33,9 +44,6 @@
         <div>
           <label class="label">{{ t('lots.materialLabel') }}</label>
           <input v-model="material" class="input" list="material-picker" placeholder="Zircone Y-TZP A2" />
-          <datalist id="material-picker">
-            <option v-for="m in picker" :key="m.name" :value="m.name">{{ m.unit }}</option>
-          </datalist>
           <p class="hint">{{ t('lots.materialHint') }}</p>
         </div>
         <div>
