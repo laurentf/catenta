@@ -201,7 +201,6 @@
     "saltWarning": "Store this secret with the patient record, in your usual software. Without it, the fingerprint on the blockchain points to nobody — which is exactly what lets you erase a patient's data even though the blockchain itself cannot be erased.",
     "download": "Download",
     "regenerate": "Regenerate",
-    "result": "Anonymous fingerprint:",
     "fileNote": "Catenta secret — keep with the patient record. Without this secret the fingerprint on the blockchain is unusable."
   },
   "hashInput": {

@@ -201,7 +201,6 @@
     "saltWarning": "Conservez ce secret avec la fiche patient, dans votre logiciel habituel. Sans lui, l'empreinte inscrite sur la blockchain ne permet plus de remonter à personne — c'est exactement ce qui vous laisse effacer les données d'un patient, alors même que la blockchain, elle, ne s'efface pas.",
     "download": "Télécharger",
     "regenerate": "Régénérer",
-    "result": "Empreinte anonyme :",
     "fileNote": "Secret Catenta — à conserver avec la fiche patient. Sans ce secret, l'empreinte inscrite sur la blockchain est inexploitable."
   },
   "hashInput": {

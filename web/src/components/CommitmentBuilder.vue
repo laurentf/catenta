@@ -27,10 +27,11 @@
       </div>
     </div>
 
-    <div v-if="modelValue" class="mt-3 flex items-center gap-2">
-      <span class="text-xs font-semibold text-teal-deep">{{ t('commitment.result') }}</span>
-      <HashChip :value="modelValue" />
-    </div>
+    <!-- L'engagement lui-même n'est pas affiché : c'est ce qui part on-chain,
+         donc public dès la transaction, et sans usage pour le praticien. Le
+         montrer à côté du sel mettait deux valeurs hexadécimales côte à côte
+         sans dire laquelle se conserve — le seul risque était d'archiver la
+         mauvaise. -->
   </div>
 </template>
 
