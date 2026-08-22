@@ -38,6 +38,14 @@ contract LifecycleModule is RoleAware {
         Placed
     }
 
+    /// @notice Plafond du coût par action.
+    /// @dev Sans lui, l'administrateur pouvait porter `actionCost` à
+    ///      `type(uint256).max` et **geler le registre entier** : plus aucun
+    ///      acteur n'aurait eu de quoi payer la moindre action. Ce n'était pas
+    ///      une faille de code mais un pouvoir non plafonné — et sur un registre
+    ///      partagé entre concurrents, un pouvoir non plafonné est une prise.
+    uint256 public constant MAX_ACTION_COST = 100;
+
     /// @notice The passport store driven by this module.
     PassportNFT public immutable PASSPORTS;
     /// @notice The material lot store driven by this module.
@@ -51,19 +59,18 @@ contract LifecycleModule is RoleAware {
     ///      later refinement and does not change the stores.
     uint256 public actionCost = 1;
 
-    /// @notice Plafond du coût par action.
-    /// @dev Sans lui, l'administrateur pouvait porter `actionCost` à
-    ///      `type(uint256).max` et **geler le registre entier** : plus aucun
-    ///      acteur n'aurait eu de quoi payer la moindre action. Ce n'était pas
-    ///      une faille de code mais un pouvoir non plafonné — et sur un registre
-    ///      partagé entre concurrents, un pouvoir non plafonné est une prise.
-    uint256 public constant MAX_ACTION_COST = 100;
-
     /// @notice What became of a shipment.
+    // Le reste du contrat est groupé PAR DOMAINE — expéditions, commandes,
+    // prescriptions — chaque bloc réunissant son enum, sa structure, son
+    // compteur et ses mappings. C'est un écart délibéré à l'ordre attendu par
+    // solhint (tous les types, puis tous les états) : sur un module de mille
+    // lignes, lire une règle métier d'un seul tenant vaut plus qu'un ordre
+    // canonique qui l'éparpille en quatre endroits.
     /// @dev An enum rather than a "settled" boolean: accepted and cancelled are
     ///      two very different facts, and a boolean conflates them. Storing the
     ///      difference is what makes the custody history of a lot readable from
     ///      storage alone - no event scan, no indexer.
+    // solhint-disable-next-line ordering
     enum ShipmentStatus {
         Pending,
         Accepted,
@@ -241,11 +248,14 @@ contract LifecycleModule is RoleAware {
     /// @param to The recipient that now holds the material.
     event ShipmentAccepted(uint256 indexed shipmentId, uint64 indexed lotId, address indexed to);
 
-    /// @notice Emitted when the sender cancels a shipment nobody accepted.
+    /// @notice Emitted when a shipment nobody accepted is called off.
+    /// @dev Émis quelle que soit la partie qui l'annule — d'où `by` plutôt que
+    ///      `from` : l'expéditeur se rétracte, le destinataire refuse, et dans
+    ///      les deux cas la matière n'a jamais bougé.
     /// @param shipmentId The id of the shipment.
     /// @param lotId The lot that stays with the sender.
-    /// @param from The sender that cancelled it.
-    event ShipmentCancelled(uint256 indexed shipmentId, uint64 indexed lotId, address indexed from);
+    /// @param by The party that called it off — sender or recipient.
+    event ShipmentCancelled(uint256 indexed shipmentId, uint64 indexed lotId, address indexed by);
 
     /// @notice Emitted when a buyer orders material from a supplier.
     /// @param orderId The id of the order.
@@ -304,8 +314,8 @@ contract LifecycleModule is RoleAware {
     error SelfShipment();
     /// @notice The caller is not the designated recipient of this shipment.
     error NotShipmentRecipient(uint256 shipmentId, address caller);
-    /// @notice The caller did not declare this shipment.
-    error NotShipmentSender(uint256 shipmentId, address caller);
+    /// @notice The caller is neither the sender nor the recipient of this shipment.
+    error NotShipmentParty(uint256 shipmentId, address caller);
     /// @notice The shipment has already been accepted or cancelled.
     error ShipmentSettled(uint256 shipmentId);
     /// @notice A required text is empty or longer than what the registry stores.
@@ -507,8 +517,14 @@ contract LifecycleModule is RoleAware {
     }
 
     /// @notice Cancels a shipment that was never accepted.
-    /// @dev Open to the sender only. Without it a mistyped recipient would pin
-    ///      a quantity to a shipment nobody will ever accept.
+    /// @dev Ouverte aux DEUX parties, et c'est un correctif d'audit. Le solde
+    ///      est vérifié à la déclaration mais rien ne l'immobilise : rien
+    ///      n'empêche de déclarer deux expéditions de 400 avec 400 en garde. La
+    ///      première acceptée passe, la seconde révoque à jamais — et tant que
+    ///      seul l'expéditeur pouvait annuler, le destinataire restait bloqué
+    ///      sur une expédition morte, avec une commande marquée « honorée » que
+    ///      rien ne livrerait. Le destinataire peut donc refuser, ce qui rouvre
+    ///      la commande exactement comme le ferait l'expéditeur.
     ///
     ///      Si l'expédition honorait une commande, celle-ci **redevient en
     ///      attente**. Sans ça, le fournisseur pouvait honorer puis annuler, en
@@ -517,7 +533,10 @@ contract LifecycleModule is RoleAware {
     /// @param _shipmentId The shipment being cancelled.
     function cancelShipment(uint256 _shipmentId) external {
         Shipment storage shipment = _shipments[_shipmentId];
-        require(shipment.from == msg.sender, NotShipmentSender(_shipmentId, msg.sender));
+        require(
+            shipment.from == msg.sender || shipment.to == msg.sender,
+            NotShipmentParty(_shipmentId, msg.sender)
+        );
         require(shipment.status == ShipmentStatus.Pending, ShipmentSettled(_shipmentId));
 
         shipment.status = ShipmentStatus.Cancelled;
@@ -954,8 +973,16 @@ contract LifecycleModule is RoleAware {
     }
 
     /// @notice Step 2: the designated recipient accepts and takes custody.
+    /// @dev Le statut est revérifié ICI, et pas seulement à l'armement. Sinon
+    ///      la garde de `initiateHandoff` se contournait par l'ordre des actes :
+    ///      armer pendant que la prothèse est encore `Certified`, poser, puis
+    ///      accepter — l'autorisation armée survivait à la pose et un dispositif
+    ///      en bouche changeait de mains. Même forme que la réentrance corrigée
+    ///      à l'émission : un contrôle fait à un instant, un effet appliqué plus
+    ///      tard. Une garde ne vaut qu'au moment où elle produit son effet.
     /// @param _tokenId The passport being accepted.
     function acceptHandoff(uint256 _tokenId) external {
+        require(_status[_tokenId] != Status.Placed, PassportLocked(_tokenId));
         require(
             PASSPORTS.pendingHandoff(_tokenId) == msg.sender,
             NotPendingRecipient(_tokenId, msg.sender)

@@ -153,32 +153,6 @@ contract CatentaRoles is AccessControlEnumerable, AccessControlDefaultAdminRules
     }
 
     /// @inheritdoc AccessControlDefaultAdminRules
-    function _setRoleAdmin(bytes32 role, bytes32 adminRole)
-        internal
-        override(AccessControl, AccessControlDefaultAdminRules)
-    {
-        super._setRoleAdmin(role, adminRole);
-    }
-
-    /// @inheritdoc AccessControlDefaultAdminRules
-    function _grantRole(bytes32 role, address account)
-        internal
-        override(AccessControlEnumerable, AccessControlDefaultAdminRules)
-        returns (bool)
-    {
-        return super._grantRole(role, account);
-    }
-
-    /// @inheritdoc AccessControlDefaultAdminRules
-    function _revokeRole(bytes32 role, address account)
-        internal
-        override(AccessControlEnumerable, AccessControlDefaultAdminRules)
-        returns (bool)
-    {
-        return super._revokeRole(role, account);
-    }
-
-    /// @inheritdoc AccessControlDefaultAdminRules
     function supportsInterface(bytes4 interfaceId)
         public
         view
@@ -187,4 +161,45 @@ contract CatentaRoles is AccessControlEnumerable, AccessControlDefaultAdminRules
     {
         return super.supportsInterface(interfaceId);
     }
+    /// @notice Fixe le rôle administrateur d'un rôle, en respectant les règles d'administration.
+    /// @dev Réécrite pour fixer l'ordre de linéarisation entre les deux
+    ///      extensions OpenZeppelin : les règles d'administration d'abord,
+    ///      l'énumération des titulaires ensuite.
+    /// @param role Le rôle dont on fixe l'administrateur.
+    /// @param adminRole Le rôle qui l'administrera.
+    function _setRoleAdmin(bytes32 role, bytes32 adminRole)
+        internal
+        override(AccessControl, AccessControlDefaultAdminRules)
+    {
+        super._setRoleAdmin(role, adminRole);
+    }
+
+    /// @notice Accorde un rôle, puis tient l'index des titulaires à jour.
+    /// @dev Réécrite pour fixer l'ordre de linéarisation entre les deux
+    ///      extensions OpenZeppelin : les règles d'administration d'abord,
+    ///      l'énumération des titulaires ensuite.
+    /// @param role Le rôle accordé.
+    /// @param account Le compte qui le reçoit.
+    function _grantRole(bytes32 role, address account)
+        internal
+        override(AccessControlEnumerable, AccessControlDefaultAdminRules)
+        returns (bool)
+    {
+        return super._grantRole(role, account);
+    }
+
+    /// @notice Révoque un rôle, puis tient l'index des titulaires à jour.
+    /// @dev Réécrite pour fixer l'ordre de linéarisation entre les deux
+    ///      extensions OpenZeppelin : les règles d'administration d'abord,
+    ///      l'énumération des titulaires ensuite.
+    /// @param role Le rôle révoqué.
+    /// @param account Le compte qui le perd.
+    function _revokeRole(bytes32 role, address account)
+        internal
+        override(AccessControlEnumerable, AccessControlDefaultAdminRules)
+        returns (bool)
+    {
+        return super._revokeRole(role, account);
+    }
+
 }

@@ -24,8 +24,10 @@ import {RoleAware} from "../access/RoleAware.sol";
 ///      what changes belongs to the replaceable part.
 contract PassportNFT is ERC721, ERC721Enumerable, RoleAware {
     /// @notice The traits of a device, fixed at manufacturing and never edited.
-    /// @dev Packed into a single slot: lotId (8) + mintedAt (5) = 13 bytes,
-    ///      plus one slot for the fingerprint.
+    /// @dev Packed into a single slot: lotId (8) + mintedAt (5) + quantity (16)
+    ///      = 29 bytes sur les 32 disponibles, plus un slot pour l'empreinte.
+    ///      C'est `quantity` en uint128 — et non en uint256 — qui fait tenir les
+    ///      trois dans le même slot ; le module garde ce cast par un require.
     struct Traits {
         uint64 lotId;
         uint40 mintedAt;
@@ -86,6 +88,7 @@ contract PassportNFT is ERC721, ERC721Enumerable, RoleAware {
     ///      the calling module; this store only enforces the role.
     /// @param _to The laboratory that manufactured the device.
     /// @param _lotId The material lot the device was made from.
+    /// @param _quantity The quantity of material consumed, in the lot's unit.
     /// @param _conformityHash Fingerprint of the off-chain conformity file.
     /// @return tokenId The id of the freshly minted passport.
     function mint(

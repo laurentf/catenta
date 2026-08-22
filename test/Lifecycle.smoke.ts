@@ -476,13 +476,14 @@ describe("Catenta v0 - material custody chain", () => {
       .withArgs(manufacturer.address, 1n, 101n);
   });
 
-  it("lets the sender cancel a shipment nobody accepted, and only once", async () => {
-    const { lots, lifecycle, manufacturer, distributor } = await deployStack();
+  it("lets either party cancel a shipment nobody accepted, and only once", async () => {
+    const { lots, lifecycle, manufacturer, distributor, outsider } = await deployStack();
     await lifecycle.connect(manufacturer).declareLot(MATERIAL, UNIT, CERT_HASH, 100n);
     await lifecycle.connect(manufacturer).declareShipment(1n, 40n, distributor.address);
 
-    await expect(lifecycle.connect(distributor).cancelShipment(1n))
-      .to.be.revertedWithCustomError(lifecycle, "NotShipmentSender");
+    // Un tiers n'a rien à défaire ici : ni expéditeur, ni destinataire.
+    await expect(lifecycle.connect(outsider).cancelShipment(1n))
+      .to.be.revertedWithCustomError(lifecycle, "NotShipmentParty");
 
     await expect(lifecycle.connect(manufacturer).cancelShipment(1n))
       .to.emit(lifecycle, "ShipmentCancelled")
@@ -915,5 +916,74 @@ describe("Catenta v0 - delegated onboarding (REGISTRAR_ROLE)", () => {
     await credit.connect(op2).mintCredits(lab.address, 40n);
     expect(await credit.balanceOf(lab.address)).to.equal(40n);
     expect(await roles.hasRole(await roles.DEFAULT_ADMIN_ROLE(), op2.address)).to.equal(false);
+  });
+});
+
+describe("Catenta v0 - correctifs d'audit", () => {
+  it("refuse une garde qui viendrait de l'adresse zéro : la garde ne frappe pas", async () => {
+    const { roles, lots, admin, outsider } = await deployStack();
+    // Un module qui ne porte QUE la garde, sans le droit de frappe.
+    await roles.connect(admin).grantRole(await roles.LOT_CUSTODIAN_ROLE(), outsider.address);
+    expect(await roles.hasRole(await roles.LOT_MINTER_ROLE(), outsider.address)).to.equal(false);
+
+    // `_update` est le point d'entrée brut d'ERC-1155 : from == 0 vaut frappe,
+    // to == 0 vaut destruction. Les deux doivent être fermés.
+    await expect(
+      lots.connect(outsider).transferCustody(ethers.ZeroAddress, outsider.address, 1n, 999n),
+    ).to.be.revertedWithCustomError(lots, "NotACustodyTransfer");
+    await expect(
+      lots.connect(outsider).transferCustody(outsider.address, ethers.ZeroAddress, 1n, 999n),
+    ).to.be.revertedWithCustomError(lots, "NotACustodyTransfer");
+
+    expect(await lots.balanceOf(outsider.address, 1n)).to.equal(0n);
+  });
+
+  it("refuse d'accepter une remise armée avant la pose : la garde vaut à l'instant de l'effet", async () => {
+    const stack = await deployStack();
+    const { passports, lifecycle, lab, practitioner } = stack;
+    await supplyLab(stack, 1000n, 400n);
+    await lifecycle.connect(lab).mintPassport(0n, 1n, 10n, CONFORMITY_HASH);
+    await lifecycle.connect(lab).initiateHandoff(1n, practitioner.address);
+    await lifecycle.connect(practitioner).acceptHandoff(1n);
+    await lifecycle.connect(practitioner).attestConformity(1n);
+
+    // On arme pendant que la prothèse est encore Certified : autorisé.
+    await lifecycle.connect(practitioner).initiateHandoff(1n, lab.address);
+    // Puis on pose. L'autorisation armée existe toujours côté store.
+    await lifecycle.connect(practitioner).markPlaced(1n, TOOTH, PATIENT_COMMITMENT);
+    expect(await passports.pendingHandoff(1n)).to.equal(lab.address);
+
+    // Elle ne doit plus produire d'effet : une prothèse en bouche ne bouge pas.
+    await expect(
+      lifecycle.connect(lab).acceptHandoff(1n),
+    ).to.be.revertedWithCustomError(lifecycle, "PassportLocked");
+    expect(await passports.ownerOf(1n)).to.equal(practitioner.address);
+  });
+
+  it("laisse le destinataire refuser une expédition, et rouvre la commande", async () => {
+    const stack = await deployStack();
+    const { lifecycle, distributor, lab } = stack;
+    await supplyLab(stack, 1000n, 400n);
+
+    // Le labo commande au distributeur, qui honore : une expédition naît.
+    await lifecycle.connect(lab).placeMaterialOrder(distributor.address, MATERIAL, 100n);
+    const shipmentId = await lifecycle
+      .connect(distributor)
+      .fulfilMaterialOrder.staticCall(1n, 1n);
+    await lifecycle.connect(distributor).fulfilMaterialOrder(1n, 1n);
+    expect((await lifecycle.materialOrderOf(1n)).status).to.equal(1n); // Fulfilled
+
+    // Un tiers ne peut rien annuler.
+    await expect(
+      lifecycle.connect(stack.outsider).cancelShipment(shipmentId),
+    ).to.be.revertedWithCustomError(lifecycle, "NotShipmentParty");
+
+    // Le DESTINATAIRE refuse : la matière n'a jamais bougé, et la commande
+    // redevient en attente plutôt que de rester « honorée » sans livraison.
+    await expect(lifecycle.connect(lab).cancelShipment(shipmentId))
+      .to.emit(lifecycle, "ShipmentCancelled")
+      .withArgs(shipmentId, 1n, lab.address);
+    expect((await lifecycle.materialOrderOf(1n)).status).to.equal(0n); // Pending
+    expect((await lifecycle.materialOrderOf(1n)).shipmentId).to.equal(0n);
   });
 });

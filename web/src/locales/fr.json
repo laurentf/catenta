@@ -109,7 +109,9 @@
     "outOfCirculating": "sur {total} encore en circulation",
     "emptyManufacturer": "Vous n'avez déclaré aucun lot. Enregistrez une matière au catalogue, puis déclarez-en un.",
     "emptyHolder": "Aucune matière en votre garde. Elle vous parviendra par une expédition, que vous devrez réceptionner.",
-    "shipToPlaceholder": "Choisir un destinataire…"
+    "shipToPlaceholder": "Choisir un destinataire…",
+    "refuse": "Refuser",
+    "refused": "Expédition refusée : la matière reste chez l'expéditeur."
   },
   "passports": {
     "eyebrow": "Prothèses dentaires sur mesure",
@@ -294,7 +296,7 @@
     "creditsNotTransferable": "Les crédits d'usage ne sont pas transférables.",
     "selfShipment": "Une expédition à soi-même n'a pas de sens.",
     "notShipmentRecipient": "Cette expédition ne vous est pas destinée.",
-    "notShipmentSender": "Vous n'êtes pas l'expéditeur de cette expédition.",
+    "notShipmentParty": "Vous n'êtes ni l'expéditeur ni le destinataire de cette expédition.",
     "shipmentSettled": "Cette expédition a déjà été réceptionnée ou annulée.",
     "invalidTooth": "Numéro de dent invalide : la notation FDI attend un quadrant de 1 à 8 et une position de 1 à 8.",
     "quantityTooLarge": "Quantité trop grande pour être inscrite dans les traits du passeport.",

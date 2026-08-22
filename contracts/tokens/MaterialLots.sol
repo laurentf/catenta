@@ -78,6 +78,9 @@ contract MaterialLots is ERC1155, ERC1155Supply, ERC1155Burnable, RoleAware {
     error LotNotTransferable();
     /// @notice The lot id does not exist.
     error UnknownLot(uint64 lotId);
+    /// @notice Custody moves between two real holders, never from or to the
+    ///         zero address — ERC-1155 reads those as a mint and a burn.
+    error NotACustodyTransfer();
 
     /// @notice Deploys the lot store bound to the shared authority.
     /// @param _roles The shared access authority.
@@ -125,6 +128,14 @@ contract MaterialLots is ERC1155, ERC1155Supply, ERC1155Burnable, RoleAware {
     ///      recipient has already been checked against the role allowlist by the
     ///      module, so the ERC1155Receiver probe adds no safety while it would
     ///      reject legitimate contract wallets (multisigs).
+    ///      Les deux extrémités sont vérifiées non nulles, et ce n'est pas une
+    ///      précaution de style : `_update` est le point d'entrée BRUT d'ERC-1155,
+    ///      où `from == 0` vaut frappe et `to == 0` vaut destruction. Sans ce
+    ///      garde, un module ne portant QUE `LOT_CUSTODIAN_ROLE` créait de la
+    ///      matière sans `LOT_MINTER_ROLE` — y compris sur un lot jamais déclaré.
+    ///      La séparation des rôles modules n'aurait alors rien séparé, ce qui
+    ///      vide de son sens la promesse « un nouveau module ne reçoit que les
+    ///      pouvoirs qu'on lui accorde ».
     /// @param _from The current holder.
     /// @param _to The new holder.
     /// @param _lotId The lot being moved.
@@ -133,6 +144,8 @@ contract MaterialLots is ERC1155, ERC1155Supply, ERC1155Burnable, RoleAware {
         external
         onlyRole(ROLES.LOT_CUSTODIAN_ROLE())
     {
+        require(_from != address(0) && _to != address(0), NotACustodyTransfer());
+
         uint256[] memory ids = new uint256[](1);
         uint256[] memory values = new uint256[](1);
         ids[0] = _lotId;

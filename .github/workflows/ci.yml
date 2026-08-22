@@ -1,0 +1,86 @@
+# Intégration continue — Catenta
+#
+# Ignition protège le DÉPLOIEMENT ; ce workflow protège l'INTÉGRATION. Sans lui,
+# un contrat cassé poussé sur main n'est attrapé que par un `hardhat test` lancé
+# à la main. Trois travaux indépendants, exécutés en parallèle :
+#
+#   contracts — lint, compilation, tests, et couverture avec un SEUIL BLOQUANT.
+#
+# Chaque étape peut virer au rouge, et aucune n'est décorative : une étape qui
+# ne peut pas échouer n'apprend rien à personne.
+#
+# Le front n'a PAS de job ici, et c'est délibéré : Render le construit et le
+# déploie automatiquement à chaque push sur main (https://catenta.onrender.com).
+# Un build en double n'apprendrait rien de plus — Render échoue si le build
+# échoue. Ce qui manquerait vraiment, en revanche, c'est le lien entre les deux
+# moitiés du dépôt : il est couvert par `check-abi.mjs`, dans le job contracts.
+#
+# Le seuil de couverture est ce qui transforme un chiffre de slide en contrainte :
+# `scripts/check-coverage.mjs` lit lcov.info et sort en erreur sous 90 %.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# Une seule exécution par branche : un push qui en suit un autre annule le premier.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  contracts:
+    name: Contrats — lint, tests, couverture
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: package-lock.json
+
+      # `npm ci` et non `npm install` : la CI installe le lockfile tel quel,
+      # sinon elle ne teste pas les versions qui seront déployées.
+      - name: Installer les dépendances
+        run: npm ci
+
+      # Zéro, et c'est tenable : la dette NatSpec a été soldée pendant l'audit
+      # des contrats, et le seul écart d'ordre qui reste porte un
+      # `solhint-disable-next-line` avec sa raison écrite au-dessus. Un seuil
+      # qu'on ne peut plus baisser est un seuil qui attrape la prochaine dérive.
+      - name: Lint Solidity
+        run: npx solhint "contracts/**/*.sol" --max-warnings 0
+
+      # Le profil par défaut a l'optimiseur activé, et ce n'est pas une
+      # préférence : sans lui LifecycleModule dépasse la limite EIP-170.
+      - name: Compiler
+        run: npx hardhat compile
+
+      # LE contrôle qui relie les deux moitiés du dépôt. L'ABI du front est
+      # écrite à la main : sans ce script, changer une signature Solidity
+      # compile des deux côtés et casse le front à l'exécution, devant le jury.
+      - name: ABI du front alignée sur les contrats
+        run: node scripts/check-abi.mjs
+
+      - name: Tests
+        run: npx hardhat test
+
+      - name: Couverture
+        run: npx hardhat test --coverage
+
+      - name: Seuil de couverture (bloquant)
+        run: node scripts/check-coverage.mjs 90
+
+      - name: Publier le rapport de couverture
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage/
+          retention-days: 14
+

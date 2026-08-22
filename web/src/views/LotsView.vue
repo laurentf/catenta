@@ -234,9 +234,23 @@
               {{ t('lots.shippedBy') }} <AddressChip :address="s.from" />
             </p>
           </div>
-          <UiButton size="sm" :loading="busy === `accept-${s.id}`" @click="accept(s.id)">
-            {{ t('lots.accept') }}
-          </UiButton>
+          <div class="flex items-center gap-2">
+            <UiButton size="sm" :loading="busy === `accept-${s.id}`" @click="accept(s.id)">
+              {{ t('lots.accept') }}
+            </UiButton>
+            <!-- Refuser, c'est la même annulation côté contrat : la matière
+                 n'a jamais bougé. Sans ce bouton, un destinataire restait
+                 bloqué sur une expédition que l'expéditeur seul pouvait
+                 défaire — et sur une commande marquée « honorée ». -->
+            <UiButton
+              size="sm"
+              variant="ghost"
+              :loading="busy === `refuse-${s.id}`"
+              @click="refuse(s.id)"
+            >
+              {{ t('lots.refuse') }}
+            </UiButton>
+          </div>
         </li>
       </ul>
     </UiCard>
@@ -674,6 +688,8 @@ async function submitCancel(id: number) {
 
 const accept = (id: number) => run(`accept-${id}`, () => lots.acceptShipment(id), 'lots.accepted')
 const cancel = (id: number) => run(`cancel-${id}`, () => lots.cancelShipment(id), 'lots.cancelled')
+/** Refuser une réception : même appel, l'autre extrémité de l'expédition. */
+const refuse = (id: number) => run(`refuse-${id}`, () => lots.cancelShipment(id), 'lots.refused')
 
 /** Le sélecteur est un simple fichier statique ; son absence ne bloque rien. */
 async function loadPicker() {

@@ -109,7 +109,9 @@
     "outOfCirculating": "out of {total} still circulating",
     "emptyManufacturer": "You have declared no lot. Register a material in the catalogue, then declare one.",
     "emptyHolder": "No material in your custody. It reaches you through a shipment, which you have to confirm.",
-    "shipToPlaceholder": "Pick a recipient…"
+    "shipToPlaceholder": "Pick a recipient…",
+    "refuse": "Decline",
+    "refused": "Shipment declined: the material stays with the sender."
   },
   "passports": {
     "eyebrow": "Custom-made dental prostheses",
@@ -294,7 +296,7 @@
     "creditsNotTransferable": "Usage credits are not transferable.",
     "selfShipment": "A shipment to yourself makes no sense.",
     "notShipmentRecipient": "This shipment is not meant for you.",
-    "notShipmentSender": "You are not the sender of this shipment.",
+    "notShipmentParty": "You are neither the sender nor the recipient of this shipment.",
     "shipmentSettled": "This shipment has already been received or cancelled.",
     "invalidTooth": "Invalid tooth number: FDI notation expects a quadrant from 1 to 8 and a position from 1 to 8.",
     "quantityTooLarge": "Quantity too large to fit the passport's frozen traits.",

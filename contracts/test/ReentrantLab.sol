@@ -16,6 +16,7 @@ import {LifecycleModule} from "../modules/LifecycleModule.sol";
 ///      test rather than a comment: reorder the module the wrong way again and
 ///      this test fails.
 contract ReentrantLab is IERC721Receiver {
+    /// @notice Le module attaqué.
     LifecycleModule public immutable MODULE;
 
     uint256 private _requestId;
@@ -32,16 +33,23 @@ contract ReentrantLab is IERC721Receiver {
     }
 
     /// @notice Takes custody of material shipped to this contract.
+    /// @param _shipmentId L'expédition à réceptionner.
     function acceptShipment(uint256 _shipmentId) external {
         MODULE.acceptShipment(_shipmentId);
     }
 
     /// @notice Accepts a prescription addressed to this contract.
+    /// @param _id La prescription à accepter.
     function acceptRequest(uint256 _id) external {
         MODULE.acceptProsthesisRequest(_id);
     }
 
     /// @notice Mints once, and tries to mint again from inside the callback.
+    /// @param _id La prescription honorée.
+    /// @param _lot Le lot consommé.
+    /// @param _qty La quantité consommée.
+    /// @param _hash L'empreinte du dossier de conformité.
+    /// @return Le tokenId de la première émission.
     function attack(
         uint256 _id,
         uint64 _lot,
@@ -70,7 +78,8 @@ contract ReentrantLab is IERC721Receiver {
             try MODULE.mintPassport(_requestId, _lotId, _quantity, _conformityHash) {
                 ++reenteredOk;
             } catch {
-                // comportement attendu
+                // Révocation attendue : la prescription a déjà été consommée.
+                _armed = false;
             }
         }
         return IERC721Receiver.onERC721Received.selector;
