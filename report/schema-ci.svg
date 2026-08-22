@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" font-family="Inter, 'Helvetica Neue', Arial, sans-serif">
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
+  <text x="36" y="32" font-size="11.5" font-weight="600" letter-spacing="1.7" fill="#6B7280">CATENTA · C5 — INTÉGRATION CONTINUE</text>
+  <text x="36" y="64" font-size="29" font-weight="700" fill="#0F2540">Trois boucles, trois rôles qu'il ne faut pas confondre</text>
+  <text x="36" y="90" font-size="15" fill="#52606D">L'intégration protège ce qui entre dans <tspan font-family="Consolas, Menlo, monospace" font-size="14">main</tspan>. La livraison met le front en ligne. Le déploiement met les contrats en chaîne. Aucune ne remplace les deux autres.</text>
+
+  <rect x="36" y="108" width="1208" height="182" rx="14" fill="#F7F9FA" stroke="#E2E8F0"/>
+  <text x="58" y="136" font-size="10.5" font-weight="700" letter-spacing="1.4" fill="#6B7280">BOUCLE 1 · INTÉGRATION — À CHAQUE PUSH ET CHAQUE PULL REQUEST</text>
+  <text x="1222" y="136" font-size="11.5" font-family="Consolas, Menlo, monospace" text-anchor="end" fill="#94A3B8">.github/workflows/ci.yml</text>
+  <text x="58" y="162" font-size="18" font-weight="700" fill="#0F2540">GitHub Actions — un seul job, six étapes, toutes bloquantes</text>
+  <text x="58" y="188" font-size="10" font-weight="700" letter-spacing="1.3" fill="#0F766E">JOB CONTRATS — SI UNE ÉTAPE ÉCHOUE, RIEN N'ENTRE DANS MAIN</text>
+
+  <rect x="58" y="198" width="179" height="66" rx="9" fill="#FFFFFF" stroke="#E2E8F0"/>
+  <text x="147" y="224" font-size="11.5" font-family="Consolas, Menlo, monospace" text-anchor="middle" fill="#0F2540">solhint</text>
+  <text x="147" y="244" font-size="10" text-anchor="middle" fill="#52606D">0 avertissement toléré</text>
+
+  <rect x="255" y="198" width="179" height="66" rx="9" fill="#FFFFFF" stroke="#E2E8F0"/>
+  <text x="344" y="224" font-size="11.5" font-family="Consolas, Menlo, monospace" text-anchor="middle" fill="#0F2540">hardhat compile</text>
+  <text x="344" y="244" font-size="10" text-anchor="middle" fill="#52606D">optimiseur, EIP-170</text>
+
+  <rect x="452" y="198" width="179" height="66" rx="9" fill="#E5F4F1" stroke="#0F766E" stroke-width="1.4"/>
+  <text x="541" y="224" font-size="11.5" font-family="Consolas, Menlo, monospace" font-weight="700" text-anchor="middle" fill="#0B5B54">check-abi.mjs</text>
+  <text x="541" y="244" font-size="10" font-weight="600" text-anchor="middle" fill="#0B5B54">136 fragments alignés</text>
+
+  <rect x="649" y="198" width="179" height="66" rx="9" fill="#FFFFFF" stroke="#E2E8F0"/>
+  <text x="738" y="224" font-size="11.5" font-family="Consolas, Menlo, monospace" text-anchor="middle" fill="#0F2540">hardhat test</text>
+  <text x="738" y="244" font-size="10" text-anchor="middle" fill="#52606D">46 tests, 10 blocs</text>
+
+  <rect x="846" y="198" width="179" height="66" rx="9" fill="#FFFFFF" stroke="#E2E8F0"/>
+  <text x="935" y="224" font-size="11.5" font-family="Consolas, Menlo, monospace" text-anchor="middle" fill="#0F2540">test --coverage</text>
+  <text x="935" y="244" font-size="10" text-anchor="middle" fill="#52606D">produit lcov.info</text>
+
+  <rect x="1043" y="198" width="179" height="66" rx="9" fill="#E5F4F1" stroke="#0F766E" stroke-width="1.4"/>
+  <text x="1132" y="224" font-size="11.5" font-family="Consolas, Menlo, monospace" font-weight="700" text-anchor="middle" fill="#0B5B54">check-coverage 90</text>
+  <text x="1132" y="244" font-size="10" font-weight="600" text-anchor="middle" fill="#0B5B54">sous 90 % → rouge</text>
+
+  <path d="M 241,220 L 251,226 L 241,232 Z" fill="#94A3B8"/>
+  <path d="M 438,220 L 448,226 L 438,232 Z" fill="#94A3B8"/>
+  <path d="M 635,220 L 645,226 L 635,232 Z" fill="#94A3B8"/>
+  <path d="M 832,220 L 842,226 L 832,232 Z" fill="#94A3B8"/>
+  <path d="M 1029,220 L 1039,226 L 1029,232 Z" fill="#94A3B8"/>
+
+  <rect x="36" y="306" width="1208" height="118" rx="14" fill="#E5F4F1"/>
+  <text x="58" y="334" font-size="10.5" font-weight="700" letter-spacing="1.4" fill="#0F766E">BOUCLE 2 · LIVRAISON DU FRONT — AUTOMATIQUE, À CHAQUE PUSH SUR MAIN</text>
+  <rect x="58" y="344" width="372" height="62" rx="9" fill="#FFFFFF"/>
+  <text x="244" y="370" font-size="12.5" font-family="Consolas, Menlo, monospace" text-anchor="middle" fill="#0F2540">git push origin main</text>
+  <text x="244" y="390" font-size="10.5" text-anchor="middle" fill="#52606D">le même événement que la boucle 1</text>
+  <rect x="454" y="344" width="372" height="62" rx="9" fill="#FFFFFF"/>
+  <text x="640" y="370" font-size="12.5" font-weight="700" text-anchor="middle" fill="#0F2540">Render — build automatique</text>
+  <text x="640" y="390" font-size="10.5" text-anchor="middle" fill="#52606D">vue-tsc puis Vite ; un build cassé ne part pas</text>
+  <rect x="850" y="344" width="372" height="62" rx="9" fill="#0F2540"/>
+  <text x="1036" y="370" font-size="12.5" font-family="Consolas, Menlo, monospace" font-weight="700" text-anchor="middle" fill="#FFFFFF">catenta.onrender.com</text>
+  <text x="1036" y="390" font-size="10.5" text-anchor="middle" fill="#9DB3C8">en ligne, exécutable par un tiers avec un wallet</text>
+  <path d="M 436,368 L 448,374 L 436,380 Z" fill="#0F766E"/>
+  <path d="M 832,368 L 844,374 L 832,380 Z" fill="#0F766E"/>
+
+  <rect x="36" y="440" width="1208" height="174" rx="14" fill="#F7F9FA" stroke="#E2E8F0"/>
+  <text x="58" y="468" font-size="10.5" font-weight="700" letter-spacing="1.4" fill="#6B7280">BOUCLE 3 · DÉPLOIEMENT DES CONTRATS — HARDHAT IGNITION, DÉCLENCHÉ À LA MAIN</text>
+  <text x="58" y="490" font-size="13.5" fill="#0F2540">Déclaratif, versionné, reprenable. Ce n'est pas un script : quatre propriétés qu'un script n'a pas.</text>
+
+  <rect x="58" y="502" width="279" height="90" rx="9" fill="#FFFFFF" stroke="#E2E8F0"/>
+  <text x="76" y="524" font-size="12.5" font-weight="700" fill="#0B5B54">Déploiement comme code</text>
+  <text x="76" y="545" font-size="11" fill="#52606D">La pile et ses 7 attributions de</text>
+  <text x="76" y="561" font-size="11" fill="#52606D">rôles dans un fichier versionné de</text>
+  <text x="76" y="577" font-size="11" fill="#52606D">71 lignes, relu en diff.</text>
+
+  <rect x="353" y="502" width="279" height="90" rx="9" fill="#FFFFFF" stroke="#E2E8F0"/>
+  <text x="371" y="524" font-size="12.5" font-weight="700" fill="#0B5B54">Journal et reprise</text>
+  <text x="371" y="545" font-size="11" fill="#52606D">Un déploiement interrompu reprend</text>
+  <text x="371" y="561" font-size="11" fill="#52606D">où il s'est arrêté. 13 transactions</text>
+  <text x="371" y="577" font-size="11" fill="#52606D">journalisées, aucune rejouée.</text>
+
+  <rect x="648" y="502" width="279" height="90" rx="9" fill="#FFFFFF" stroke="#E2E8F0"/>
+  <text x="666" y="524" font-size="12.5" font-weight="700" fill="#0B5B54">Réconciliation</text>
+  <text x="666" y="545" font-size="11" fill="#52606D">Ignition refuse un module devenu</text>
+  <text x="666" y="561" font-size="11" fill="#52606D">incompatible avec ce qui est en</text>
+  <text x="666" y="577" font-size="11" fill="#52606D">ligne : jamais deux architectures.</text>
+
+  <rect x="943" y="502" width="279" height="90" rx="9" fill="#FFFFFF" stroke="#E2E8F0"/>
+  <text x="961" y="524" font-size="12.5" font-weight="700" fill="#0B5B54">Vérification enchaînée</text>
+  <text x="961" y="545" font-size="11" fill="#52606D">--verify publie la source depuis</text>
+  <text x="961" y="561" font-size="11" fill="#52606D">l'artefact déployé lui-même, dans</text>
+  <text x="961" y="577" font-size="11" fill="#52606D">la commande de déploiement.</text>
+
+  <rect x="36" y="630" width="1208" height="70" rx="12" fill="#F2F4F6"/>
+  <text x="58" y="654" font-size="11.5" font-weight="700" fill="#0F2540">Ce qui n'est pas présent</text>
+  <text x="58" y="674" font-size="11" fill="#52606D">Ni analyse statique automatisée, ni fuzzing, ni tests de propriétés. Les deux garde-fous en place</text>
+  <text x="58" y="690" font-size="11" fill="#52606D">sont écrits pour ce projet — et ils échouent pour de vrai, c'est ce qui les distingue d'une décoration.</text>
+  <text x="700" y="654" font-size="11.5" font-weight="700" fill="#0B5B54">Ce qui est épinglé, parce qu'un registre ne se corrige pas</text>
+  <text x="700" y="674" font-size="11" fill="#52606D">solc 0.8.34 sans caret · OpenZeppelin 5.6.1 · secrets dans le keystore chiffré de Hardhat,</text>
+  <text x="700" y="690" font-size="11" fill="#52606D">jamais un .env, jamais l'historique shell.</text>
+</svg>

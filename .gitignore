@@ -27,3 +27,7 @@ ignition/deployments/
 Thumbs.db
 .idea/
 .vscode/
+
+# LibreOffice — verrous et temporaires
+.~lock.*#
+lu*.tmp

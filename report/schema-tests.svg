@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" font-family="Inter, 'Helvetica Neue', Arial, sans-serif">
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
+  <text x="36" y="32" font-size="11.5" font-weight="600" letter-spacing="1.7" fill="#6B7280">CATENTA · C6 — VÉRIFIER LA RÉSILIENCE PAR LES TESTS</text>
+  <text x="36" y="64" font-size="29" font-weight="700" fill="#0F2540">Un test par garde, et chaque test raconte une phrase métier</text>
+  <text x="36" y="90" font-size="15" fill="#52606D">Le test ne vérifie pas qu'une fonction marche : il vérifie que la garde <tspan font-weight="700">révoque</tspan>. Un test qui ne fait que passer ne prouve rien sur ce qui doit être refusé.</text>
+
+  <rect x="36" y="106" width="228" height="62" rx="10" fill="#0F2540"/>
+  <text x="150" y="138" font-size="23" font-weight="700" text-anchor="middle" fill="#FFFFFF">46</text>
+  <text x="150" y="156" font-size="9.5" font-weight="600" letter-spacing="1.1" text-anchor="middle" fill="#9DB3C8">TESTS, TOUS VERTS</text>
+  <rect x="281" y="106" width="228" height="62" rx="10" fill="#F2F4F6"/>
+  <text x="395" y="138" font-size="23" font-weight="700" text-anchor="middle" fill="#0F2540">10</text>
+  <text x="395" y="156" font-size="9.5" font-weight="600" letter-spacing="1.1" text-anchor="middle" fill="#6B7280">BLOCS MÉTIER</text>
+  <rect x="526" y="106" width="228" height="62" rx="10" fill="#F2F4F6"/>
+  <text x="640" y="138" font-size="23" font-weight="700" text-anchor="middle" fill="#0F2540">993</text>
+  <text x="640" y="156" font-size="9.5" font-weight="600" letter-spacing="1.1" text-anchor="middle" fill="#6B7280">LIGNES DE TEST</text>
+  <rect x="771" y="106" width="228" height="62" rx="10" fill="#E5F4F1"/>
+  <text x="885" y="138" font-size="23" font-weight="700" text-anchor="middle" fill="#0B5B54">98,21 %</text>
+  <text x="885" y="156" font-size="9.5" font-weight="600" letter-spacing="1.1" text-anchor="middle" fill="#0F766E">LIGNES COUVERTES</text>
+  <rect x="1016" y="106" width="228" height="62" rx="10" fill="#E5F4F1"/>
+  <text x="1130" y="138" font-size="23" font-weight="700" text-anchor="middle" fill="#0B5B54">100 %</text>
+  <text x="1130" y="156" font-size="9.5" font-weight="600" letter-spacing="1.1" text-anchor="middle" fill="#0F766E">SUR LE MODULE MÉTIER</text>
+
+  <rect x="36" y="206" width="392" height="112" rx="10" fill="#FFFFFF" stroke="#E2E8F0"/>
+  <text x="56" y="231" font-size="12.5" font-family="Consolas, Menlo, monospace" font-weight="700" fill="#0F2540">smoke</text>
+  <text x="408" y="231" font-size="10.5" font-weight="700" text-anchor="end" fill="#0F766E">6 tests</text>
+  <text x="56" y="254" font-size="11.5" fill="#52606D">Le parcours complet fabricant → distributeur → laboratoire →</text>
+  <text x="56" y="271" font-size="11.5" fill="#52606D">praticien → patient, en une seule lecture. Plus le soulbound,</text>
+  <text x="56" y="288" font-size="11.5" fill="#52606D">et le remplacement du module par un autre.</text>
+
+  <rect x="444" y="206" width="392" height="112" rx="10" fill="#FFFFFF" stroke="#E2E8F0"/>
+  <text x="464" y="231" font-size="12.5" font-family="Consolas, Menlo, monospace" font-weight="700" fill="#0F2540">usage credit</text>
+  <text x="816" y="231" font-size="10.5" font-weight="700" text-anchor="end" fill="#0F766E">6 tests</text>
+  <text x="464" y="254" font-size="11.5" fill="#52606D">Un crédit brûlé par action utile, l'action bloquée à zéro</text>
+  <text x="464" y="271" font-size="11.5" fill="#52606D">crédit, la non-transférabilité, la phase pilote gratuite,</text>
+  <text x="464" y="288" font-size="11.5" fill="#52606D">et le mint réservé au seul rôle qui le porte.</text>
+
+  <rect x="852" y="206" width="392" height="112" rx="10" fill="#FFFFFF" stroke="#E2E8F0"/>
+  <text x="872" y="231" font-size="12.5" font-family="Consolas, Menlo, monospace" font-weight="700" fill="#0F2540">un lot se décrit lui-même</text>
+  <text x="1224" y="231" font-size="10.5" font-weight="700" text-anchor="end" fill="#0F766E">3 tests</text>
+  <text x="872" y="254" font-size="11.5" fill="#52606D">Matière et unité lisibles sans aucun fichier annexe, deux</text>
+  <text x="872" y="271" font-size="11.5" fill="#52606D">unités différentes qui coexistent, et des chaînes bornées</text>
+  <text x="872" y="288" font-size="11.5" fill="#52606D">pour tenir dans un slot chacune.</text>
+
+  <rect x="36" y="329" width="392" height="112" rx="10" fill="#FFFFFF" stroke="#E2E8F0"/>
+  <text x="56" y="354" font-size="12.5" font-family="Consolas, Menlo, monospace" font-weight="700" fill="#0F2540">material custody chain</text>
+  <text x="408" y="354" font-size="10.5" font-weight="700" text-anchor="end" fill="#0F766E">10 tests</text>
+  <text x="56" y="377" font-size="11.5" fill="#52606D">Transfert direct refusé, garde impossible sans le rôle,</text>
+  <text x="56" y="394" font-size="11.5" fill="#52606D">destinataire non éligible, quantité insuffisante, annulation,</text>
+  <text x="56" y="411" font-size="11.5" fill="#52606D">double acceptation, vente au cabinet, flux inverse.</text>
+
+  <rect x="444" y="329" width="392" height="112" rx="10" fill="#FFFFFF" stroke="#E2E8F0"/>
+  <text x="464" y="354" font-size="12.5" font-family="Consolas, Menlo, monospace" font-weight="700" fill="#0F2540">actor registry</text>
+  <text x="816" y="354" font-size="10.5" font-weight="700" text-anchor="end" fill="#0F766E">5 tests</text>
+  <text x="464" y="377" font-size="11.5" fill="#52606D">Un fabricant ne peut pas être nommé — la règle est dans le</text>
+  <text x="464" y="394" font-size="11.5" fill="#52606D">contrat, pas dans l'interface. SIREN à neuf chiffres,</text>
+  <text x="464" y="411" font-size="11.5" fill="#52606D">effacement, perte du nom si l'acteur devient fabricant.</text>
+
+  <rect x="852" y="329" width="392" height="112" rx="10" fill="#FFFFFF" stroke="#E2E8F0"/>
+  <text x="872" y="354" font-size="12.5" font-family="Consolas, Menlo, monospace" font-weight="700" fill="#0F2540">material orders</text>
+  <text x="1224" y="354" font-size="10.5" font-weight="700" text-anchor="end" fill="#0F766E">5 tests</text>
+  <text x="872" y="377" font-size="11.5" fill="#52606D">Commande → livraison, cascade tracée vers le fabricant,</text>
+  <text x="872" y="394" font-size="11.5" fill="#52606D">refus et annulation motivés, réouverture si le fournisseur</text>
+  <text x="872" y="411" font-size="11.5" fill="#52606D">annule, matière livrée conforme à la commande.</text>
+
+  <rect x="36" y="452" width="392" height="112" rx="10" fill="#FFFFFF" stroke="#E2E8F0"/>
+  <text x="56" y="477" font-size="12.5" font-family="Consolas, Menlo, monospace" font-weight="700" fill="#0F2540">prosthesis requests</text>
+  <text x="408" y="477" font-size="10.5" font-weight="700" text-anchor="end" fill="#0F766E">4 tests</text>
+  <text x="56" y="500" font-size="11.5" fill="#52606D">Prescription → passeport. Pas de fabrication contre une</text>
+  <text x="56" y="517" font-size="11.5" fill="#52606D">demande non acceptée. Refus et annulation motivés, textes</text>
+  <text x="56" y="534" font-size="11.5" fill="#52606D">bornés, dent validée en notation FDI.</text>
+
+  <rect x="444" y="452" width="392" height="112" rx="10" fill="#FCEDE6" stroke="#F3D9C9"/>
+  <text x="464" y="477" font-size="12.5" font-family="Consolas, Menlo, monospace" font-weight="700" fill="#B45309">réentrance + correctifs d'audit</text>
+  <text x="816" y="477" font-size="10.5" font-weight="700" text-anchor="end" fill="#B45309">4 tests</text>
+  <text x="464" y="500" font-size="11.5" fill="#52606D">Un laboratoire-contrat tente réellement la réentrance. Plus :</text>
+  <text x="464" y="517" font-size="11.5" fill="#52606D">la garde ne frappe pas depuis l'adresse zéro, une remise armée</text>
+  <text x="464" y="534" font-size="11.5" fill="#52606D">ne survit pas à la pose, le destinataire peut refuser.</text>
+
+  <rect x="852" y="452" width="392" height="112" rx="10" fill="#FFFFFF" stroke="#E2E8F0"/>
+  <text x="872" y="477" font-size="12.5" font-family="Consolas, Menlo, monospace" font-weight="700" fill="#0F2540">delegated onboarding</text>
+  <text x="1224" y="477" font-size="10.5" font-weight="700" text-anchor="end" fill="#0F766E">3 tests</text>
+  <text x="872" y="500" font-size="11.5" fill="#52606D">Un agent d'agrément agrée des acteurs sans détenir</text>
+  <text x="872" y="517" font-size="11.5" fill="#52606D">DEFAULT_ADMIN, et ne peut pas s'auto-promouvoir. Plusieurs</text>
+  <text x="872" y="534" font-size="11.5" fill="#52606D">émetteurs de crédits sans toucher à la racine.</text>
+
+  <rect x="36" y="580" width="1208" height="120" rx="14" fill="#E5F4F1"/>
+  <text x="58" y="608" font-size="14" font-weight="700" fill="#0B5B54">Trois tests à jouer en direct<tspan font-size="13" font-weight="400" fill="#0F2540"> — préfixe : </tspan><tspan font-family="Consolas, Menlo, monospace" font-size="12.5" fill="#0F2540">npx hardhat test --grep "…"</tspan></text>
+  <text x="58" y="638" font-size="12" font-family="Consolas, Menlo, monospace" font-weight="700" fill="#0B5B54">"NEW module"</text>
+  <text x="58" y="660" font-size="11.5" fill="#0F2540">La modularité, prouvée : on déplace les rôles, le</text>
+  <text x="58" y="677" font-size="11.5" fill="#0F2540">passeport survit, l'ancien module devient impuissant.</text>
+  <text x="470" y="638" font-size="12" font-family="Consolas, Menlo, monospace" font-weight="700" fill="#0B5B54">"custody history"</text>
+  <text x="470" y="660" font-size="11.5" fill="#0F2540">Trois expéditions, trois issues distinctes — lues dans</text>
+  <text x="470" y="677" font-size="11.5" fill="#0F2540">le storage, sans lire un seul event.</text>
+  <text x="882" y="638" font-size="12" font-family="Consolas, Menlo, monospace" font-weight="700" fill="#0B5B54">"one credit"</text>
+  <text x="882" y="660" font-size="11.5" fill="#0F2540">La comptabilité du modèle économique, décrément</text>
+  <text x="882" y="677" font-size="11.5" fill="#0F2540">par décrément le long de toute la chaîne.</text>
+</svg>

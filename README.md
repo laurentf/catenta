@@ -76,8 +76,8 @@ fabricant · distributeur · labo · praticien · Ordre/ARS   IPFS (docs) · PII
 | Contrats | Solidity `0.8.34` (pragma figé, **optimiseur actif dans les deux profils** — le module de cycle de vie dépasse la limite EIP-170 de 24 576 octets sans lui) · **OpenZeppelin v5, massivement** — ~25 modules audités (jetons, `AccessControl*`, `ReentrancyGuardTransient`, `Pausable`, `EIP712`, `EnumerableSet`, `MerkleProof`, `Multicall`…), inventoriés et justifiés un par un en [SPEC §8.4](docs/SPEC.md) |
 | Outillage | Hardhat 3 · Ignition (déploiement) · keystore chiffré (secrets) |
 | Tests | double runner : **Solidity/forge-std** (propriétés, *fuzzing*) + **TypeScript/mocha + ethers v6** (scénarios) |
-| Qualité | solhint · slither · couverture native Hardhat 3 (seuil bloquant) |
-| CI/CD | GitHub Actions — lint → compile → test → coverage → slither → build front |
+| Qualité | solhint (0 erreur, 20 avertissements au plus) · couverture native Hardhat 3 avec **seuil bloquant** · vérification de l'ABI du front contre les contrats compilés |
+| CI/CD | GitHub Actions — lint → compile → ABI → test → coverage → seuil · front livré en continu par **Render** ([catenta.onrender.com](https://catenta.onrender.com)) |
 | Front | Vue 3 + Vite + TypeScript · Reown AppKit · ethers v6 · Pinia · vue-i18n · Tailwind |
 | Réseau | Sepolia, contrats vérifiés sur Etherscan |
 

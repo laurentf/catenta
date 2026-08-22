@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" font-family="Inter, 'Helvetica Neue', Arial, sans-serif">
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
+  <text x="36" y="32" font-size="11.5" font-weight="600" letter-spacing="1.7" fill="#6B7280">CATENTA · C2 — JUSTIFICATION DU DÉCOUPAGE</text>
+  <text x="36" y="64" font-size="29" font-weight="700" fill="#0F2540">Pourquoi des modules et des rôles, plutôt qu'un proxy</text>
+  <text x="36" y="90" font-size="15" fill="#52606D">Le proxy est la réponse par défaut à « comment faire évoluer un contrat ». Elle a été pesée, puis écartée — voici contre quoi, et ce que ça coûte.</text>
+
+  <rect x="344" y="112" width="444" height="40" rx="8" fill="#F2F4F6"/>
+  <text x="366" y="138" font-size="13.5" font-weight="700" fill="#52606D">Proxy évolutif — UUPS ou Transparent</text>
+  <rect x="800" y="112" width="444" height="40" rx="8" fill="#0F2540"/>
+  <text x="822" y="138" font-size="13.5" font-weight="700" fill="#FFFFFF">Modules + autorité de rôles — le choix de Catenta</text>
+
+  <text x="36" y="180" font-size="12" font-weight="700" fill="#0F2540">Comment on fait évoluer</text>
+  <text x="36" y="196" font-size="12" font-weight="700" fill="#0F2540">la règle métier</text>
+  <text x="366" y="180" font-size="10.5" fill="#52606D">On remplace l'implémentation derrière le proxy. Une transaction,</text>
+  <text x="366" y="196" font-size="10.5" fill="#52606D">et le comportement de l'adresse existante change.</text>
+  <text x="822" y="180" font-size="10.5" fill="#0F2540">On déploie un module neuf, on lui accorde ses rôles, on les</text>
+  <text x="822" y="196" font-size="10.5" fill="#0F2540">révoque à l'ancien. Trois transactions, trois événements.</text>
+  <line x1="36" y1="212" x2="1244" y2="212" stroke="#E2E8F0"/>
+
+  <text x="36" y="236" font-size="12" font-weight="700" fill="#0F2540">L'adresse publique</text>
+  <text x="366" y="236" font-size="10.5" font-weight="600" fill="#0B5B54">Inchangée. Les intégrations, les liens et les signets survivent</text>
+  <text x="366" y="252" font-size="10.5" font-weight="600" fill="#0B5B54">sans rien faire. C'est le vrai avantage du proxy.</text>
+  <text x="822" y="236" font-size="10.5" fill="#0F2540">Change. Une variable à reporter par contrat remplacé — et il y</text>
+  <text x="822" y="252" font-size="10.5" fill="#0F2540">en a deux : le module de cycle de vie, et le registre d'acteurs.</text>
+  <line x1="36" y1="268" x2="1244" y2="268" stroke="#E2E8F0"/>
+
+  <text x="36" y="292" font-size="12" font-weight="700" fill="#0F2540">L'état</text>
+  <text x="366" y="292" font-size="10.5" fill="#52606D">Intégralement conservé : le storage appartient au proxy,</text>
+  <text x="366" y="308" font-size="10.5" fill="#52606D">l'implémentation n'est que du code.</text>
+  <text x="822" y="292" font-size="10.5" fill="#0F2540">Passeports, lots et crédits survivent. L'état propre du module</text>
+  <text x="822" y="308" font-size="10.5" fill="#0F2540">— statuts, commandes, prescriptions — est perdu.</text>
+  <line x1="36" y1="324" x2="1244" y2="324" stroke="#E2E8F0"/>
+
+  <text x="36" y="348" font-size="12" font-weight="700" fill="#0F2540">Le mécanisme</text>
+  <text x="366" y="348" font-size="10.5" fill="#52606D">delegatecall : le code d'un contrat s'exécute dans le storage</text>
+  <text x="366" y="364" font-size="10.5" fill="#52606D">d'un autre. La disposition des slots doit rester compatible à jamais.</text>
+  <text x="822" y="348" font-size="10.5" font-weight="600" fill="#0B5B54">Des appels ordinaires. Chaque contrat a son propre storage,</text>
+  <text x="822" y="364" font-size="10.5" font-weight="600" fill="#0B5B54">personne n'écrit jamais dans celui d'un autre.</text>
+  <line x1="36" y1="380" x2="1244" y2="380" stroke="#E2E8F0"/>
+
+  <text x="36" y="404" font-size="12" font-weight="700" fill="#0F2540">Ce qu'un auditeur doit</text>
+  <text x="36" y="420" font-size="12" font-weight="700" fill="#0F2540">relire à chaque évolution</text>
+  <text x="366" y="404" font-size="10.5" fill="#52606D">L'ordre des variables, les gaps de réserve, l'initialiseur, les</text>
+  <text x="366" y="420" font-size="10.5" fill="#52606D">collisions de slots. Une erreur de disposition corrompt tout.</text>
+  <text x="822" y="404" font-size="10.5" font-weight="600" fill="#0B5B54">Le code du nouveau module. Les stockages, eux, n'ont pas</text>
+  <text x="822" y="420" font-size="10.5" font-weight="600" fill="#0B5B54">changé d'une ligne depuis leur audit.</text>
+  <line x1="36" y1="436" x2="1244" y2="436" stroke="#E2E8F0"/>
+
+  <text x="36" y="460" font-size="12" font-weight="700" fill="#0F2540">Comment une prise de</text>
+  <text x="36" y="476" font-size="12" font-weight="700" fill="#0F2540">contrôle se voit</text>
+  <text x="366" y="460" font-size="10.5" fill="#52606D">upgradeTo réécrit le comportement en une transaction, sans</text>
+  <text x="366" y="476" font-size="10.5" fill="#52606D">que le storage bouge. Silencieux pour qui ne surveille pas.</text>
+  <text x="822" y="460" font-size="10.5" font-weight="600" fill="#0B5B54">Un RoleGranted puis un RoleRevoked, lisibles par tous — et</text>
+  <text x="822" y="476" font-size="10.5" font-weight="600" fill="#0B5B54">l'administration est sous délai de trois jours.</text>
+
+  <rect x="36" y="504" width="596" height="196" rx="12" fill="#E5F4F1"/>
+  <text x="58" y="532" font-size="14.5" font-weight="700" fill="#0B5B54">Ce que ce design achète</text>
+  <text x="58" y="558" font-size="11.5" font-weight="700" fill="#0F2540">Une classe entière de bugs n'existe pas</text>
+  <text x="58" y="575" font-size="11" fill="#52606D">Sans delegatecall, ni collision de slots, ni initialiseur oublié : les</text>
+  <text x="58" y="591" font-size="11" fill="#52606D">accidents les plus coûteux de l'écosystème sont hors sujet ici.</text>
+  <text x="58" y="616" font-size="11.5" font-weight="700" fill="#0F2540">Les stockages s'auditent seuls</text>
+  <text x="58" y="633" font-size="11" fill="#52606D">Un lot, un passeport se lisent sans connaître la règle métier du jour.</text>
+  <text x="58" y="658" font-size="11.5" font-weight="700" fill="#0F2540">Un changement de règle est un événement public</text>
+  <text x="58" y="675" font-size="11" fill="#52606D">Pas un remplacement silencieux de bytecode. Et l'ajout d'un module —</text>
+  <text x="58" y="691" font-size="11" fill="#52606D">rappel, caution — ne redéploie ni ne migre quoi que ce soit.</text>
+
+  <rect x="648" y="504" width="596" height="196" rx="12" fill="#FCEDE6"/>
+  <text x="670" y="532" font-size="14.5" font-weight="700" fill="#B45309">Ce qu'il coûte, sans rien masquer</text>
+  <text x="670" y="558" font-size="11.5" font-weight="700" fill="#0F2540">L'état propre du module est perdu au remplacement</text>
+  <text x="670" y="575" font-size="11" fill="#52606D">Statuts, commandes, prescriptions. Une migration serait à écrire à la</text>
+  <text x="670" y="591" font-size="11" fill="#52606D">main — et l'adresse change, donc le front se reconfigure.</text>
+  <text x="670" y="616" font-size="11.5" font-weight="700" fill="#0F2540">Deux modules peuvent coexister</text>
+  <text x="670" y="633" font-size="11" fill="#52606D">Oublier de révoquer laisse deux contrats écrire dans les mêmes</text>
+  <text x="670" y="649" font-size="11" fill="#52606D">stockages. C'est la checklist de déploiement qui l'évite, pas le code.</text>
+  <text x="670" y="674" font-size="11.5" font-weight="700" fill="#0F2540">Le découplage se paie à chaque écriture</text>
+  <text x="670" y="691" font-size="11" fill="#52606D">Un appel externe hasRole par action, là où un monolithe lirait son storage.</text>
+</svg>

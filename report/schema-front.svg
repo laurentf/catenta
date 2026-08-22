@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" font-family="Inter, 'Helvetica Neue', Arial, sans-serif">
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
+  <text x="36" y="32" font-size="11.5" font-weight="600" letter-spacing="1.7" fill="#6B7280">CATENTA · C7 — INTERAGIR AVEC LE CONTRAT DEPUIS UNE APP WEB</text>
+  <text x="36" y="64" font-size="29" font-weight="700" fill="#0F2540">La chaîne technique, du clic à la transaction</text>
+  <text x="36" y="90" font-size="15" fill="#52606D">Cinq briques, chacune avec un rôle et un seul. Ce qui compte n'est pas la pile choisie, c'est que le front n'ait aucune autorité sur ce qu'il affiche.</text>
+
+  <rect x="36" y="130" width="219" height="200" rx="11" fill="#FFFFFF" stroke="#E2E8F0"/>
+  <text x="56" y="164" font-size="15" font-weight="700" fill="#0F2540">Vue 3 · Vite</text>
+  <text x="56" y="186" font-size="9.5" font-weight="700" letter-spacing="1.1" fill="#0F766E">L'INTERFACE</text>
+  <text x="56" y="216" font-size="11" fill="#52606D">Composition API et</text>
+  <text x="56" y="233" font-size="11" fill="#52606D">TypeScript. Tailwind pour</text>
+  <text x="56" y="250" font-size="11" fill="#52606D">la mise en forme, vue-i18n</text>
+  <text x="56" y="267" font-size="11" fill="#52606D">pour le français et</text>
+  <text x="56" y="284" font-size="11" fill="#52606D">l'anglais.</text>
+
+  <rect x="283" y="130" width="219" height="200" rx="11" fill="#FFFFFF" stroke="#E2E8F0"/>
+  <text x="303" y="164" font-size="15" font-weight="700" fill="#0F2540">Pinia</text>
+  <text x="303" y="186" font-size="9.5" font-weight="700" letter-spacing="1.1" fill="#0F766E">L'ÉTAT, LU ON-CHAIN</text>
+  <text x="303" y="216" font-size="11" fill="#52606D">Sept stores : rôles, lots,</text>
+  <text x="303" y="233" font-size="11" fill="#52606D">passeports, commandes,</text>
+  <text x="303" y="250" font-size="11" fill="#52606D">acteurs, crédits, wallet.</text>
+  <text x="303" y="267" font-size="11" fill="#52606D">Aucun état inventé côté</text>
+  <text x="303" y="284" font-size="11" fill="#52606D">client.</text>
+
+  <rect x="530" y="130" width="219" height="200" rx="11" fill="#FFFFFF" stroke="#E2E8F0"/>
+  <text x="550" y="164" font-size="15" font-weight="700" fill="#0F2540">ethers v6</text>
+  <text x="550" y="186" font-size="9.5" font-weight="700" letter-spacing="1.1" fill="#0F766E">L'ENCODAGE ABI</text>
+  <text x="550" y="216" font-size="11" fill="#52606D">Traduit un clic en appel de</text>
+  <text x="550" y="233" font-size="11" fill="#52606D">contrat, et décode les</text>
+  <text x="550" y="250" font-size="11" fill="#52606D">reverts en erreurs nommées.</text>
+  <text x="550" y="267" font-size="11" fill="#52606D">136 fragments d'ABI, tenus</text>
+  <text x="550" y="284" font-size="11" fill="#52606D">alignés par la CI.</text>
+
+  <rect x="777" y="130" width="219" height="200" rx="11" fill="#FFFFFF" stroke="#E2E8F0"/>
+  <text x="797" y="164" font-size="15" font-weight="700" fill="#0F2540">Reown AppKit</text>
+  <text x="797" y="186" font-size="9.5" font-weight="700" letter-spacing="1.1" fill="#0F766E">LA CONNEXION</text>
+  <text x="797" y="216" font-size="11" fill="#52606D">Ex-WalletConnect. Ouvre la</text>
+  <text x="797" y="233" font-size="11" fill="#52606D">modale, restaure la session,</text>
+  <text x="797" y="250" font-size="11" fill="#52606D">fait signer la transaction.</text>
+  <text x="797" y="267" font-size="11" fill="#52606D">Le front ne détient jamais</text>
+  <text x="797" y="284" font-size="11" fill="#52606D">de clé privée.</text>
+
+  <rect x="1024" y="130" width="220" height="200" rx="11" fill="#0F2540"/>
+  <text x="1044" y="164" font-size="15" font-weight="700" fill="#FFFFFF">Sepolia</text>
+  <text x="1044" y="186" font-size="9.5" font-weight="700" letter-spacing="1.1" fill="#A7DFD8">LA CHAÎNE</text>
+  <text x="1044" y="216" font-size="11" fill="#C7D6E4">Deux adresses configurées.</text>
+  <text x="1044" y="233" font-size="11" fill="#C7D6E4">Le module expose ROLES,</text>
+  <text x="1044" y="250" font-size="11" fill="#C7D6E4">PASSPORTS, LOTS et CREDIT :</text>
+  <text x="1044" y="267" font-size="11" fill="#C7D6E4">quatre contrats se déduisent.</text>
+  <text x="1044" y="284" font-size="11" fill="#C7D6E4">Le registre d'acteurs, non.</text>
+
+  <path d="M 262,224 L 276,230 L 262,236 Z" fill="#94A3B8"/>
+  <path d="M 509,224 L 523,230 L 509,236 Z" fill="#94A3B8"/>
+  <path d="M 756,224 L 770,230 L 756,236 Z" fill="#94A3B8"/>
+  <path d="M 1003,224 L 1017,230 L 1003,236 Z" fill="#94A3B8"/>
+
+  <rect x="36" y="350" width="392" height="210" rx="12" fill="#E5F4F1"/>
+  <text x="58" y="380" font-size="15" font-weight="700" fill="#0B5B54">Il ne décide rien</text>
+  <text x="58" y="406" font-size="12" fill="#0F2540">Le rôle est lu on-chain via</text>
+  <text x="58" y="424" font-size="12" fill="#0F2540">CatentaRoles.hasRole. L'interface ne fait</text>
+  <text x="58" y="442" font-size="12" fill="#0F2540">que refléter ce que le contrat accepterait.</text>
+  <text x="58" y="466" font-size="12" font-weight="600" fill="#0B5B54">Un bouton absent n'est jamais une sécurité :</text>
+  <text x="58" y="484" font-size="12" font-weight="600" fill="#0B5B54">le contrat reste seul juge.</text>
+  <text x="58" y="510" font-size="12" fill="#0F2540">Sans aucun rôle, on voit l'application en</text>
+  <text x="58" y="528" font-size="12" fill="#0F2540">lecture seule plutôt qu'un mur — le registre</text>
+  <text x="58" y="546" font-size="12" fill="#0F2540">est public, prétendre l'inverse serait mentir.</text>
+
+  <rect x="444" y="350" width="392" height="210" rx="12" fill="#E5F4F1"/>
+  <text x="466" y="380" font-size="15" font-weight="700" fill="#0B5B54">Il n'indexe rien</text>
+  <text x="466" y="406" font-size="12" fill="#0F2540">Toutes les listes se lisent par index borné :</text>
+  <text x="466" y="424" font-size="12" fill="#0F2540">tokenOfOwnerByIndex, lotCount,</text>
+  <text x="466" y="442" font-size="12" fill="#0F2540">shipmentCount, materialOrderCount.</text>
+  <text x="466" y="466" font-size="12" font-weight="600" fill="#0B5B54">Aucun getLogs, donc aucune dépendance à la</text>
+  <text x="466" y="484" font-size="12" font-weight="600" fill="#0B5B54">générosité d'un RPC public.</text>
+  <text x="466" y="510" font-size="12" fill="#0F2540">C'est pour cela qu'ERC721Enumerable a été</text>
+  <text x="466" y="528" font-size="12" fill="#0F2540">payé au mint : quatre écritures de plus pour</text>
+  <text x="466" y="546" font-size="12" fill="#0F2540">supprimer une infrastructure entière.</text>
+
+  <rect x="852" y="350" width="392" height="210" rx="12" fill="#E5F4F1"/>
+  <text x="874" y="380" font-size="15" font-weight="700" fill="#0B5B54">Il n'encode rien dans le QR</text>
+  <text x="874" y="406" font-size="12" fill="#0F2540">Le QR d'une prothèse ne porte que l'adresse</text>
+  <text x="874" y="424" font-size="12" fill="#0F2540">de sa fiche. Tout est relu on-chain à</text>
+  <text x="874" y="442" font-size="12" fill="#0F2540">l'ouverture.</text>
+  <text x="874" y="466" font-size="12" font-weight="600" fill="#0B5B54">Un QR imprimé ne périme donc jamais, et ne</text>
+  <text x="874" y="484" font-size="12" font-weight="600" fill="#0B5B54">peut pas porter d'information fausse.</text>
+  <text x="874" y="510" font-size="12" fill="#0F2540">Comme il pointe vers une route profonde, la</text>
+  <text x="874" y="528" font-size="12" fill="#0F2540">destination est mémorisée pendant que le</text>
+  <text x="874" y="546" font-size="12" fill="#0F2540">wallet restaure — et filtrée contre l'open redirect.</text>
+
+  <rect x="36" y="580" width="1208" height="120" rx="14" fill="#F2F4F6"/>
+  <text x="58" y="610" font-size="13" font-weight="700" fill="#0F2540">Le front en chiffres</text>
+  <text x="58" y="646" font-size="20" font-weight="700" fill="#0B5B54">42</text>
+  <text x="58" y="668" font-size="10.5" fill="#6B7280">fichiers, 5 750 lignes</text>
+  <text x="252" y="646" font-size="20" font-weight="700" fill="#0B5B54">7</text>
+  <text x="252" y="668" font-size="10.5" fill="#6B7280">pages, dont 2 sans wallet</text>
+  <text x="446" y="646" font-size="20" font-weight="700" fill="#0B5B54">2 × 361</text>
+  <text x="446" y="668" font-size="10.5" fill="#6B7280">clés de traduction, FR et EN</text>
+  <text x="640" y="646" font-size="20" font-weight="700" fill="#0B5B54">39</text>
+  <text x="640" y="668" font-size="10.5" fill="#6B7280">messages d'erreur traduits</text>
+  <text x="834" y="646" font-size="20" font-weight="700" fill="#0B5B54">136</text>
+  <text x="834" y="668" font-size="10.5" fill="#6B7280">fragments d'ABI vérifiés en CI</text>
+  <text x="1028" y="646" font-size="20" font-weight="700" fill="#0B5B54">2 sur 6</text>
+  <text x="1028" y="668" font-size="10.5" fill="#6B7280">adresses à configurer</text>
+</svg>

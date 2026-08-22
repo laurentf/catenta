@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" font-family="Inter, 'Helvetica Neue', Arial, sans-serif">
+
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
+
+  <!-- ================= TITRE ================= -->
+  <text x="36" y="32" font-size="11.5" font-weight="600" letter-spacing="1.7" fill="#6B7280">CATENTA · C3 — EXPLOITER UN JETON NUMÉRIQUE</text>
+  <text x="36" y="64" font-size="29" font-weight="700" fill="#0F2540">Trois besoins, trois standards — aucun jeton décoratif</text>
+  <text x="36" y="90" font-size="15" fill="#52606D">Chaque standard rend effective une fonctionnalité qui n'existerait pas sans lui. Chaque choix est justifié par ce qu'il permet, par ce qu'il écarte, et par ce qu'il coûte.</text>
+
+  <!-- ================= CARTE 1 — ERC-721 ================= -->
+  <rect x="36" y="106" width="384" height="442" rx="14" fill="#FFFFFF"/>
+  <rect x="36" y="106" width="384" height="64" rx="14" fill="#0F2540"/>
+  <rect x="36" y="144" width="384" height="26" fill="#0F2540"/>
+  <text x="58" y="139" font-size="27" font-weight="700" fill="#FFFFFF">ERC-721</text>
+  <text x="58" y="160" font-size="12.5" fill="#9DB3C8">soulbound — non transférable</text>
+  <rect x="36" y="170" width="384" height="30" fill="#F2F4F6"/>
+  <text x="58" y="190" font-size="13.5" font-family="Consolas, Menlo, monospace" fill="#0F2540">PassportNFT.sol</text>
+  <text x="398" y="189" font-size="9.5" font-weight="600" letter-spacing="1.2" text-anchor="end" fill="#94A3B8">STOCKAGE PERMANENT</text>
+
+  <text x="58" y="226" font-size="10.5" font-weight="700" letter-spacing="1.4" fill="#6B7280">LE BESOIN</text>
+  <text x="58" y="247" font-size="14.5" font-weight="600" fill="#0F2540">Le passeport d'une prothèse.</text>
+  <text x="58" y="265" font-size="14.5" fill="#0F2540">Un jeton = une prothèse. Jamais une quantité.</text>
+  <line x1="58" y1="281" x2="398" y2="281" stroke="#E2E8F0" stroke-width="1"/>
+
+  <text x="58" y="302" font-size="10.5" font-weight="700" letter-spacing="1.4" fill="#0F766E">POURQUOI CE STANDARD</text>
+  <text x="58" y="323" font-size="13" fill="#0F2540">• Unique par nature : rien à fractionner, rien à</text>
+  <text x="58" y="341" font-size="13" fill="#0F2540">   compter — matière, dent et teinte figées au mint.</text>
+  <text x="58" y="359" font-size="13" fill="#0F2540">• ERC721Enumerable liste les prothèses d'un cabinet</text>
+  <text x="58" y="377" font-size="13" fill="#0F2540">   sans indexeur ni lecture de logs.</text>
+  <text x="58" y="395" font-size="13" fill="#0F2540">• Soulbound : pas un actif, mais le bien du patient.</text>
+
+  <rect x="50" y="410" width="356" height="58" rx="8" fill="#FCEDE6"/>
+  <text x="66" y="430" font-size="10" font-weight="700" letter-spacing="1.3" fill="#B45309">ÉCARTÉ, ET POURQUOI</text>
+  <text x="66" y="447" font-size="12" fill="#52606D">ERC-1155 supposerait une quantité ; un ERC-721</text>
+  <text x="66" y="463" font-size="12" fill="#52606D">transférable en ferait un actif cessible.</text>
+
+  <rect x="50" y="476" width="356" height="58" rx="8" fill="#F2F4F6"/>
+  <text x="66" y="496" font-size="10" font-weight="700" letter-spacing="1.3" fill="#52606D">LA LIMITE ASSUMÉE</text>
+  <text x="66" y="513" font-size="12" fill="#52606D">L'énumération ajoute 4 écritures neuves par mint ; et</text>
+  <text x="66" y="529" font-size="12" fill="#52606D">le passeport suit la pièce, pas la bouche du patient.</text>
+  <rect x="36" y="106" width="384" height="442" rx="14" fill="none" stroke="#E2E8F0" stroke-width="1"/>
+
+  <!-- ================= CARTE 2 — ERC-1155 ================= -->
+  <rect x="448" y="106" width="384" height="442" rx="14" fill="#FFFFFF"/>
+  <rect x="448" y="106" width="384" height="64" rx="14" fill="#0F766E"/>
+  <rect x="448" y="144" width="384" height="26" fill="#0F766E"/>
+  <text x="470" y="139" font-size="27" font-weight="700" fill="#FFFFFF">ERC-1155</text>
+  <text x="470" y="160" font-size="12.5" fill="#A7DFD8">semi-fongible — Supply + Burnable</text>
+  <rect x="448" y="170" width="384" height="30" fill="#F2F4F6"/>
+  <text x="470" y="190" font-size="13.5" font-family="Consolas, Menlo, monospace" fill="#0F2540">MaterialLots.sol</text>
+  <text x="810" y="189" font-size="9.5" font-weight="600" letter-spacing="1.2" text-anchor="end" fill="#94A3B8">STOCKAGE PERMANENT</text>
+
+  <text x="470" y="226" font-size="10.5" font-weight="700" letter-spacing="1.4" fill="#6B7280">LE BESOIN</text>
+  <text x="470" y="247" font-size="14.5" font-weight="600" fill="#0F2540">Les lots de matière première.</text>
+  <text x="470" y="265" font-size="14.5" fill="#0F2540">« 200 g de zircone du lot n°7 » : une quantité.</text>
+  <line x1="470" y1="281" x2="810" y2="281" stroke="#E2E8F0" stroke-width="1"/>
+
+  <text x="470" y="302" font-size="10.5" font-weight="700" letter-spacing="1.4" fill="#0F766E">POURQUOI CE STANDARD</text>
+  <text x="470" y="323" font-size="13" fill="#0F2540">• Semi-fongible : deux grammes d'un lot sont</text>
+  <text x="470" y="341" font-size="13" fill="#0F2540">   interchangeables ; deux lots, non.</text>
+  <text x="470" y="359" font-size="13" fill="#0F2540">• ERC1155Supply fournit la quantité restante.</text>
+  <text x="470" y="377" font-size="13" fill="#0F2540">• ERC1155Burnable : la matière est brûlée dans la</text>
+  <text x="470" y="395" font-size="13" fill="#0F2540">   transaction même qui crée la prothèse.</text>
+
+  <rect x="462" y="410" width="356" height="58" rx="8" fill="#FCEDE6"/>
+  <text x="478" y="430" font-size="10" font-weight="700" letter-spacing="1.3" fill="#B45309">ÉCARTÉ, ET POURQUOI</text>
+  <text x="478" y="447" font-size="12" fill="#52606D">ERC-721 imposerait un jeton par gramme ;</text>
+  <text x="478" y="463" font-size="12" fill="#52606D">ERC-20, un contrat déployé par lot.</text>
+
+  <rect x="462" y="476" width="356" height="58" rx="8" fill="#F2F4F6"/>
+  <text x="478" y="496" font-size="10" font-weight="700" letter-spacing="1.3" fill="#52606D">LA LIMITE ASSUMÉE</text>
+  <text x="478" y="513" font-size="12" fill="#52606D">L'id du lot n'est pas indexé dans TransferSingle :</text>
+  <text x="478" y="529" font-size="12" fill="#52606D">son histoire se lit dans le storage, pas dans les logs.</text>
+  <rect x="448" y="106" width="384" height="442" rx="14" fill="none" stroke="#E2E8F0" stroke-width="1"/>
+
+  <!-- ================= CARTE 3 — ERC-20 ================= -->
+  <rect x="860" y="106" width="384" height="442" rx="14" fill="#FFFFFF"/>
+  <rect x="860" y="106" width="384" height="64" rx="14" fill="#0B5B54"/>
+  <rect x="860" y="144" width="384" height="26" fill="#0B5B54"/>
+  <text x="882" y="139" font-size="27" font-weight="700" fill="#FFFFFF">ERC-20</text>
+  <text x="882" y="160" font-size="12.5" fill="#A7DFD8">non transférable — decimals = 0</text>
+  <rect x="860" y="170" width="384" height="30" fill="#F2F4F6"/>
+  <text x="882" y="190" font-size="13.5" font-family="Consolas, Menlo, monospace" fill="#0F2540">CatentaCredit.sol</text>
+  <text x="1222" y="189" font-size="9.5" font-weight="600" letter-spacing="1.2" text-anchor="end" fill="#94A3B8">STOCKAGE PERMANENT</text>
+
+  <text x="882" y="226" font-size="10.5" font-weight="700" letter-spacing="1.4" fill="#6B7280">LE BESOIN</text>
+  <text x="882" y="247" font-size="14.5" font-weight="600" fill="#0F2540">Le crédit d'usage $CATENTA.</text>
+  <text x="882" y="265" font-size="14.5" fill="#0F2540">Une action utile = un crédit brûlé.</text>
+  <line x1="882" y1="281" x2="1222" y2="281" stroke="#E2E8F0" stroke-width="1"/>
+
+  <text x="882" y="302" font-size="10.5" font-weight="700" letter-spacing="1.4" fill="#0F766E">POURQUOI CE STANDARD</text>
+  <text x="882" y="323" font-size="13" fill="#0F2540">• Fongible et sans identité : une comptabilité de</text>
+  <text x="882" y="341" font-size="13" fill="#0F2540">   soldes, lisible par n'importe quel wallet.</text>
+  <text x="882" y="359" font-size="13" fill="#0F2540">• decimals = 0 : un crédit est une unité entière.</text>
+  <text x="882" y="377" font-size="13" fill="#0F2540">• Non transférable : ni carnet d'ordres ni cours,</text>
+  <text x="882" y="395" font-size="13" fill="#0F2540">   ni listable ni échangeable — par construction.</text>
+
+  <rect x="874" y="410" width="356" height="58" rx="8" fill="#FCEDE6"/>
+  <text x="890" y="430" font-size="10" font-weight="700" letter-spacing="1.3" fill="#B45309">ÉCARTÉ, ET POURQUOI</text>
+  <text x="890" y="447" font-size="12" fill="#52606D">Un ERC-20 classique en ferait un jeton spéculatif</text>
+  <text x="890" y="463" font-size="12" fill="#52606D">— le modèle Galeon, écarté d'emblée.</text>
+
+  <rect x="874" y="476" width="356" height="58" rx="8" fill="#F2F4F6"/>
+  <text x="890" y="496" font-size="10" font-weight="700" letter-spacing="1.3" fill="#52606D">LA LIMITE ASSUMÉE</text>
+  <text x="890" y="513" font-size="12" fill="#52606D">Dépendance à un émetteur central : sans crédits</text>
+  <text x="890" y="529" font-size="12" fill="#52606D">émis, un acteur agréé ne peut plus rien faire.</text>
+  <rect x="860" y="106" width="384" height="442" rx="14" fill="none" stroke="#E2E8F0" stroke-width="1"/>
+
+  <!-- ================= BANDEAU — LE VERROU COMMUN ================= -->
+  <rect x="36" y="562" width="1208" height="144" rx="14" fill="#E5F4F1"/>
+  <text x="58" y="590" font-size="16.5" font-weight="700" fill="#0B5B54">Un seul verrou, trois règles<tspan font-size="14" font-weight="400" fill="#0F2540"> — les trois contrats surchargent le même hook OpenZeppelin, _update,</tspan></text>
+  <text x="58" y="609" font-size="14" fill="#0F2540">par lequel passe tout chemin de transfert. Surcharger les entrées publiques laisserait les internes grandes ouvertes.</text>
+
+  <text x="58" y="641" font-size="12.5" font-family="Consolas, Menlo, monospace" font-weight="700" fill="#0B5B54">PassportNFT._update</text>
+  <text x="58" y="663" font-size="12.5" fill="#0F2540">Seule une remise armée passe ; l'autorisation est</text>
+  <text x="58" y="681" font-size="12.5" fill="#0F2540">effacée avant le transfert. Le burn est refusé.</text>
+
+  <text x="470" y="641" font-size="12.5" font-family="Consolas, Menlo, monospace" font-weight="700" fill="#0B5B54">MaterialLots._update</text>
+  <text x="470" y="663" font-size="12.5" fill="#0F2540">Un détenteur ne transfère jamais seul : seul un module</text>
+  <text x="470" y="681" font-size="12.5" fill="#0F2540">LOT_CUSTODIAN_ROLE déplace la garde, après acceptation.</text>
+
+  <text x="882" y="641" font-size="12.5" font-family="Consolas, Menlo, monospace" font-weight="700" fill="#0B5B54">CatentaCredit._update</text>
+  <text x="882" y="663" font-size="12.5" fill="#0F2540">Seuls le mint et le burn passent. Aucun chemin ne mène</text>
+  <text x="882" y="681" font-size="12.5" fill="#0F2540">d'un détenteur à un autre : pas de marché, par le code.</text>
+
+</svg>

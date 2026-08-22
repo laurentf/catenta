@@ -1,0 +1,101 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" font-family="Inter, 'Helvetica Neue', Arial, sans-serif">
+  <rect x="0" y="0" width="1280" height="720" fill="#FFFFFF"/>
+  <text x="36" y="32" font-size="11.5" font-weight="600" letter-spacing="1.7" fill="#6B7280">CATENTA · C8 — DÉPLOYER SUR UNE BLOCKCHAIN</text>
+  <text x="36" y="64" font-size="29" font-weight="700" fill="#0F2540">En ligne sur Sepolia, et lisible par le jury</text>
+  <text x="36" y="90" font-size="15" fill="#52606D">Hardhat 3 · Ignition · keystore chiffré. Trois commandes, six contrats, sept attributions de rôles — et un registre qui porte déjà de l'activité réelle.</text>
+
+  <rect x="36" y="108" width="392" height="96" rx="11" fill="#FFFFFF" stroke="#E2E8F0"/>
+  <text x="56" y="134" font-size="11" font-weight="700" fill="#0F766E">1 · LES SECRETS</text>
+  <text x="56" y="157" font-size="12" font-family="Consolas, Menlo, monospace" fill="#0F2540">npx hardhat keystore set SEPOLIA_RPC_URL</text>
+  <text x="56" y="174" font-size="12" font-family="Consolas, Menlo, monospace" fill="#0F2540">npx hardhat keystore set SEPOLIA_PRIVATE_KEY</text>
+  <text x="56" y="193" font-size="11" fill="#52606D">Chiffrés. Jamais un .env, jamais l'historique shell.</text>
+
+  <rect x="444" y="108" width="392" height="96" rx="11" fill="#E5F4F1" stroke="#0F766E" stroke-width="1.3"/>
+  <text x="464" y="134" font-size="11" font-weight="700" fill="#0B5B54">2 · LE DÉPLOIEMENT</text>
+  <text x="464" y="155" font-size="12" font-family="Consolas, Menlo, monospace" fill="#0F2540">npx hardhat ignition deploy \</text>
+  <text x="464" y="171" font-size="12" font-family="Consolas, Menlo, monospace" fill="#0F2540">   ignition/modules/Catenta.ts \</text>
+  <text x="464" y="187" font-size="12" font-family="Consolas, Menlo, monospace" fill="#0F2540">   --network sepolia --verify</text>
+
+  <rect x="852" y="108" width="392" height="96" rx="11" fill="#FFFFFF" stroke="#E2E8F0"/>
+  <text x="872" y="134" font-size="11" font-weight="700" fill="#0F766E">3 · LE FRONT</text>
+  <text x="872" y="157" font-size="12" font-family="Consolas, Menlo, monospace" fill="#0F2540">VITE_LIFECYCLE_ADDRESS=0x2140…</text>
+  <text x="872" y="176" font-size="11" fill="#52606D">Une seule valeur à reporter : le module expose ROLES,</text>
+  <text x="872" y="193" font-size="11" fill="#52606D">PASSPORTS, LOTS et CREDIT, le front déduit le reste.</text>
+
+  <rect x="36" y="220" width="1208" height="292" rx="14" fill="#0F2540"/>
+  <text x="58" y="250" font-size="15" font-weight="700" fill="#FFFFFF">LA PILE EN LIGNE<tspan font-size="13.5" font-weight="400" fill="#9DB3C8"> — Sepolia. ⚠ La pile en ligne est celle d'AVANT les correctifs d'audit : 20 021 octets en chaîne contre 20 117 compilés. À redéployer.</tspan></text>
+
+  <text x="58" y="282" font-size="9.5" font-weight="700" letter-spacing="1.2" fill="#6E86A0">CONTRAT</text>
+  <text x="300" y="282" font-size="9.5" font-weight="700" letter-spacing="1.2" fill="#6E86A0">ADRESSE</text>
+  <text x="660" y="282" font-size="9.5" font-weight="700" letter-spacing="1.2" fill="#6E86A0">TAILLE</text>
+  <text x="800" y="282" font-size="9.5" font-weight="700" letter-spacing="1.2" fill="#6E86A0">NATURE</text>
+  <text x="1000" y="282" font-size="9.5" font-weight="700" letter-spacing="1.2" fill="#6E86A0">CE QU'IL DÉTIENT</text>
+  <line x1="58" y1="292" x2="1222" y2="292" stroke="#2A4463"/>
+
+  <text x="58" y="318" font-size="13" font-family="Consolas, Menlo, monospace" font-weight="700" fill="#A7DFD8">CatentaRoles</text>
+  <text x="300" y="318" font-size="11.5" font-family="Consolas, Menlo, monospace" fill="#C7D6E4">0x2044188f7912F4d85668D1Bb177471AFBd131dfb</text>
+  <text x="660" y="318" font-size="11.5" fill="#C7D6E4">4 974 o</text>
+  <text x="800" y="318" font-size="11.5" fill="#A7DFD8">autorité</text>
+  <text x="1000" y="318" font-size="11.5" fill="#9DB3C8">tous les rôles</text>
+
+  <text x="58" y="350" font-size="13" font-family="Consolas, Menlo, monospace" font-weight="700" fill="#FFFFFF">PassportNFT</text>
+  <text x="300" y="350" font-size="11.5" font-family="Consolas, Menlo, monospace" fill="#C7D6E4">0x5E1D6459924fA8FAFDBf6030AFc2f6d3c5F4493D</text>
+  <text x="660" y="350" font-size="11.5" fill="#C7D6E4">7 268 o</text>
+  <text x="800" y="350" font-size="11.5" fill="#9DB3C8">permanent</text>
+  <text x="1000" y="350" font-size="11.5" fill="#9DB3C8">3 prothèses</text>
+
+  <text x="58" y="382" font-size="13" font-family="Consolas, Menlo, monospace" font-weight="700" fill="#FFFFFF">MaterialLots</text>
+  <text x="300" y="382" font-size="11.5" font-family="Consolas, Menlo, monospace" fill="#C7D6E4">0x05Bc23176bb88fbc503dd5864F5b086158990e6F</text>
+  <text x="660" y="382" font-size="11.5" fill="#C7D6E4">8 997 o</text>
+  <text x="800" y="382" font-size="11.5" fill="#9DB3C8">permanent</text>
+  <text x="1000" y="382" font-size="11.5" fill="#9DB3C8">5 lots</text>
+
+  <text x="58" y="414" font-size="13" font-family="Consolas, Menlo, monospace" font-weight="700" fill="#FBBF77">ActorRegistry</text>
+  <text x="300" y="414" font-size="11.5" font-family="Consolas, Menlo, monospace" fill="#FBBF77">0x44fDaBbEAE0711d3c62cFE5f232b05deB3e9c914</text>
+  <text x="660" y="414" font-size="11.5" fill="#C7D6E4">3 334 o</text>
+  <text x="800" y="414" font-size="11.5" fill="#FBBF77">remplaçable</text>
+  <text x="1000" y="414" font-size="11.5" fill="#9DB3C8">raisons sociales</text>
+
+  <text x="58" y="446" font-size="13" font-family="Consolas, Menlo, monospace" font-weight="700" fill="#FFFFFF">CatentaCredit</text>
+  <text x="300" y="446" font-size="11.5" font-family="Consolas, Menlo, monospace" fill="#C7D6E4">0x281F41640774c323cc89Be354D401d417422bccB</text>
+  <text x="660" y="446" font-size="11.5" fill="#C7D6E4">3 022 o</text>
+  <text x="800" y="446" font-size="11.5" fill="#9DB3C8">permanent</text>
+  <text x="1000" y="446" font-size="11.5" fill="#9DB3C8">crédits d'usage</text>
+
+  <text x="58" y="478" font-size="13" font-family="Consolas, Menlo, monospace" font-weight="700" fill="#FBBF77">LifecycleModule</text>
+  <text x="300" y="478" font-size="11.5" font-family="Consolas, Menlo, monospace" fill="#FBBF77">0x214040cEa7892cF3559925Fe589Cc62Eaff6eaD3</text>
+  <text x="660" y="478" font-size="11.5" font-weight="700" fill="#FBBF77">20 117 o</text>
+  <text x="800" y="478" font-size="11.5" fill="#FBBF77">remplaçable</text>
+  <text x="1000" y="478" font-size="11.5" fill="#9DB3C8">9 expéditions · 8 commandes</text>
+
+  <line x1="58" y1="492" x2="1222" y2="492" stroke="#2A4463"/>
+  <text x="58" y="504" font-size="10.5" fill="#6E86A0">Deux adresses à donner au front : le module, qui expose les quatre autres — et le registre d'acteurs, que personne n'expose. defaultAdminDelay : 259 200 s.</text>
+
+  <rect x="36" y="528" width="392" height="172" rx="12" fill="#FCEDE6"/>
+  <text x="58" y="556" font-size="13.5" font-weight="700" fill="#B45309">L'optimiseur est obligatoire, pas préférentiel</text>
+  <text x="58" y="580" font-size="11.5" fill="#0F2540">Avec les commandes et les prescriptions,</text>
+  <text x="58" y="597" font-size="11.5" fill="#0F2540">LifecycleModule dépasse 30 000 octets sans lui</text>
+  <text x="58" y="614" font-size="11.5" fill="#0F2540">— au-delà de la limite EIP-170 de 24 576, que le</text>
+  <text x="58" y="631" font-size="11.5" fill="#0F2540">réseau de test applique exactement comme Sepolia.</text>
+  <text x="58" y="655" font-size="11.5" font-weight="700" fill="#B45309">Aucun test ne passait. Optimisé : 20 117 octets,</text>
+  <text x="58" y="672" font-size="11.5" font-weight="700" fill="#B45309">soit 81,9 % de la limite. Découvert par un test.</text>
+
+  <rect x="444" y="528" width="392" height="172" rx="12" fill="#F2F4F6"/>
+  <text x="466" y="556" font-size="13.5" font-weight="700" fill="#0B5B54">Le RPC d'un wallet ne tient pas un déploiement</text>
+  <text x="466" y="580" font-size="11.5" fill="#0F2540">Ignition envoie chaque batch en parallèle.</text>
+  <text x="466" y="597" font-size="11.5" fill="#0F2540">rpc.walletconnect.org étrangle la rafale et</text>
+  <text x="466" y="614" font-size="11.5" fill="#0F2540">répond 403 en plein milieu du déploiement.</text>
+  <text x="466" y="638" font-size="11.5" fill="#0F2540">Un fournisseur classique — Infura, Alchemy —</text>
+  <text x="466" y="655" font-size="11.5" fill="#0F2540">encaisse. Le journal a permis de reprendre là</text>
+  <text x="466" y="672" font-size="11.5" fill="#0F2540">où ça s'était arrêté, sans rien redéployer.</text>
+
+  <rect x="852" y="528" width="392" height="172" rx="12" fill="#F2F4F6"/>
+  <text x="874" y="556" font-size="13.5" font-weight="700" fill="#0B5B54">Un --deployment-id explicite</text>
+  <text x="874" y="580" font-size="11.5" fill="#0F2540">Sans lui, un module dont la forme a changé</text>
+  <text x="874" y="597" font-size="11.5" fill="#0F2540">déclenche une erreur de réconciliation :</text>
+  <text x="874" y="614" font-size="11.5" fill="#0F2540">Ignition refuse de mélanger deux architectures</text>
+  <text x="874" y="631" font-size="11.5" fill="#0F2540">dans une même pile.</text>
+  <text x="874" y="655" font-size="11.5" fill="#0F2540">Avec, le journal de la pile précédente reste</text>
+  <text x="874" y="672" font-size="11.5" fill="#0F2540">intact et ses adresses restent retrouvables.</text>
+</svg>
