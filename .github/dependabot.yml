@@ -1,0 +1,69 @@
+# Surveillance des dépendances — Catenta
+#
+# Le problème que ce fichier règle n'est pas la reproductibilité : `npm ci`
+# installe le lockfile à l'octet près, et c'est déjà garanti. Le problème est
+# qu'un lockfile figé le reste en silence. Hardhat est resté en 3.11.0 pendant
+# des mois alors que `^3.11.0` autorisait la 3.14.0, et rien ne l'a signalé —
+# ce sont les logs de la CI qui ont fini par le révéler, par sept
+# vulnérabilités hautes dont six ont disparu au premier `npm update`.
+#
+# Dependabot rend ce retard VISIBLE, sous forme de PR qu'on lit et qu'on
+# fusionne ou pas. C'est la différence avec une étape de CI non bloquante :
+# une PR demande une décision, une ligne verte ne demande rien.
+#
+# Cadence mensuelle et nombre de PR plafonné : l'objectif est d'être prévenu,
+# pas d'être noyé.
+
+version: 2
+
+updates:
+  # ── Contrats et outillage Hardhat ──────────────────────────────────────
+  #
+  # Une PR qui remonte `@openzeppelin/contracts` n'est JAMAIS une fusion de
+  # routine : sa source est compilée dans les contrats, donc un changement de
+  # version change le bytecode déployé et impose de redéployer puis de
+  # re-vérifier sur Etherscan. C'est pour cette raison qu'il est épinglé sans
+  # caret. Hardhat, à l'inverse, ne touche pas l'artefact — mesuré : remonter
+  # 3.11 → 3.14 a laissé les sept contrats byte à byte identiques.
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: chore(deps)
+    groups:
+      # Les mises à jour d'outillage arrivent groupées : une PR à relire
+      # plutôt que huit, et la CI les valide toutes d'un coup.
+      outillage:
+        dependency-type: development
+        update-types:
+          - minor
+          - patch
+
+  # ── Front ──────────────────────────────────────────────────────────────
+  - package-ecosystem: npm
+    directory: /web
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: chore(deps)
+    groups:
+      outillage-front:
+        dependency-type: development
+        update-types:
+          - minor
+          - patch
+
+  # ── Actions GitHub ─────────────────────────────────────────────────────
+  #
+  # Celui-ci aurait signalé le passage v4 → v7 sans qu'on attende de le lire
+  # dans un avertissement de run.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 2
+    commit-message:
+      prefix: ci
